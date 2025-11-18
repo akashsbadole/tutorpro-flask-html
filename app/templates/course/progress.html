@@ -1,0 +1,342 @@
+{% extends "course/base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block course_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Course Progress</h1>
+    <div class="btn-group">
+        <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+            <i class="fas fa-download"></i> Export Progress
+        </button>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="#">Export as PDF</a></li>
+            <li><a class="dropdown-item" href="#">Export as CSV</a></li>
+        </ul>
+    </div>
+</div>
+
+<!-- Overall Progress -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Overall Progress</h5>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="text-center">
+                    <div class="progress-ring" style="width: 120px; height: 120px;">
+                        <svg width="120" height="120">
+                            <circle class="progress-ring-circle" stroke="#e9ecef" stroke-width="8" fill="transparent" r="52" cx="60" cy="60"></circle>
+                            <circle class="progress-ring-circle" stroke="#28a745" stroke-width="8" fill="transparent" r="52" cx="60" cy="60" data-percent="{{ enrollment.progress_percentage }}"></circle>
+                        </svg>
+                        <div class="progress-text" style="margin-top: -75px; font-size: 1.5rem;">{{ "%.0f"|format(enrollment.progress_percentage) }}%</div>
+                    </div>
+                    <h6 class="mt-2">Course Completion</h6>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="row">
+                    <div class="col-6">
+                        <div class="text-center p-3">
+                            <h4 class="text-primary">{{ progress_data|selectattr('completed')|list|length }}</h4>
+                            <p class="mb-0">Modules Completed</p>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center p-3">
+                            <h4 class="text-warning">{{ progress_data|rejectattr('completed')|list|length }}</h4>
+                            <p class="mb-0">Modules Remaining</p>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center p-3">
+                            <h4 class="text-info">{{ progress_data|sum(attribute='syllabus.estimated_hours') or 0 }}h</h4>
+                            <p class="mb-0">Total Hours</p>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center p-3">
+                            <h4 class="text-success">{{ progress_data|selectattr('progress.time_spent_minutes')|sum(attribute='progress.time_spent_minutes') // 60 or 0 }}h</h4>
+                            <p class="mb-0">Time Spent</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Progress Timeline -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-chart-line"></i> Progress Timeline</h5>
+    </div>
+    <div class="card-body">
+        <div class="timeline">
+            {% for item in progress_data %}
+            <div class="timeline-item">
+                <div class="timeline-marker {% if item.completed %}completed{% endif %}">
+                    {% if item.completed %}
+                    <i class="fas fa-check"></i>
+                    {% else %}
+                    <i class="fas fa-circle"></i>
+                    {% endif %}
+                </div>
+                <div class="timeline-content">
+                    <div class="card {% if item.completed %}border-success{% endif %}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="card-title">{{ item.syllabus.title }}</h6>
+                                    {% if item.syllabus.description %}
+                                    <p class="card-text text-muted small">{{ item.syllabus.description[:100] }}{% if item.syllabus.description|length > 100 %}...{% endif %}</p>
+                                    {% endif %}
+                                </div>
+                                <div class="text-end">
+                                    {% if item.completed %}
+                                    <span class="badge bg-success">Completed</span>
+                                    <div class="small text-muted">{{ item.progress.completion_date.strftime('%b %d, %Y') if item.progress.completion_date else '' }}</div>
+                                    {% else %}
+                                    <span class="badge bg-warning">In Progress</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Progress Details -->
+                            {% if item.progress %}
+                            <div class="mt-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="small">Progress</span>
+                                    <span class="small">{{ "%.0f"|format(item.progress.progress_percentage) }}%</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar" role="progressbar" style="width: {{ item.progress.progress_percentage }}%"></div>
+                                </div>
+                                
+                                {% if item.progress.time_spent_minutes %}
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock"></i> Time spent: {{ item.progress.time_spent_minutes }} minutes
+                                    </small>
+                                </div>
+                                {% endif %}
+                                
+                                {% if item.progress.notes %}
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-sticky-note"></i> {{ item.progress.notes }}
+                                    </small>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Action Buttons -->
+                            <div class="mt-3">
+                                <a href="{{ url_for('course.syllabus_topics', syllabus_id=item.syllabus.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i> View Topics
+                                </a>
+                                
+                                {% if item.progress and not item.progress.is_completed %}
+                                <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#completeModal{{ item.syllabus.id }}">
+                                    <i class="fas fa-check"></i> Mark Complete
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Learning Analytics -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Learning Activity</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="activityChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-trophy"></i> Achievements</h5>
+            </div>
+            <div class="card-body">
+                {% if enrollment.student.earned_achievements %}
+                <div class="row">
+                    {% for achievement in enrollment.student.earned_achievements if achievement.course_id == course.id %}
+                    <div class="col-4 text-center mb-3">
+                        <div class="badge-achievement" style="background-color: {{ achievement.achievement.badge_color }};">
+                            <i class="fas fa-medal fa-2x text-white"></i>
+                        </div>
+                        <div class="small mt-1">{{ achievement.achievement.title }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">No achievements earned yet. Keep learning to unlock badges!</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Completion Modal -->
+{% for item in progress_data %}
+{% if item.progress and not item.progress.is_completed %}
+<div class="modal fade" id="completeModal{{ item.syllabus.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Mark Module as Complete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('course.update_progress', progress_id=item.progress.id) }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Time Spent (minutes)</label>
+                        <input type="number" name="time_spent_minutes" class="form-control" value="{{ item.progress.time_spent_minutes or 0 }}" min="0">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea name="notes" class="form-control" rows="3">{{ item.progress.notes or '' }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="is_completed" value="1" checked>
+                            <label class="form-check-label">Mark as completed</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Save Progress</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+    
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 15px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background-color: #e9ecef;
+    }
+    
+    .timeline-item {
+        position: relative;
+        margin-bottom: 30px;
+    }
+    
+    .timeline-marker {
+        position: absolute;
+        left: -25px;
+        top: 0;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background-color: #6c757d;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+    }
+    
+    .timeline-marker.completed {
+        background-color: #28a745;
+    }
+    
+    .timeline-content {
+        margin-left: 10px;
+    }
+    
+    .progress-ring {
+        transform: rotate(-90deg);
+    }
+    
+    .progress-ring-circle {
+        transition: stroke-dashoffset 0.35s;
+        stroke: #4CAF50;
+        stroke-dasharray: 326.73;
+    }
+    
+    .progress-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Progress animation
+        const progressRings = document.querySelectorAll('.progress-ring-circle');
+        progressRings.forEach(function(ring) {
+            const radius = ring.r.baseVal.value;
+            const circumference = radius * 2 * Math.PI;
+            const percent = ring.getAttribute('data-percent');
+            const offset = circumference - percent / 100 * circumference;
+            
+            ring.style.strokeDasharray = `${circumference} ${circumference}`;
+            ring.style.strokeDashoffset = offset;
+        });
+        
+        // Activity Chart
+        const ctx = document.getElementById('activityChart').getContext('2d');
+        const activityChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                datasets: [{
+                    label: 'Hours Spent',
+                    data: [2, 5, 3, 8],
+                    borderColor: '#007bff',
+                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Hours'
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

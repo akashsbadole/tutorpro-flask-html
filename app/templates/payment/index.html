@@ -1,0 +1,235 @@
+{% extends "payment/base.html" %}
+
+{% block title %}Payment Dashboard - TutorPro{% endblock %}
+
+{% block payment_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Payment Dashboard</h2>
+    <div>
+        <a href="{{ url_for('payment.payment_methods') }}" class="btn btn-outline-primary">
+            <i class="fas fa-plus me-2"></i>Add Payment Method
+        </a>
+        {% if current_user.role == 'tutor' %}
+        <a href="{{ url_for('payment.request_payout') }}" class="btn btn-primary">
+            <i class="fas fa-hand-holding-usd me-2"></i>Request Payout
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Payment Overview Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card payment-card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="payment-method-icon card-icon">
+                        <i class="fas fa-credit-card"></i>
+                    </div>
+                    <div>
+                        <h6 class="card-subtitle mb-2">Total Payments</h6>
+                        <h3 class="card-title mb-0">{{ recent_payments|length if recent_payments else 0 }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card payment-card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="payment-method-icon upi-icon">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                    <div>
+                        <h6 class="card-subtitle mb-2">Payment Methods</h6>
+                        <h3 class="card-title mb-0">{{ payment_methods|length if payment_methods else 0 }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card payment-card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="payment-method-icon paypal-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div>
+                        <h6 class="card-subtitle mb-2">Completed</h6>
+                        <h3 class="card-title mb-0">{{ recent_payments|selectattr('status', 'equalto', 'Completed')|list|length }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card payment-card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="payment-method-icon" style="background-color: #9C27B0; color: white;">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div>
+                        <h6 class="card-subtitle mb-2">Pending</h6>
+                        <h3 class="card-title mb-0">{{ recent_payments|selectattr('status', 'equalto', 'Pending')|list|length }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Payments -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Recent Payments</h5>
+        <a href="{{ url_for('payment.payment_history') }}" class="btn btn-sm btn-outline-primary">View All</a>
+    </div>
+    <div class="card-body">
+        {% if recent_payments %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Transaction ID</th>
+                        <th>Amount</th>
+                        <th>Method</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in recent_payments %}
+                    <tr>
+                        <td>{{ payment.transaction_id }}</td>
+                        <td>{{ payment.currency }} {{ "%.2f"|format(payment.amount) }}</td>
+                        <td>
+                            {% if payment.payment_method %}
+                                <span class="badge bg-secondary">{{ payment.payment_method.payment_type }}</span>
+                            {% else %}
+                                <span class="badge bg-light text-dark">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="payment-status status-{{ payment.status.lower() }}">
+                                {{ payment.status }}
+                            </span>
+                        </td>
+                        <td>{{ payment.created_at.strftime('%d %b %Y') }}</td>
+                        <td>
+                            <a href="{{ url_for('payment.receipt', payment_id=payment.gateway_transaction_id) }}" 
+                               class="btn btn-sm btn-outline-info" title="View Receipt">
+                                <i class="fas fa-receipt"></i>
+                            </a>
+                            {% if payment.status == 'Completed' %}
+                            <a href="{{ url_for('payment.refund_payment', payment_id=payment.id) }}" 
+                               class="btn btn-sm btn-outline-warning" title="Request Refund">
+                                <i class="fas fa-undo"></i>
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No payments yet</h5>
+            <p class="text-muted">Your payment history will appear here once you make your first payment.</p>
+            <a href="{{ url_for('payment.payment_methods') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Add Payment Method
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Payment Methods -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Payment Methods</h5>
+        <a href="{{ url_for('payment.payment_methods') }}" class="btn btn-sm btn-outline-primary">Manage</a>
+    </div>
+    <div class="card-body">
+        {% if payment_methods %}
+        <div class="row">
+            {% for method in payment_methods %}
+            <div class="col-md-4 mb-3">
+                <div class="card h-100 {{ 'border-primary' if method.is_default else '' }}">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="payment-method-icon 
+                                {{ 'upi-icon' if method.payment_type == 'UPI' else '' }}
+                                {{ 'paypal-icon' if method.payment_type == 'PayPal' else '' }}
+                                {{ 'card-icon' if method.payment_type in ['Credit Card', 'Debit Card'] else '' }}">
+                                {% if method.payment_type == 'UPI' %}
+                                    <i class="fas fa-mobile-alt"></i>
+                                {% elif method.payment_type == 'PayPal' %}
+                                    <i class="fab fa-paypal"></i>
+                                {% else %}
+                                    <i class="fas fa-credit-card"></i>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <h6 class="card-subtitle mb-0">{{ method.payment_type }}</h6>
+                                {% if method.is_default %}
+                                <span class="badge bg-primary">Default</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <p class="card-text">{{ method.method_details }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-credit-card fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No payment methods</h5>
+            <p class="text-muted">Add a payment method to make bookings and payments.</p>
+            <a href="{{ url_for('payment.payment_methods') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Add Payment Method
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if current_user.role == 'tutor' %}
+<!-- Payout Summary -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Payout Summary</h5>
+        <a href="{{ url_for('payment.payouts') }}" class="btn btn-sm btn-outline-primary">View All</a>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="text-center">
+                    <h4 class="text-primary">$0.00</h4>
+                    <p class="text-muted mb-0">Available Balance</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="text-center">
+                    <h4 class="text-success">$0.00</h4>
+                    <p class="text-muted mb-0">Total Earned</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="text-center">
+                    <h4 class="text-warning">0</h4>
+                    <p class="text-muted mb-0">Pending Payouts</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

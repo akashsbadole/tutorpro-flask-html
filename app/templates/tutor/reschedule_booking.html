@@ -1,0 +1,490 @@
+{% extends "tutor/base.html" %}
+
+{% block title %}Reschedule Booking - TutorPro{% endblock %}
+
+{% block head %}
+<style>
+    .reschedule-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .reschedule-form {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .section-title {
+        color: #495057;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .booking-info {
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .booking-detail {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .booking-detail:last-child {
+        margin-bottom: 0;
+    }
+    
+    .booking-icon {
+        width: 40px;
+        height: 40px;
+        background: #667eea;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        flex-shrink: 0;
+    }
+    
+    .booking-content {
+        flex: 1;
+    }
+    
+    .booking-label {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-bottom: 0.25rem;
+    }
+    
+    .booking-value {
+        font-weight: 500;
+        color: #495057;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-label {
+        font-weight: 500;
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-control {
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        padding: 0.75rem;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    .btn-primary {
+        background: #667eea;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 0.25rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+        background: #5a67d8;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 0.25rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-secondary:hover {
+        background: #5a6268;
+    }
+    
+    .conflict-alert {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+        padding: 1rem;
+        border-radius: 0.25rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .success-alert {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+        padding: 1rem;
+        border-radius: 0.25rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .available-slots {
+        margin-top: 1rem;
+    }
+    
+    .slot-item {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .slot-item:hover {
+        background: #e9ecef;
+        border-color: #667eea;
+    }
+    
+    .slot-item.selected {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+    }
+    
+    .slot-item.conflict {
+        background: #f8d7da;
+        border-color: #dc3545;
+        color: #721c24;
+    }
+    
+    .slot-time {
+        font-weight: 500;
+    }
+    
+    .slot-date {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+    
+    .slot-item.selected .slot-date {
+        color: rgba(255, 255, 255, 0.8);
+    }
+    
+    .slot-item.conflict .slot-date {
+        color: #721c24;
+    }
+    
+    .student-info {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .student-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-right: 1rem;
+    }
+    
+    .student-details {
+        flex: 1;
+    }
+    
+    .student-name {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.25rem;
+    }
+    
+    .student-contact {
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+    
+    .course-info {
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .course-title {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+    
+    .course-description {
+        color: #6c757d;
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .course-meta {
+        display: flex;
+        gap: 1rem;
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+    
+    .course-meta-item {
+        display: flex;
+        align-items: center;
+    }
+    
+    .course-meta-item i {
+        margin-right: 0.25rem;
+    }
+    
+    @media (max-width: 768px) {
+        .reschedule-form {
+            padding: 1rem;
+        }
+        
+        .booking-detail {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .booking-icon {
+            margin-bottom: 0.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block tutor_content %}
+<div class="container-fluid">
+    <div class="reschedule-container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Reschedule Booking</h1>
+            <div>
+                <a href="{{ url_for('tutor.booking_details', booking_id=booking.id) }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Details
+                </a>
+            </div>
+        </div>
+
+        <div class="reschedule-form">
+            <!-- Booking Information -->
+            <div class="booking-info">
+                <h3 class="section-title">Booking Information</h3>
+                
+                <!-- Student Information -->
+                <div class="student-info">
+                    {% if booking.student.user_profile.avatar_url %}
+                        <img src="{{ booking.student.user_profile.avatar_url }}" class="student-avatar" alt="Student Avatar">
+                    {% else %}
+                        <div class="student-avatar d-flex align-items-center justify-content-center bg-light">
+                            <i class="fas fa-user text-muted"></i>
+                        </div>
+                    {% endif %}
+                    <div class="student-details">
+                        <div class="student-name">
+                            {{ booking.student.user_profile.full_name if booking.student.user_profile else booking.student.email }}
+                        </div>
+                        <div class="student-contact">
+                            <i class="fas fa-envelope me-1"></i> {{ booking.student.email }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Course Information -->
+                <div class="course-info">
+                    <div class="course-title">{{ booking.course.title }}</div>
+                    <div class="course-description">{{ booking.course.description[:200] }}{% if booking.course.description|length > 200 %}...{% endif %}</div>
+                    <div class="course-meta">
+                        <div class="course-meta-item">
+                            <i class="fas fa-book"></i> {{ booking.course.subject.name }}
+                        </div>
+                        <div class="course-meta-item">
+                            <i class="fas fa-signal"></i> {{ booking.course.level }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Current Booking Details -->
+                <div class="booking-detail">
+                    <div class="booking-icon">
+                        <i class="fas fa-calendar"></i>
+                    </div>
+                    <div class="booking-content">
+                        <div class="booking-label">Current Scheduled Time</div>
+                        <div class="booking-value">{{ booking.scheduled_time.strftime('%A, %B %d, %Y at %I:%M %p') }}</div>
+                    </div>
+                </div>
+                
+                <div class="booking-detail">
+                    <div class="booking-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="booking-content">
+                        <div class="booking-label">Duration</div>
+                        <div class="booking-value">{{ booking.duration_minutes }} minutes</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reschedule Form -->
+            <h3 class="section-title">Reschedule Booking</h3>
+            
+            {% if conflict %}
+            <div class="conflict-alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                The selected time conflicts with another booking. Please choose a different time.
+            </div>
+            {% endif %}
+            
+            <form method="POST" id="rescheduleForm">
+                {{ form.hidden_tag() }}
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.new_scheduled_time.label(class="form-label") }}
+                            {{ form.new_scheduled_time(class="form-control") }}
+                            {% if form.new_scheduled_time.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.new_scheduled_time.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.new_duration_minutes.label(class="form-label") }}
+                            {{ form.new_duration_minutes(class="form-control") }}
+                            {% if form.new_duration_minutes.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.new_duration_minutes.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    {{ form.notes.label(class="form-label") }}
+                    {{ form.notes(class="form-control", rows="3", placeholder="Optional: Add notes about the rescheduling...") }}
+                    {% if form.notes.errors %}
+                        <div class="text-danger">
+                            {% for error in form.notes.errors %}
+                                <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="available-slots" id="availableSlots">
+                    <h6 class="mb-3">Available Time Slots</h6>
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{{ url_for('tutor.booking_details', booking_id=booking.id) }}" class="btn btn-secondary">
+                        Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Reschedule Booking
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Check availability when date/time changes
+    document.getElementById('new_scheduled_time').addEventListener('change', function() {
+        const datetime = this.value;
+        const duration = document.getElementById('new_duration_minutes').value;
+        
+        if (datetime && duration) {
+            checkAvailability(datetime, duration);
+        }
+    });
+    
+    document.getElementById('new_duration_minutes').addEventListener('change', function() {
+        const datetime = document.getElementById('new_scheduled_time').value;
+        const duration = this.value;
+        
+        if (datetime && duration) {
+            checkAvailability(datetime, duration);
+        }
+    });
+    
+    // Check availability function
+    function checkAvailability(datetime, duration) {
+        const slotsContainer = document.getElementById('availableSlots');
+        slotsContainer.innerHTML = '<h6 class="mb-3">Available Time Slots</h6><div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+        
+        fetch(`/tutor/bookings/check-availability?datetime=${datetime}&duration=${duration}&exclude_booking_id={{ booking.id }}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.available) {
+                    slotsContainer.innerHTML = '<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i>Time slot is available</div>';
+                } else {
+                    slotsContainer.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Time slot is not available: ${data.message}
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                slotsContainer.innerHTML = '<div class="alert alert-danger">Error checking availability</div>';
+            });
+    }
+    
+    // Initialize availability check on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const datetime = document.getElementById('new_scheduled_time').value;
+        const duration = document.getElementById('new_duration_minutes').value;
+        
+        if (datetime && duration) {
+            checkAvailability(datetime, duration);
+        }
+    });
+    
+    // Form validation
+    document.getElementById('rescheduleForm').addEventListener('submit', function(e) {
+        const datetime = document.getElementById('new_scheduled_time').value;
+        const duration = document.getElementById('new_duration_minutes').value;
+        
+        if (!datetime || !duration) {
+            e.preventDefault();
+            alert('Please fill in all required fields.');
+            return;
+        }
+        
+        // Additional validation can be added here
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,217 @@
+{% extends "payment/base.html" %}
+
+{% block title %}PayPal Payment - TutorPro{% endblock %}
+
+{% block payment_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>PayPal Payment</h2>
+    <a href="{{ url_for('payment.payment_history') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Payments
+    </a>
+</div>
+
+<!-- Payment Steps -->
+<div class="payment-steps mb-4">
+    <div class="payment-step active">
+        <div class="step-number">1</div>
+        <div>PayPal Details</div>
+    </div>
+    <div class="payment-step">
+        <div class="step-number">2</div>
+        <div>Redirect to PayPal</div>
+    </div>
+    <div class="payment-step">
+        <div class="step-number">3</div>
+        <div>Complete Payment</div>
+    </div>
+</div>
+
+<!-- Booking Details -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Booking Details</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Tutor:</strong> {{ booking.tutor.user.first_name }} {{ booking.tutor.user.last_name }}</p>
+                <p><strong>Subject:</strong> {{ booking.course.title if booking.course else 'General Tutoring' }}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Date:</strong> {{ booking.scheduled_time.strftime('%d %b %Y') }}</p>
+                <p><strong>Time:</strong> {{ booking.scheduled_time.strftime('%I:%M %p') }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Form -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">PayPal Payment Details</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" id="paypalPaymentForm">
+            {{ form.hidden_tag() }}
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    {{ form.paypal_email.label(class="form-label") }}
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fab fa-paypal"></i>
+                        </span>
+                        {{ form.paypal_email(class="form-control", readonly=true) }}
+                    </div>
+                    {% if form.paypal_email.errors %}
+                        <div class="text-danger">
+                            {% for error in form.paypal_email.errors %}
+                                <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    {{ form.amount.label(class="form-label") }}
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        {{ form.amount(class="form-control", readonly=true) }}
+                    </div>
+                    {% if form.amount.errors %}
+                        <div class="text-danger">
+                            {% for error in form.amount.errors %}
+                                <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                {{ form.description.label(class="form-label") }}
+                {{ form.description(class="form-control", rows="3") }}
+                {% if form.description.errors %}
+                    <div class="text-danger">
+                        {% for error in form.description.errors %}
+                            <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="mb-3">
+                <div class="form-check">
+                    {{ form.is_subscription(class="form-check-input", onchange="toggleSubscriptionOptions()") }}
+                    {{ form.is_subscription.label(class="form-check-label") }}
+                </div>
+            </div>
+            
+            <div id="subscriptionOptions" style="display: none;">
+                <div class="mb-3">
+                    {{ form.subscription_interval.label(class="form-label") }}
+                    {{ form.subscription_interval(class="form-select") }}
+                </div>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Subscription:</strong> You will be charged {{ form.subscription_interval.data or 'monthly' }} until you cancel.
+                </div>
+            </div>
+            
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Important:</strong> After submitting this form, you will be redirected to PayPal to complete your payment securely.
+            </div>
+            
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('payment.payment_history') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Cancel
+                </a>
+                <button type="submit" class="btn btn-primary" id="proceedToPaypalBtn">
+                    <i class="fab fa-paypal me-2"></i>Proceed to PayPal
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- PayPal Information -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">About PayPal</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6><i class="fas fa-shield-alt me-2"></i>Secure Payments</h6>
+                <ul>
+                    <li>Buyer protection for all transactions</li>
+                    <li>Encrypted payment processing</li>
+                    <li>Fraud prevention systems</li>
+                    <li>24/7 monitoring</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6><i class="fas fa-credit-card me-2"></i>Payment Options</h6>
+                <ul>
+                    <li>Pay with PayPal balance</li>
+                    <li>Link bank accounts</li>
+                    <li>Use credit/debit cards</li>
+                    <li>PayPal Credit available</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="loadingModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-body text-center py-4">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h5>Redirecting to PayPal</h5>
+                <p class="text-muted">Please wait while we redirect you to PayPal...</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+function toggleSubscriptionOptions() {
+    const isSubscription = document.querySelector('input[name="is_subscription"]').checked;
+    const subscriptionOptions = document.getElementById('subscriptionOptions');
+    
+    if (isSubscription) {
+        subscriptionOptions.style.display = 'block';
+    } else {
+        subscriptionOptions.style.display = 'none';
+    }
+}
+
+document.getElementById('paypalPaymentForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Show loading modal
+    const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    loadingModal.show();
+    
+    // Submit form after a short delay to show loading modal
+    setTimeout(function() {
+        e.target.submit();
+    }, 1500);
+});
+
+// Auto-focus on description field if empty
+document.addEventListener('DOMContentLoaded', function() {
+    const descriptionField = document.querySelector('textarea[name="description"]');
+    if (descriptionField && !descriptionField.value.trim()) {
+        descriptionField.focus();
+    }
+});
+</script>
+{% endblock %}

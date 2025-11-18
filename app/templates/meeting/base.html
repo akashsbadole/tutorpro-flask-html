@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+    .meeting-sidebar {
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .meeting-nav {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .meeting-nav li {
+        margin-bottom: 0.5rem;
+    }
+    
+    .meeting-nav a {
+        display: block;
+        padding: 0.75rem 1rem;
+        color: #495057;
+        text-decoration: none;
+        border-radius: 0.25rem;
+        transition: all 0.3s ease;
+    }
+    
+    .meeting-nav a:hover,
+    .meeting-nav a.active {
+        background: #667eea;
+        color: white;
+    }
+    
+    .meeting-card {
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        transition: transform 0.3s ease;
+    }
+    
+    .meeting-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    .meeting-status {
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    
+    .status-scheduled {
+        background: #e3f2fd;
+        color: #1976d2;
+    }
+    
+    .status-ongoing {
+        background: #e8f5e8;
+        color: #388e3c;
+    }
+    
+    .status-completed {
+        background: #f3e5f5;
+        color: #7b1fa2;
+    }
+    
+    .status-cancelled {
+        background: #ffebee;
+        color: #d32f2f;
+    }
+    
+    .platform-badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-left: 0.5rem;
+    }
+    
+    .platform-zoom {
+        background: #2d8cff;
+        color: white;
+    }
+    
+    .platform-google-meet {
+        background: #34a853;
+        color: white;
+    }
+    
+    .platform-teams {
+        background: #5b5fc7;
+        color: white;
+    }
+    
+    .meeting-time {
+        color: #6c757d;
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .meeting-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+    
+    .meeting-participants {
+        display: flex;
+        align-items: center;
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+    
+    .meeting-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+    
+    .btn-join {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        font-size: 0.875rem;
+        text-decoration: none;
+        transition: background 0.3s ease;
+    }
+    
+    .btn-join:hover {
+        background: #218838;
+    }
+    
+    .btn-edit {
+        background: #6c757d;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        font-size: 0.875rem;
+        text-decoration: none;
+        transition: background 0.3s ease;
+    }
+    
+    .btn-edit:hover {
+        background: #5a6268;
+    }
+    
+    .meeting-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #667eea;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+    
+    @media (max-width: 768px) {
+        .meeting-stats {
+            grid-template-columns: 1fr;
+        }
+        
+        .meeting-actions {
+            flex-direction: column;
+        }
+        
+        .meeting-actions .btn {
+            width: 100%;
+            text-align: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="meeting-sidebar">
+                <h5 class="mb-3">Meeting Menu</h5>
+                <ul class="meeting-nav">
+                    <li><a href="{{ url_for('meeting.index') }}" class="{{ 'active' if request.endpoint == 'meeting.index' }}">My Meetings</a></li>
+                    <li><a href="{{ url_for('meeting.create') }}" class="{{ 'active' if request.endpoint == 'meeting.create' }}">Create Meeting</a></li>
+                    <li><a href="{{ url_for('meeting.calendar') }}" class="{{ 'active' if request.endpoint == 'meeting.calendar' }}">Calendar</a></li>
+                    <li><a href="{{ url_for('meeting.templates') }}" class="{{ 'active' if request.endpoint == 'meeting.templates' }}">Templates</a></li>
+                    <li><a href="{{ url_for('meeting.search') }}" class="{{ 'active' if request.endpoint == 'meeting.search' }}">Search</a></li>
+                    {% if current_user.is_admin() %}
+                    <li><a href="{{ url_for('meeting.management') }}" class="{{ 'active' if request.endpoint == 'meeting.management' }}">Management</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+        <div class="col-md-9">
+            {% block meeting_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}

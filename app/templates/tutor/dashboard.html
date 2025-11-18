@@ -1,0 +1,380 @@
+{% extends "tutor/base.html" %}
+
+{% block title %}Tutor Dashboard - TutorPro{% endblock %}
+
+{% block head %}
+<style>
+    .stat-card {
+        transition: transform 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    .recent-activity {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    .rating-stars {
+        color: #ffc107;
+    }
+</style>
+{% endblock %}
+
+{% block tutor_content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Tutor Dashboard</h1>
+        <div>
+            <a href="{{ url_for('tutor.profile') }}" class="btn btn-outline-primary me-2">
+                <i class="fas fa-user"></i> Profile
+            </a>
+            <a href="{{ url_for('tutor.schedule') }}" class="btn btn-outline-primary me-2">
+                <i class="fas fa-calendar"></i> Schedule
+            </a>
+            <a href="{{ url_for('tutor.bookings') }}" class="btn btn-outline-primary">
+                <i class="fas fa-calendar-check"></i> Bookings
+            </a>
+        </div>
+    </div>
+
+    <!-- Tutor Profile Summary -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-2">
+                            {% if tutor_profile.user_profile.avatar_url %}
+                                <img src="{{ tutor_profile.user_profile.avatar_url }}" class="img-fluid rounded-circle" alt="Profile Picture">
+                            {% else %}
+                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center text-white" style="width: 100px; height: 100px;">
+                                    <i class="fas fa-user fa-3x"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <h3>{{ tutor_profile.user_profile.full_name }}</h3>
+                            <p class="text-muted">{{ tutor_profile.title }}</p>
+                            <p>{{ tutor_profile.description[:100] }}{% if tutor_profile.description|length > 100 %}...{% endif %}</p>
+                            <div class="rating-stars">
+                                {% for i in range(1, 6) %}
+                                    {% if i <= rating_summary.overall_rating|round %}
+                                        <i class="fas fa-star"></i>
+                                    {% elif i - 0.5 <= rating_summary.overall_rating|round %}
+                                        <i class="fas fa-star-half-alt"></i>
+                                    {% else %}
+                                        <i class="far fa-star"></i>
+                                    {% endif %}
+                                {% endfor %}
+                                <span class="text-muted">{{ "%.1f"|format(rating_summary.overall_rating) }} ({{ rating_summary.total_reviews }} reviews)</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <h4 class="text-primary">${{ "%.2f"|format(tutor_profile.hourly_rate) }}/hour</h4>
+                            <p class="text-muted">Hourly Rate</p>
+                            <div class="mt-3">
+                                <span class="badge bg-success">Verified</span>
+                                <span class="badge bg-info">{{ tutor_profile.total_students }} Students</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Total Bookings</h5>
+                            <h2>{{ total_bookings }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-calendar-check fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Upcoming Bookings</h5>
+                            <h2>{{ upcoming_bookings }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-calendar-alt fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Total Earnings</h5>
+                            <h2>${{ "%.2f"|format(total_earnings) }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-dollar-sign fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Pending Payouts</h5>
+                            <h2>${{ "%.2f"|format(pending_payouts) }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-wallet fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upcoming Bookings and Recent Reviews -->
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Upcoming Bookings</h5>
+                </div>
+                <div class="card-body recent-activity">
+                    {% if upcoming_booking_list %}
+                        {% for booking in upcoming_booking_list %}
+                            <div class="d-flex align-items-center mb-3 p-2 border rounded">
+                                <div class="bg-primary rounded d-flex align-items-center justify-content-center text-white me-3" style="width: 40px; height: 40px;">
+                                    <i class="fas fa-calendar"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-0">{{ booking.student.email }}</h6>
+                                    <small class="text-muted">{{ booking.scheduled_time.strftime('%Y-%m-%d %H:%M') }} - {{ booking.course.title }}</small>
+                                    <div class="mt-1">
+                                        <span class="badge {% if booking.status == 'Pending' %}bg-warning{% else %}bg-success{% endif %}">
+                                            {{ booking.status }}
+                                        </span>
+                                    </div>
+                                </div>
+                                {% if booking.status == 'Pending' %}
+                                    <form method="POST" action="{{ url_for('tutor.confirm_booking', booking_id=booking.id) }}" style="display: inline;">
+                                        <button type="submit" class="btn btn-sm btn-success">Confirm</button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted mb-0">No upcoming bookings</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">Recent Reviews</h5>
+                </div>
+                <div class="card-body recent-activity">
+                    {% if recent_reviews %}
+                        {% for review in recent_reviews %}
+                            <div class="d-flex align-items-start mb-3">
+                                <div class="bg-info rounded d-flex align-items-center justify-content-center text-white me-3" style="width: 40px; height: 40px;">
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between">
+                                        <h6 class="mb-0">{{ review.reviewer.email }}</h6>
+                                        <small class="text-muted">{{ review.created_at.strftime('%Y-%m-%d') }}</small>
+                                    </div>
+                                    <div class="rating-stars mb-1">
+                                        {% for i in range(1, 6) %}
+                                            {% if i <= review.rating %}
+                                                <i class="fas fa-star"></i>
+                                            {% else %}
+                                                <i class="far fa-star"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    <p class="mb-0">{{ review.comment[:100] }}{% if review.comment|length > 100 %}...{% endif %}</p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted mb-0">No reviews yet</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rating Breakdown -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="card-title mb-0">Rating Breakdown</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Overall Rating</h6>
+                            <div class="rating-stars mb-2">
+                                {% for i in range(1, 6) %}
+                                    {% if i <= rating_summary.overall_rating|round %}
+                                        <i class="fas fa-star"></i>
+                                    {% elif i - 0.5 <= rating_summary.overall_rating|round %}
+                                        <i class="fas fa-star-half-alt"></i>
+                                    {% else %}
+                                        <i class="far fa-star"></i>
+                                    {% endif %}
+                                {% endfor %}
+                                <span class="text-muted">{{ "%.1f"|format(rating_summary.overall_rating) }} out of 5</span>
+                            </div>
+                            <div class="progress mb-2">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: {{ (rating_summary.five_star_count / rating_summary.total_reviews * 100) if rating_summary.total_reviews > 0 else 0 }}%">
+                                    5 Stars ({{ rating_summary.five_star_count }})
+                                </div>
+                            </div>
+                            <div class="progress mb-2">
+                                <div class="progress-bar bg-info" role="progressbar" style="width: {{ (rating_summary.four_star_count / rating_summary.total_reviews * 100) if rating_summary.total_reviews > 0 else 0 }}%">
+                                    4 Stars ({{ rating_summary.four_star_count }})
+                                </div>
+                            </div>
+                            <div class="progress mb-2">
+                                <div class="progress-bar bg-warning" role="progressbar" style="width: {{ (rating_summary.three_star_count / rating_summary.total_reviews * 100) if rating_summary.total_reviews > 0 else 0 }}%">
+                                    3 Stars ({{ rating_summary.three_star_count }})
+                                </div>
+                            </div>
+                            <div class="progress mb-2">
+                                <div class="progress-bar bg-secondary" role="progressbar" style="width: {{ (rating_summary.two_star_count / rating_summary.total_reviews * 100) if rating_summary.total_reviews > 0 else 0 }}%">
+                                    2 Stars ({{ rating_summary.two_star_count }})
+                                </div>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-danger" role="progressbar" style="width: {{ (rating_summary.one_star_count / rating_summary.total_reviews * 100) if rating_summary.total_reviews > 0 else 0 }}%">
+                                    1 Star ({{ rating_summary.one_star_count }})
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Rating by Aspect</h6>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Teaching Quality</span>
+                                    <span>{{ "%.1f"|format(rating_summary.teaching_quality_rating) }}</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar bg-primary" role="progressbar" style="width: {{ (rating_summary.teaching_quality_rating / 5 * 100) }}%"></div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Communication</span>
+                                    <span>{{ "%.1f"|format(rating_summary.communication_rating) }}</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar bg-info" role="progressbar" style="width: {{ (rating_summary.communication_rating / 5 * 100) }}%"></div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Punctuality</span>
+                                    <span>{{ "%.1f"|format(rating_summary.punctuality_rating) }}</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ (rating_summary.punctuality_rating / 5 * 100) }}%"></div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Preparation</span>
+                                    <span>{{ "%.1f"|format(rating_summary.preparation_rating) }}</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ (rating_summary.preparation_rating / 5 * 100) }}%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Value for Money</span>
+                                    <span>{{ "%.1f"|format(rating_summary.value_for_money_rating) }}</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar bg-secondary" role="progressbar" style="width: {{ (rating_summary.value_for_money_rating / 5 * 100) }}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="card-title mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('tutor.profile') }}" class="btn btn-outline-primary btn-block">
+                                <i class="fas fa-user fa-2x mb-2"></i>
+                                <h6>Edit Profile</h6>
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('tutor.schedule') }}" class="btn btn-outline-success btn-block">
+                                <i class="fas fa-calendar fa-2x mb-2"></i>
+                                <h6>Manage Schedule</h6>
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('tutor.earnings') }}" class="btn btn-outline-info btn-block">
+                                <i class="fas fa-money-bill-wave fa-2x mb-2"></i>
+                                <h6>Earnings</h6>
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('tutor.subjects') }}" class="btn btn-outline-warning btn-block">
+                                <i class="fas fa-book fa-2x mb-2"></i>
+                                <h6>Subjects</h6>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock tutor_content %}
+
+{% block scripts %}
+<script>
+    // Auto-refresh dashboard every 30 seconds
+    setInterval(function() {
+        location.reload();
+    }, 30000);
+</script>
+{% endblock %}

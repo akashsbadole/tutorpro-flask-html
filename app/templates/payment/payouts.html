@@ -1,0 +1,312 @@
+{% extends "payment/base.html" %}
+
+{% block title %}Payouts - TutorPro{% endblock %}
+
+{% block payment_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Payouts</h2>
+    <div>
+        <a href="{{ url_for('payment.request_payout') }}" class="btn btn-primary me-2">
+            <i class="fas fa-plus me-2"></i>Request Payout
+        </a>
+        <a href="{{ url_for('payment.payout_methods') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-university me-2"></i>Payout Methods
+        </a>
+    </div>
+</div>
+
+<!-- Payout Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card payment-card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="payment-method-icon" style="background-color: #4CAF50; color: white;">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div>
+                        <h6 class="card-subtitle mb-2">Available Balance</h6>
+                        <h3 class="card-title mb-0">$0.00</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card payment-card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="payment-method-icon paypal-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div>
+                        <h6 class="card-subtitle mb-2">Pending</h6>
+                        <h3 class="card-title mb-0">{{ payouts|selectattr('status', 'equalto', 'Pending')|list|length }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card payment-card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="payment-method-icon" style="background-color: #FF9800; color: white;">
+                        <i class="fas fa-spinner"></i>
+                    </div>
+                    <div>
+                        <h6 class="card-subtitle mb-2">Processing</h6>
+                        <h3 class="card-title mb-0">{{ payouts|selectattr('status', 'equalto', 'Processing')|list|length }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card payment-card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="payment-method-icon" style="background-color: #9C27B0; color: white;">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div>
+                        <h6 class="card-subtitle mb-2">Completed</h6>
+                        <h3 class="card-title mb-0">{{ payouts|selectattr('status', 'equalto', 'Completed')|list|length }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payouts Table -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Payout History</h5>
+        <div class="dropdown">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="fas fa-filter me-2"></i>Filter
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="{{ url_for('payment.payouts') }}">All Payouts</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('payment.payouts', status='Pending') }}">Pending</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('payment.payouts', status='Processing') }}">Processing</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('payment.payouts', status='Completed') }}">Completed</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('payment.payouts', status='Failed') }}">Failed</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if payouts %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Payout ID</th>
+                        <th>Amount</th>
+                        <th>Method</th>
+                        <th>Status</th>
+                        <th>Requested</th>
+                        <th>Processed</th>
+                        <th>Reference</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payout in payouts %}
+                    <tr>
+                        <td>
+                            <span class="font-monospace">#{{ payout.id }}</span>
+                        </td>
+                        <td>
+                            <span class="fw-bold">{{ payout.currency }} {{ "%.2f"|format(payout.amount) }}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">{{ payout.payout_method }}</span>
+                        </td>
+                        <td>
+                            <span class="payment-status status-{{ payout.status.lower() }}">
+                                {{ payout.status }}
+                            </span>
+                        </td>
+                        <td>{{ payout.created_at.strftime('%d %b %Y') }}</td>
+                        <td>
+                            {% if payout.processed_at %}
+                                {{ payout.processed_at.strftime('%d %b %Y') }}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if payout.reference_id %}
+                                <span class="font-monospace">{{ payout.reference_id }}</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-sm btn-outline-info" 
+                                        onclick="viewPayoutDetails({{ payout.id }})" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                {% if payout.status == 'Pending' %}
+                                <button type="button" class="btn btn-sm btn-outline-warning" 
+                                        onclick="cancelPayout({{ payout.id }})" title="Cancel Payout">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                                {% endif %}
+                                {% if payout.status == 'Completed' %}
+                                <button type="button" class="btn btn-sm btn-outline-success" 
+                                        onclick="downloadPayoutReceipt({{ payout.id }})" title="Download Receipt">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-money-bill-wave fa-4x text-muted mb-3"></i>
+            <h4 class="text-muted">No payouts yet</h4>
+            <p class="text-muted">Your payout history will appear here once you request your first payout.</p>
+            <a href="{{ url_for('payment.request_payout') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Request Payout
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Payout Details Modal -->
+<div class="modal fade" id="payoutDetailsModal" tabindex="-1" aria-labelledby="payoutDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="payoutDetailsModalLabel">Payout Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="payoutDetailsContent">
+                <!-- Payout details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="downloadReceiptBtn" style="display: none;">
+                    <i class="fas fa-download me-2"></i>Download Receipt
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+function viewPayoutDetails(payoutId) {
+    // Show loading state
+    const modalBody = document.getElementById('payoutDetailsContent');
+    modalBody.innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading payout details...</p>
+        </div>
+    `;
+    
+    // Fetch payout details
+    fetch(`/api/payment/payouts/${payoutId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const payout = data.payout;
+                modalBody.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Payout ID:</strong> #${payout.id}</p>
+                            <p><strong>Amount:</strong> ${payout.currency} ${payout.amount.toFixed(2)}</p>
+                            <p><strong>Method:</strong> ${payout.payout_method}</p>
+                            <p><strong>Status:</strong> <span class="payment-status status-${payout.status.toLowerCase()}">${payout.status}</span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Requested:</strong> ${new Date(payout.created_at).toLocaleDateString()}</p>
+                            <p><strong>Processed:</strong> ${payout.processed_at ? new Date(payout.processed_at).toLocaleDateString() : '-'}</p>
+                            <p><strong>Reference:</strong> ${payout.reference_id || '-'}</p>
+                        </div>
+                    </div>
+                    ${payout.failure_reason ? `<div class="alert alert-danger mt-3"><strong>Failure Reason:</strong> ${payout.failure_reason}</div>` : ''}
+                `;
+                
+                // Show download button for completed payouts
+                const downloadBtn = document.getElementById('downloadReceiptBtn');
+                if (payout.status === 'Completed') {
+                    downloadBtn.style.display = 'inline-block';
+                    downloadBtn.onclick = () => downloadPayoutReceipt(payout.id);
+                } else {
+                    downloadBtn.style.display = 'none';
+                }
+            } else {
+                modalBody.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Failed to load payout details: ${data.message}
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading payout details:', error);
+            modalBody.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Error loading payout details. Please try again.
+                </div>
+            `;
+        });
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('payoutDetailsModal'));
+    modal.show();
+}
+
+function cancelPayout(payoutId) {
+    if (confirm('Are you sure you want to cancel this payout request?')) {
+        fetch(`/api/payment/payouts/${payoutId}/cancel`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Reload page to show updated status
+                window.location.reload();
+            } else {
+                alert('Failed to cancel payout: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error cancelling payout:', error);
+            alert('Error cancelling payout. Please try again.');
+        });
+    }
+}
+
+function downloadPayoutReceipt(payoutId) {
+    // Create a temporary link to download the receipt
+    const link = document.createElement('a');
+    link.href = `/api/payment/payouts/${payoutId}/receipt`;
+    link.download = `payout_receipt_${payoutId}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+</script>
+{% endblock %}

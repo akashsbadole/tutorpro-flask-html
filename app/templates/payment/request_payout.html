@@ -1,0 +1,335 @@
+{% extends "payment/base.html" %}
+
+{% block title %}Request Payout - TutorPro{% endblock %}
+
+{% block payment_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Request Payout</h2>
+    <a href="{{ url_for('payment.payouts') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Payouts
+    </a>
+</div>
+
+<!-- Earnings Summary -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Your Earnings Summary</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h4 class="text-primary">$0.00</h4>
+                    <p class="text-muted mb-0">Available Balance</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h4 class="text-success">$0.00</h4>
+                    <p class="text-muted mb-0">Total Earned</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h4 class="text-warning">$0.00</h4>
+                    <p class="text-muted mb-0">Pending Payouts</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h4 class="text-info">$0.00</h4>
+                    <p class="text-muted mb-0">Total Withdrawn</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payout Request Form -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Request Payout</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" id="payoutForm">
+            {{ form.hidden_tag() }}
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    {{ form.amount.label(class="form-label") }}
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        {{ form.amount(class="form-control", step="0.01", placeholder="0.00") }}
+                    </div>
+                    {% if form.amount.errors %}
+                        <div class="text-danger">
+                            {% for error in form.amount.errors %}
+                                <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <small class="form-text text-muted">Minimum payout amount: ${{ current_app.config.get('MIN_PAYOUT_AMOUNT', 10.00) }}</small>
+                </div>
+                <div class="col-md-6">
+                    {{ form.payout_method.label(class="form-label") }}
+                    {{ form.payout_method(class="form-select", onchange="togglePayoutDetails()") }}
+                    {% if form.payout_method.errors %}
+                        <div class="text-danger">
+                            {% for error in form.payout_method.errors %}
+                                <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Bank Transfer Details -->
+            <div id="bank-transfer-details" class="payout-method-details" style="display: none;">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Account Holder Name</label>
+                        <input type="text" name="account_holder_name" class="form-control" placeholder="John Doe">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Bank Name</label>
+                        <input type="text" name="bank_name" class="form-control" placeholder="Bank of America">
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Account Number</label>
+                        <input type="text" name="account_number" class="form-control" placeholder="123456789">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Routing Number</label>
+                        <input type="text" name="routing_number" class="form-control" placeholder="123456789">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- UPI Details -->
+            <div id="upi-details" class="payout-method-details" style="display: none;">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Account Holder Name</label>
+                        <input type="text" name="upi_holder_name" class="form-control" placeholder="John Doe">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">UPI ID</label>
+                        <input type="text" name="upi_id" class="form-control" placeholder="username@upi">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- PayPal Details -->
+            <div id="paypal-details" class="payout-method-details" style="display: none;">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Account Holder Name</label>
+                        <input type="text" name="paypal_holder_name" class="form-control" placeholder="John Doe">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">PayPal Email</label>
+                        <input type="email" name="paypal_email" class="form-control" placeholder="your@email.com">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                {{ form.payout_details.label(class="form-label") }}
+                {{ form.payout_details(class="form-control", placeholder="Enter payout details based on selected method") }}
+                {% if form.payout_details.errors %}
+                    <div class="text-danger">
+                        {% for error in form.payout_details.errors %}
+                            <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="mb-3">
+                {{ form.notes.label(class="form-label") }}
+                {{ form.notes(class="form-control", rows="3", placeholder="Any additional notes for this payout request...") }}
+                {% if form.notes.errors %}
+                    <div class="text-danger">
+                        {% for error in form.notes.errors %}
+                            <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Payout Processing:</strong> 
+                Payout requests are typically processed within {{ current_app.config.get('PAYOUT_PROCESSING_DAYS', 3) }} business days. 
+                You will receive an email notification when your payout is processed.
+            </div>
+            
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('payment.payouts') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Cancel
+                </a>
+                <button type="submit" class="btn btn-primary" id="submitPayoutBtn">
+                    <i class="fas fa-hand-holding-usd me-2"></i>Submit Payout Request
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Payout Methods -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Saved Payout Methods</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-3">You can save payout methods for faster future requests.</p>
+        
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-university fa-2x text-primary mb-2"></i>
+                        <h6>Bank Transfer</h6>
+                        <p class="small text-muted">Direct bank transfer to your account</p>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="savePayoutMethod('Bank Transfer')">
+                            <i class="fas fa-plus me-1"></i>Save Method
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-mobile-alt fa-2x text-success mb-2"></i>
+                        <h6>UPI</h6>
+                        <p class="small text-muted">Instant transfer via UPI</p>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="savePayoutMethod('UPI')">
+                            <i class="fas fa-plus me-1"></i>Save Method
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fab fa-paypal fa-2x text-info mb-2"></i>
+                        <h6>PayPal</h6>
+                        <p class="small text-muted">Transfer to your PayPal account</p>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="savePayoutMethod('PayPal')">
+                            <i class="fas fa-plus me-1"></i>Save Method
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center mt-3">
+            <a href="{{ url_for('payment.payout_methods') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-list me-2"></i>Manage Saved Methods
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+function togglePayoutDetails() {
+    const payoutMethod = document.querySelector('select[name="payout_method"]').value;
+    const allDetails = document.querySelectorAll('.payout-method-details');
+    
+    // Hide all payout method details
+    allDetails.forEach(detail => {
+        detail.style.display = 'none';
+    });
+    
+    // Show relevant payout method details
+    if (payoutMethod === 'Bank Transfer') {
+        document.getElementById('bank-transfer-details').style.display = 'block';
+    } else if (payoutMethod === 'UPI') {
+        document.getElementById('upi-details').style.display = 'block';
+    } else if (payoutMethod === 'PayPal') {
+        document.getElementById('paypal-details').style.display = 'block';
+    }
+}
+
+function savePayoutMethod(methodType) {
+    // Redirect to payout methods page with pre-selected type
+    window.location.href = `/payment/payouts/methods?type=${encodeURIComponent(methodType)}`;
+}
+
+function updatePayoutDetails() {
+    const payoutMethod = document.querySelector('select[name="payout_method"]').value;
+    const payoutDetailsField = document.querySelector('input[name="payout_details"]');
+    
+    // Auto-fill payout details based on method
+    if (payoutMethod === 'Bank Transfer') {
+        const accountHolderName = document.querySelector('input[name="account_holder_name"]').value;
+        const accountNumber = document.querySelector('input[name="account_number"]').value;
+        const bankName = document.querySelector('input[name="bank_name"]').value;
+        const routingNumber = document.querySelector('input[name="routing_number"]').value;
+        
+        if (accountHolderName && accountNumber) {
+            payoutDetailsField.value = `${accountHolderName}|${accountNumber}|${bankName}|${routingNumber}`;
+        }
+    } else if (payoutMethod === 'UPI') {
+        const holderName = document.querySelector('input[name="upi_holder_name"]').value;
+        const upiId = document.querySelector('input[name="upi_id"]').value;
+        
+        if (holderName && upiId) {
+            payoutDetailsField.value = `${holderName}|${upiId}`;
+        }
+    } else if (payoutMethod === 'PayPal') {
+        const holderName = document.querySelector('input[name="paypal_holder_name"]').value;
+        const paypalEmail = document.querySelector('input[name="paypal_email"]').value;
+        
+        if (holderName && paypalEmail) {
+            payoutDetailsField.value = `${holderName}|${paypalEmail}`;
+        }
+    }
+}
+
+document.getElementById('payoutForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Update payout details before submission
+    updatePayoutDetails();
+    
+    // Validate minimum payout amount
+    const amount = parseFloat(document.querySelector('input[name="amount"]').value);
+    const minAmount = parseFloat('{{ current_app.config.get("MIN_PAYOUT_AMOUNT", 10.00) }}');
+    
+    if (amount < minAmount) {
+        alert(`Minimum payout amount is $${minAmount.toFixed(2)}`);
+        return false;
+    }
+    
+    // Show loading state
+    const submitBtn = document.getElementById('submitPayoutBtn');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+    submitBtn.disabled = true;
+    
+    // Submit form after a short delay
+    setTimeout(() => {
+        e.target.submit();
+    }, 1000);
+});
+
+// Auto-focus on amount field
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelector('input[name="amount"]').focus();
+});
+
+// Update payout details when any detail field changes
+document.addEventListener('DOMContentLoaded', function() {
+    const detailFields = document.querySelectorAll('input[name="account_holder_name"], input[name="account_number"], input[name="bank_name"], input[name="routing_number"], input[name="upi_holder_name"], input[name="upi_id"], input[name="paypal_holder_name"], input[name="paypal_email"]');
+    detailFields.forEach(field => {
+        field.addEventListener('input', updatePayoutDetails);
+    });
+});
+</script>
+{% endblock %}

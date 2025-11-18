@@ -1,0 +1,402 @@
+{% extends "tutor/base.html" %}
+
+{% block title %}Tutor Profile - TutorPro{% endblock %}
+
+{% block head %}
+<style>
+    .profile-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+        border-radius: 0 0 1rem 1rem;
+    }
+    
+    .profile-avatar {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        border: 4px solid white;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        object-fit: cover;
+    }
+    
+    .profile-stats {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+    }
+    
+    .stat-item {
+        text-align: center;
+        padding: 1rem;
+    }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #667eea;
+    }
+    
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+    
+    .profile-section {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .section-title {
+        color: #495057;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .subject-badge {
+        display: inline-block;
+        background: #667eea;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.875rem;
+        margin: 0.25rem;
+    }
+    
+    .availability-time {
+        display: inline-block;
+        background: #e9ecef;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.875rem;
+        margin: 0.25rem;
+    }
+    
+    .availability-available {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .availability-unavailable {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .edit-profile-btn {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 0.5rem 1.5rem;
+        border-radius: 0.25rem;
+        transition: all 0.3s ease;
+    }
+    
+    .edit-profile-btn:hover {
+        background: #5a67d8;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .preview-profile-btn {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 0.5rem 1.5rem;
+        border-radius: 0.25rem;
+        transition: all 0.3s ease;
+    }
+    
+    .preview-profile-btn:hover {
+        background: #218838;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .rating-stars {
+        color: #ffc107;
+    }
+    
+    .availability-calendar {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+    
+    .calendar-day {
+        text-align: center;
+        padding: 0.5rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+        background: #f8f9fa;
+    }
+    
+    .calendar-day-header {
+        font-weight: bold;
+        background: #e9ecef;
+        padding: 0.25rem;
+        border-radius: 0.25rem;
+    }
+    
+    @media (max-width: 768px) {
+        .profile-stats {
+            display: block;
+        }
+        
+        .stat-item {
+            margin-bottom: 1rem;
+        }
+        
+        .availability-calendar {
+            grid-template-columns: repeat(1, 1fr);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block tutor_content %}
+<div class="container-fluid">
+    <!-- Profile Header -->
+    <div class="profile-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-3 text-center">
+                    {% if user_profile.avatar_url %}
+                        <img src="{{ user_profile.avatar_url }}" class="profile-avatar" alt="Profile Picture">
+                    {% else %}
+                        <div class="profile-avatar d-flex align-items-center justify-content-center bg-light">
+                            <i class="fas fa-user fa-3x text-muted"></i>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <h2>{{ user_profile.full_name }}</h2>
+                    <p class="lead mb-2">{{ tutor_profile.title }}</p>
+                    <div class="rating-stars mb-2">
+                        {% for i in range(1, 6) %}
+                            {% if i <= tutor_profile.rating|round %}
+                                <i class="fas fa-star"></i>
+                            {% elif i - 0.5 <= tutor_profile.rating|round %}
+                                <i class="fas fa-star-half-alt"></i>
+                            {% else %}
+                                <i class="far fa-star"></i>
+                            {% endif %}
+                        {% endfor %}
+                        <span class="ms-2">{{ "%.1f"|format(tutor_profile.rating) }} ({{ tutor_profile.total_students }} students)</span>
+                    </div>
+                </div>
+                <div class="col-md-3 text-end">
+                    <a href="{{ url_for('tutor.edit_profile') }}" class="btn edit-profile-btn mb-2">
+                        <i class="fas fa-edit me-2"></i>Edit Profile
+                    </a>
+                    <a href="{{ url_for('tutor.profile_preview') }}" class="btn preview-profile-btn">
+                        <i class="fas fa-eye me-2"></i>Preview
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Statistics -->
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="profile-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">${{ "%.2f"|format(tutor_profile.hourly_rate) }}</div>
+                        <div class="stat-label">Hourly Rate</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="profile-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">{{ tutor_profile.total_students }}</div>
+                        <div class="stat-label">Total Students</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="profile-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">{{ tutor_profile.rating|round(1) }}</div>
+                        <div class="stat-label">Average Rating</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="profile-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">{{ tutor_profile.subjects|length }}</div>
+                        <div class="stat-label">Subjects</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Professional Information -->
+        <div class="row">
+            <div class="col-md-8">
+                <div class="profile-section">
+                    <h3 class="section-title">Professional Information</h3>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Professional Bio</h6>
+                            <p>{{ tutor_profile.description }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Areas of Expertise</h6>
+                            <p>{{ user_profile.expertise }}</p>
+                        </div>
+                    </div>
+                    
+                    {% if tutor_profile.education %}
+                    <div class="mt-3">
+                        <h6>Education</h6>
+                        <p>{{ tutor_profile.edperience }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if tutor_profile.experience %}
+                    <div class="mt-3">
+                        <h6>Teaching Experience</h6>
+                        <p>{{ tutor_profile.experience }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if user_profile.languages %}
+                    <div class="mt-3">
+                        <h6>Languages Spoken</h6>
+                        <p>{{ user_profile.languages }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="profile-section">
+                    <h3 class="section-title">Subjects You Teach</h3>
+                    {% for ts in tutor_profile.subjects %}
+                        <span class="subject-badge">
+                            {{ ts.subject.name }} ({{ ts.proficiency_level }})
+                        </span>
+                    {% else %}
+                        <p class="text-muted">No subjects added yet</p>
+                    {% endfor %}
+                </div>
+                
+                <div class="profile-section">
+                    <h3 class="section-title">Teaching Style</h3>
+                    {% if user_profile.teaching_style %}
+                        <p>{{ user_profile.teaching_style }}</p>
+                    {% else %}
+                        <p class="text-muted">No teaching style information provided</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Availability Information -->
+        <div class="row">
+            <div class="col-12">
+                <div class="profile-section">
+                    <h3 class="section-title">Weekly Availability</h3>
+                    <div class="availability-calendar">
+                        <div class="calendar-day calendar-day-header">Monday</div>
+                        <div class="calendar-day calendar-day-header">Tuesday</div>
+                        <div class="calendar-day calendar-day-header">Wednesday</div>
+                        <div class="calendar-day calendar-day-header">Thursday</div>
+                        <div class="calendar-day calendar-day-header">Friday</div>
+                        <div class="calendar-day calendar-day-header">Saturday</div>
+                        <div class="calendar-day calendar-day-header">Sunday</div>
+                        
+                        {% for day in range(7) %}
+                            <div class="calendar-day">
+                                {% set avail = availabilities|selectattr('day_of_week', 'equalto', day)|first %}
+                                {% if avail and avail.is_available %}
+                                    <div class="availability-available">
+                                        {{ avail.start_time.strftime('%H:%M') }} - {{ avail.end_time.strftime('%H:%M') }}
+                                    </div>
+                                {% else %}
+                                    <div class="availability-unavailable">Not Available</div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="mt-3">
+                        <a href="{{ url_for('tutor.availability') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-calendar-alt me-2"></i>Manage Availability
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Information -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="profile-section">
+                    <h3 class="section-title">Contact Information</h3>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Email</h6>
+                            <p>{{ current_user.email }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Phone</h6>
+                            <p>{{ user_profile.phone or 'Not provided' }}</p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Time Zone</h6>
+                            <p>{{ user_profile.timezone or 'UTC' }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Video Introduction</h6>
+                            {% if tutor_profile.video_intro_url %}
+                                <a href="{{ tutor_profile.video_intro_url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-play-circle me-1"></i>Watch Video
+                                </a>
+                            {% else %}
+                                <p class="text-muted">Not provided</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="profile-section">
+                    <h3 class="section-title">Payment Information</h3>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Hourly Rate</h6>
+                            <p>${{ "%.2f"|format(tutor_profile.hourly_rate) }} {{ tutor_profile.currency }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Preferred Payment</h6>
+                            <p>{{ tutor_profile.preferred_payment_method or 'Not specified' }}</p>
+                        </div>
+                    </div>
+                    {% if tutor_profile.upi_id %}
+                    <div class="mt-3">
+                        <h6>UPI ID</h6>
+                        <p>{{ tutor_profile.upi_id }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

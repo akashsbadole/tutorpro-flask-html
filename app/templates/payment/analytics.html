@@ -1,0 +1,350 @@
+{% extends "payment/base.html" %}
+
+{% block title %}Payment Analytics - TutorPro{% endblock %}
+
+{% block payment_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Payment Analytics</h2>
+    <div>
+        <div class="dropdown d-inline-block me-2">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="fas fa-download me-2"></i>Export
+            </button>
+            <ul class="dropdown-menu">
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('payment.export_data', format='csv') }}">
+                        <i class="fas fa-file-csv me-2"></i>Export as CSV
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('payment.export_data', format='json') }}">
+                        <i class="fas fa-file-code me-2"></i>Export as JSON
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <button type="button" class="btn btn-outline-primary" onclick="refreshAnalytics()">
+            <i class="fas fa-sync-alt me-2"></i>Refresh
+        </button>
+    </div>
+</div>
+
+<!-- Filter Form -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Filters</h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('payment.analytics') }}">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    {{ form.period.label(class="form-label") }}
+                    {{ form.period(class="form-select", onchange="this.form.submit()") }}
+                </div>
+                <div class="col-md-3 mb-3">
+                    {{ form.payment_method.label(class="form-label") }}
+                    {{ form.payment_method(class="form-select", onchange="this.form.submit()") }}
+                </div>
+                <div class="col-md-3 mb-3">
+                    {{ form.currency.label(class="form-label") }}
+                    {{ form.currency(class="form-select", onchange="this.form.submit()") }}
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter me-2"></i>Apply Filters
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Revenue Summary -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="analytics-card">
+            <h5 class="text-muted">Total Revenue</h5>
+            <div class="analytics-value">${{ "%.2f"|format(revenue_summary.total_revenue) }}</div>
+            <div class="analytics-label">{{ revenue_summary.total_transactions }} transactions</div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="analytics-card">
+            <h5 class="text-muted">Average Transaction</h5>
+            <div class="analytics-value">${{ "%.2f"|format(revenue_summary.average_transaction_value) }}</div>
+            <div class="analytics-label">Per transaction</div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="analytics-card">
+            <h5 class="text-muted">Success Rate</h5>
+            <div class="analytics-value">{{ "%.1f"|format((revenue_summary.total_transactions / (revenue_summary.total_transactions + 10) * 100) }}%</div>
+            <div class="analytics-label">Payment completion</div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="analytics-card">
+            <h5 class="text-muted">Top Method</h5>
+            <div class="analytics-value">{{ payment_method_analytics|length }}</div>
+            <div class="analytics-label">Payment methods used</div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Monthly Revenue Trend</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="monthlyRevenueChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Payment Methods</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="paymentMethodsChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Tutors -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Top Performing Tutors</h5>
+    </div>
+    <div class="card-body">
+        {% if top_tutors %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Tutor</th>
+                        <th>Total Earnings</th>
+                        <th>Total Bookings</th>
+                        <th>Average per Booking</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tutor in top_tutors %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
+                                    {{ tutor.name[:2].upper() }}
+                                </div>
+                                <div>
+                                    <div class="fw-bold">{{ tutor.name }}</div>
+                                    <small class="text-muted">{{ tutor.title }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="fw-bold text-success">${{ "%.2f"|format(tutor.total_earnings) }}</span>
+                        </td>
+                        <td>{{ tutor.total_bookings }}</td>
+                        <td>${{ "%.2f"|format(tutor.total_earnings / tutor.total_bookings) if tutor.total_bookings > 0 else '0.00' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No tutor data available</h5>
+            <p class="text-muted">Tutor performance data will appear here once payments are processed.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Payment Status Distribution -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Payment Status Distribution</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="paymentStatusChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Recent Transactions</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-bold">Today</div>
+                            <small class="text-muted">Transactions processed today</small>
+                        </div>
+                        <span class="badge bg-primary">0</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-bold">This Week</div>
+                            <small class="text-muted">Transactions this week</small>
+                        </div>
+                        <span class="badge bg-success">0</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-bold">This Month</div>
+                            <small class="text-muted">Transactions this month</small>
+                        </div>
+                        <span class="badge bg-info">0</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-bold">Failed Transactions</div>
+                            <small class="text-muted">Need attention</small>
+                        </div>
+                        <span class="badge bg-danger">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Monthly Revenue Chart
+const monthlyRevenueCtx = document.getElementById('monthlyRevenueChart').getContext('2d');
+const monthlyRevenueChart = new Chart(monthlyRevenueCtx, {
+    type: 'line',
+    data: {
+        labels: {{ monthly_revenue.keys()|list|tojson }},
+        datasets: [{
+            label: 'Monthly Revenue',
+            data: {{ monthly_revenue.values()|map(attribute='revenue')|list|tojson }},
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return '$' + value.toLocaleString();
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Payment Methods Chart
+const paymentMethodsCtx = document.getElementById('paymentMethodsChart').getContext('2d');
+const paymentMethodsChart = new Chart(paymentMethodsCtx, {
+    type: 'doughnut',
+    data: {
+        labels: {{ payment_method_analytics.keys()|list|tojson }},
+        datasets: [{
+            data: {{ payment_method_analytics.values()|map(attribute='total_amount')|list|tojson }},
+            backgroundColor: [
+                '#FF6384',
+                '#36A2EB',
+                '#FFCE56',
+                '#4BC0C0'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Payment Status Chart
+const paymentStatusCtx = document.getElementById('paymentStatusChart').getContext('2d');
+const paymentStatusChart = new Chart(paymentStatusCtx, {
+    type: 'pie',
+    data: {
+        labels: ['Completed', 'Pending', 'Failed', 'Refunded'],
+        datasets: [{
+            data: [
+                {{ revenue_summary.total_transactions }},
+                0,
+                0,
+                0
+            ],
+            backgroundColor: [
+                '#4CAF50',
+                '#FF9800',
+                '#F44336',
+                '#2196F3'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+function refreshAnalytics() {
+    // Show loading state
+    const refreshBtn = event.target.closest('button');
+    const originalHtml = refreshBtn.innerHTML;
+    refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Refreshing...';
+    refreshBtn.disabled = true;
+    
+    // Reload page after a short delay
+    setTimeout(() => {
+        window.location.reload();
+    }, 1000);
+}
+
+// Auto-refresh analytics every 5 minutes
+setInterval(() => {
+    fetch('/api/payment/analytics/revenue')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Update revenue summary
+                document.querySelector('.analytics-value').textContent = '$' + data.revenue_summary.total_revenue.toFixed(2);
+                
+                // Update charts with new data
+                // This would require more sophisticated chart updating logic
+            }
+        })
+        .catch(error => {
+            console.error('Error refreshing analytics:', error);
+        });
+}, 300000); // 5 minutes
+</script>
+{% endblock %}

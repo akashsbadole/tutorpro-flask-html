@@ -1,0 +1,274 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Admin Dashboard - TutorPro{% endblock %}
+
+{% block head %}
+<style>
+    .stat-card {
+        transition: transform 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    .recent-activity {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Admin Dashboard</h1>
+        <div>
+            <a href="{{ url_for('admin.users') }}" class="btn btn-outline-primary me-2">
+                <i class="fas fa-users"></i> Manage Users
+            </a>
+            <a href="{{ url_for('admin.courses') }}" class="btn btn-outline-primary me-2">
+                <i class="fas fa-book"></i> Manage Courses
+            </a>
+            <a href="{{ url_for('admin.payments') }}" class="btn btn-outline-primary">
+                <i class="fas fa-credit-card"></i> Payments
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Total Users</h5>
+                            <h2>{{ total_users }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-users fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Total Tutors</h5>
+                            <h2>{{ total_tutors }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-chalkboard-teacher fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Total Learners</h5>
+                            <h2>{{ total_learners }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-user-graduate fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Total Bookings</h5>
+                            <h2>{{ total_bookings }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-calendar-check fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">Booking Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-6">
+                            <h3>{{ completed_bookings }}</h3>
+                            <p class="text-success">Completed</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h3>{{ pending_bookings }}</h3>
+                            <p class="text-warning">Pending</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Financial Overview</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-6">
+                            <h3>${{ "%.2f"|format(total_revenue) }}</h3>
+                            <p class="text-success">Total Revenue</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h3>${{ "%.2f"|format(total_payouts) }}</h3>
+                            <p class="text-info">Total Payouts</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Recent Users</h5>
+                </div>
+                <div class="card-body recent-activity">
+                    {% if recent_users %}
+                        {% for user in recent_users %}
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center text-white me-3" style="width: 40px; height: 40px;">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">{{ user.email }}</h6>
+                                    <small class="text-muted">{{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted mb-0">No recent users</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">Recent Bookings</h5>
+                </div>
+                <div class="card-body recent-activity">
+                    {% if recent_bookings %}
+                        {% for booking in recent_bookings %}
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-success rounded-circle d-flex align-items-center justify-content-center text-white me-3" style="width: 40px; height: 40px;">
+                                    <i class="fas fa-calendar"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">{{ booking.student.email }} with {{ booking.tutor.user.email }}</h6>
+                                    <small class="text-muted">{{ booking.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted mb-0">No recent bookings</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">Recent Payments</h5>
+                </div>
+                <div class="card-body recent-activity">
+                    {% if recent_payments %}
+                        {% for payment in recent_payments %}
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-info rounded-circle d-flex align-items-center justify-content-center text-white me-3" style="width: 40px; height: 40px;">
+                                    <i class="fas fa-dollar-sign"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">${{ "%.2f"|format(payment.amount) }} - {{ payment.transaction_id }}</h6>
+                                    <small class="text-muted">{{ payment.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted mb-0">No recent payments</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="card-title mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('admin.users') }}" class="btn btn-outline-primary btn-block">
+                                <i class="fas fa-users fa-2x mb-2"></i>
+                                <h6>Manage Users</h6>
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('admin.courses') }}" class="btn btn-outline-success btn-block">
+                                <i class="fas fa-book fa-2x mb-2"></i>
+                                <h6>Manage Courses</h6>
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('admin.payments') }}" class="btn btn-outline-info btn-block">
+                                <i class="fas fa-credit-card fa-2x mb-2"></i>
+                                <h6>Payments</h6>
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('admin.reports') }}" class="btn btn-outline-warning btn-block">
+                                <i class="fas fa-chart-bar fa-2x mb-2"></i>
+                                <h6>Reports</h6>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock admin_content %}
+
+{% block scripts %}
+<script>
+    // Auto-refresh dashboard every 30 seconds
+    setInterval(function() {
+        location.reload();
+    }, 30000);
+</script>
+{% endblock %}

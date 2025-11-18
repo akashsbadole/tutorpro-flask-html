@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+    .demo-sidebar {
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .demo-nav {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .demo-nav li {
+        margin-bottom: 0.5rem;
+    }
+    
+    .demo-nav a {
+        display: block;
+        padding: 0.75rem 1rem;
+        color: #495057;
+        text-decoration: none;
+        border-radius: 0.25rem;
+        transition: all 0.3s ease;
+    }
+    
+    .demo-nav a:hover,
+    .demo-nav a.active {
+        background: #667eea;
+        color: white;
+    }
+    
+    .demo-card {
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        transition: transform 0.3s ease;
+    }
+    
+    .demo-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    .demo-status {
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    
+    .status-requested {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .status-confirmed {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+    
+    .status-scheduled {
+        background: #e3f2fd;
+        color: #1976d2;
+    }
+    
+    .status-ongoing {
+        background: #e8f5e8;
+        color: #388e3c;
+    }
+    
+    .status-completed {
+        background: #f3e5f5;
+        color: #7b1fa2;
+    }
+    
+    .status-cancelled {
+        background: #ffebee;
+        color: #d32f2f;
+    }
+    
+    .status-no-show {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .conversion-status {
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-left: 0.5rem;
+    }
+    
+    .conversion-not-converted {
+        background: #e9ecef;
+        color: #495057;
+    }
+    
+    .conversion-interested {
+        background: #cce5ff;
+        color: #004085;
+    }
+    
+    .conversion-enrolled {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .conversion-not-interested {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .demo-time {
+        color: #6c757d;
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .demo-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+    
+    .demo-participants {
+        display: flex;
+        align-items: center;
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+    
+    .demo-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+    
+    .btn-start {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        font-size: 0.875rem;
+        text-decoration: none;
+        transition: background 0.3s ease;
+    }
+    
+    .btn-start:hover {
+        background: #218838;
+    }
+    
+    .btn-feedback {
+        background: #17a2b8;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        font-size: 0.875rem;
+        text-decoration: none;
+        transition: background 0.3s ease;
+    }
+    
+    .btn-feedback:hover {
+        background: #138496;
+    }
+    
+    .demo-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #667eea;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+    
+    .rating-stars {
+        color: #ffc107;
+        margin-left: 0.5rem;
+    }
+    
+    .feedback-summary {
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .feedback-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+    
+    .feedback-label {
+        font-weight: 500;
+        color: #495057;
+    }
+    
+    .feedback-value {
+        color: #667eea;
+        font-weight: 600;
+    }
+    
+    @media (max-width: 768px) {
+        .demo-stats {
+            grid-template-columns: 1fr;
+        }
+        
+        .demo-actions {
+            flex-direction: column;
+        }
+        
+        .demo-actions .btn {
+            width: 100%;
+            text-align: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="demo-sidebar">
+                <h5 class="mb-3">Demo Classes</h5>
+                <ul class="demo-nav">
+                    <li><a href="{{ url_for('demo.index') }}" class="{{ 'active' if request.endpoint == 'demo.index' }}">My Demos</a></li>
+                    <li><a href="{{ url_for('demo.request_demo') }}" class="{{ 'active' if request.endpoint == 'demo.request_demo' }}">Request Demo</a></li>
+                    <li><a href="{{ url_for('demo.requests') }}" class="{{ 'active' if request.endpoint == 'demo.requests' }}">Demo Requests</a></li>
+                    <li><a href="{{ url_for('demo.create') }}" class="{{ 'active' if request.endpoint == 'demo.create' }}">Create Demo</a></li>
+                    <li><a href="{{ url_for('demo.calendar') }}" class="{{ 'active' if request.endpoint == 'demo.calendar' }}">Calendar</a></li>
+                    <li><a href="{{ url_for('demo.templates') }}" class="{{ 'active' if request.endpoint == 'demo.templates' }}">Templates</a></li>
+                    <li><a href="{{ url_for('demo.search') }}" class="{{ 'active' if request.endpoint == 'demo.search' }}">Search</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-md-9">
+            {% block demo_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}

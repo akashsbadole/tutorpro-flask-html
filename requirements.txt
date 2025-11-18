@@ -1,0 +1,28 @@
+Flask==2.3.3
+Flask-SQLAlchemy==3.0.5
+Flask-Login==0.6.3
+Flask-WTF==1.1.1
+Flask-Migrate==4.0.5
+Flask-Mail==0.9.1
+Flask-Caching==2.1.0
+Werkzeug==2.3.7
+WTForms==3.0.1
+SQLAlchemy==2.0.21
+email-validator==2.0.0
+python-dotenv==1.0.0
+Pillow==9.5.0
+
+# Payment Gateway Dependencies
+paypal-checkout-serversdk==1.0.3
+razorpay==2.0.0
+qrcode[pil]==7.4.2
+cryptography==41.0.4
+requests==2.31.0
+
+# Meeting and Video Conferencing Dependencies
+PyJWT==2.8.0
+google-auth==2.22.0
+google-auth-oauthlib==1.0.0
+google-auth-httplib2==0.1.1
+google-api-python-client==2.95.0
+cryptography==41.0.4

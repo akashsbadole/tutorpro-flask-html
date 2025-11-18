@@ -1,0 +1,338 @@
+{% extends "course/base.html" %}
+
+{% block title %}Create Material{% endblock %}
+
+{% block course_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Create Course Material</h1>
+    <div class="btn-group">
+        <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+            <i class="fas fa-book"></i> Module: {{ syllabus.title }}
+        </button>
+        <ul class="dropdown-menu">
+            {% for item in syllabus.course.syllabus %}
+            <li>
+                <a class="dropdown-item {% if item.id == syllabus.id %}active{% endif %}" 
+                   href="{{ url_for('course.create_material', syllabus_id=item.id) }}">
+                    {{ item.title }}
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    <a href="{{ url_for('course.course_syllabus', course_id=syllabus.course_id) }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Syllabus
+    </a>
+</div>
+
+<!-- Course and Module Info -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h5 class="card-title">Course: {{ syllabus.course.title }}</h5>
+            </div>
+            <div class="col-md-6">
+                <h5 class="card-title">Module: {{ syllabus.title }}</h5>
+                {% if syllabus.description %}
+                <p class="card-text">{{ syllabus.description }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Material Form -->
+<div class="card">
+    <div class="card-header">
+        <h4 class="mb-0">Material Details</h4>
+    </div>
+    <div class="card-body">
+        <form method="POST" enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="mb-3">
+                        {{ form.title.label(class="form-label") }}
+                        {{ form.title(class="form-control") }}
+                        {% if form.title.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.title.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.description.label(class="form-label") }}
+                        {{ form.description(class="form-control", rows="4") }}
+                        {% if form.description.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.description.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.material_file.label(class="form-label") }}
+                        {{ form.material_file(class="form-control") }}
+                        {% if form.material_file.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.material_file.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="form-text">Upload PDF, DOC, DOCX, PPT, PPTX, XLS, XLSX, ZIP, or media files (Max 100MB)</div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.material_type.label(class="form-label") }}
+                        {{ form.material_type(class="form-select") }}
+                        {% if form.material_type.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.material_type.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.order_index.label(class="form-label") }}
+                        {{ form.order_index(class="form-control", type="number", min="1") }}
+                        {% if form.order_index.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.order_index.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.external_url.label(class="form-label") }}
+                        {{ form.external_url(class="form-control") }}
+                        {% if form.external_url.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.external_url.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <div class="form-check">
+                            {{ form.is_required(class="form-check-input") }}
+                            {{ form.is_required.label(class="form-check-label") }}
+                            <div class="form-text">This material is required for module completion</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <div class="form-check">
+                            {{ form.is_published(class="form-check-input") }}
+                            {{ form.is_published.label(class="form-check-label") }}
+                            <div class="form-text">Students can see this material immediately</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <div class="form-check">
+                            {{ form.is_downloadable(class="form-check-input") }}
+                            {{ form.is_downloadable.label(class="form-check-label") }}
+                            <div class="form-text">Allow students to download this material</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-grid gap-2 d-flex justify-content-end">
+                <a href="{{ url_for('course.course_syllabus', course_id=syllabus.course_id) }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Material Creation Tips -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">Material Creation Tips</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6><i class="fas fa-file text-primary"></i> File Formats</h6>
+                <ul>
+                    <li>Use PDFs for consistent formatting</li>
+                    <li>Provide multiple formats when possible</li>
+                    <li>Optimize file sizes for faster loading</li>
+                    <li>Ensure accessibility for all users</li>
+                    <li>Test files on different devices</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6><i class="fas fa-link text-info"></i> External Resources</h6>
+                <ul>
+                    <li>Use reliable, stable URLs</li>
+                    <li>Check for broken links regularly</li>
+                    <li>Provide alternative access methods</li>
+                    <li>Consider copyright and licensing</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <h6><i class="fas fa-shield-alt text-success"></i> Security</h6>
+                <ul>
+                    <li>Scan files for malware</li>
+                    <li>Use secure file storage</li>
+                    <li>Implement access controls</li>
+                    <li>Regular backup of materials</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6><i class="fas fa-universal-access text-warning"></i> Accessibility</h6>
+                <ul>
+                    <li>Provide text alternatives</li>
+                    <li>Use high-contrast colors</li>
+                    <li>Include transcripts for videos</li>
+                    <li>Ensure keyboard navigation</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-save form data
+        const form = document.querySelector('form');
+        const inputs = form.querySelectorAll('input, textarea, select');
+        
+        inputs.forEach(function(input) {
+            const saveKey = `material_create_${input.name}`;
+            
+            // Load saved data
+            const savedData = localStorage.getItem(saveKey);
+            if (savedData && !input.value) {
+                if (input.type === 'checkbox') {
+                    input.checked = savedData === 'true';
+                } else {
+                    input.value = savedData;
+                }
+            }
+            
+            // Save data on change
+            input.addEventListener('change', function() {
+                const value = input.type === 'checkbox' ? input.checked.toString() : this.value;
+                localStorage.setItem(saveKey, value);
+            });
+        });
+        
+        // Character counter for text areas
+        const textAreas = form.querySelectorAll('textarea');
+        textAreas.forEach(function(textarea) {
+            const counter = document.createElement('div');
+            counter.className = 'form-text text-end';
+            counter.style.fontSize = '0.875rem';
+            
+            textarea.parentNode.insertBefore(counter, textarea.nextSibling);
+            
+            function updateCounter() {
+                const length = textarea.value.length;
+                counter.textContent = `${length} characters`;
+            }
+            
+            textarea.addEventListener('input', updateCounter);
+            updateCounter();
+        });
+        
+        // File upload validation
+        const fileInput = document.querySelector('input[type="file"]');
+        if (fileInput) {
+            fileInput.addEventListener('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    const maxSize = 100 * 1024 * 1024; // 100MB
+                    const allowedTypes = [
+                        'application/pdf', 'application/msword', 
+                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                        'application/vnd.ms-powerpoint', 
+                        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                        'application/vnd.ms-excel',
+                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                        'application/zip',
+                        'image/jpeg', 'image/png', 'image/gif',
+                        'video/mp4', 'video/webm', 'video/ogg',
+                        'audio/mpeg', 'audio/wav', 'audio/ogg'
+                    ];
+                    
+                    if (file.size > maxSize) {
+                        alert('File size must be less than 100MB');
+                        this.value = '';
+                    } else if (!allowedTypes.includes(file.type)) {
+                        alert('Please upload a supported file type (PDF, DOC, DOCX, PPT, PPTX, XLS, XLSX, ZIP, images, videos, or audio)');
+                        this.value = '';
+                    }
+                }
+            });
+        }
+        
+        // Material type specific fields
+        const materialTypeSelect = document.querySelector('select[name="material_type"]');
+        const fileField = document.querySelector('input[name="material_file"]').closest('.mb-3');
+        const urlField = document.querySelector('input[name="external_url"]').closest('.mb-3');
+        
+        function toggleFields() {
+            if (materialTypeSelect) {
+                const materialType = materialTypeSelect.value;
+                
+                // Show/hide file field based on material type
+                if (materialType === 'external_link') {
+                    fileField.style.display = 'none';
+                    urlField.style.display = 'block';
+                } else {
+                    fileField.style.display = 'block';
+                    urlField.style.display = 'none';
+                }
+            }
+        }
+        
+        if (materialTypeSelect) {
+            materialTypeSelect.addEventListener('change', toggleFields);
+            toggleFields();
+        }
+        
+        // Clear saved data on form submission
+        form.addEventListener('submit', function() {
+            inputs.forEach(function(input) {
+                const saveKey = `material_create_${input.name}`;
+                localStorage.removeItem(saveKey);
+            });
+        });
+    });
+</script>
+{% endblock %}

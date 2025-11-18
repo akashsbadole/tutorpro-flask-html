@@ -1,0 +1,538 @@
+{% extends "tutor/base.html" %}
+
+{% block title %}Bookings Calendar - TutorPro{% endblock %}
+
+{% block head %}
+<style>
+    .calendar-container {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 0.5rem;
+    }
+    
+    .calendar-day-header {
+        text-align: center;
+        font-weight: 600;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        color: #495057;
+    }
+    
+    .calendar-day {
+        text-align: center;
+        padding: 1rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        background: white;
+        min-height: 120px;
+        position: relative;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .calendar-day:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+    
+    .calendar-day.other-month {
+        background: #f8f9fa;
+        color: #6c757d;
+    }
+    
+    .calendar-day.today {
+        border: 2px solid #667eea;
+        background: #f0f4ff;
+    }
+    
+    .calendar-day.has-booking {
+        border-left: 4px solid #667eea;
+    }
+    
+    .calendar-day-number {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    
+    .calendar-day-booking {
+        font-size: 0.75rem;
+        background: #667eea;
+        color: white;
+        padding: 0.125rem 0.25rem;
+        border-radius: 0.25rem;
+        display: inline-block;
+        margin: 0.125rem;
+        cursor: pointer;
+    }
+    
+    .calendar-day-booking:hover {
+        background: #5a67d8;
+    }
+    
+    .legend {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .legend-color {
+        width: 20px;
+        height: 20px;
+        border-radius: 0.25rem;
+    }
+    
+    .booking-color {
+        background: #667eea;
+    }
+    
+    .today-color {
+        background: #667eea;
+    }
+    
+    .stats-container {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        flex: 1;
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #667eea;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+    
+    .booking-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+    }
+    
+    .booking-modal-content {
+        position: relative;
+        background: white;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        max-width: 600px;
+        margin: 5% auto;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    
+    .booking-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .booking-modal-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #6c757d;
+    }
+    
+    .booking-item {
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-left: 4px solid #667eea;
+    }
+    
+    .booking-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+    
+    .booking-title {
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    .booking-status {
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    
+    .status-pending {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .status-confirmed {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .status-completed {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+    
+    .status-cancelled {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .booking-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+    
+    .booking-detail {
+        display: flex;
+        align-items: center;
+    }
+    
+    .booking-detail i {
+        margin-right: 0.5rem;
+        width: 16px;
+        text-align: center;
+    }
+    
+    .booking-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.75rem;
+        font-size: 0.875rem;
+    }
+    
+    @media (max-width: 768px) {
+        .calendar-grid {
+            grid-template-columns: repeat(1, 1fr);
+        }
+        
+        .calendar-day {
+            min-height: 80px;
+        }
+        
+        .stats-container {
+            flex-direction: column;
+        }
+        
+        .legend {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .booking-modal-content {
+            margin: 10% 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block tutor_content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Bookings Calendar</h1>
+        <div>
+            <a href="{{ url_for('tutor.bookings') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Bookings
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="stats-container">
+        <div class="stat-card">
+            <div class="stat-value">{{ total_bookings }}</div>
+            <div class="stat-label">Total Bookings</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ upcoming_bookings }}</div>
+            <div class="stat-label">Upcoming</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ completed_bookings }}</div>
+            <div class="stat-label">Completed</div>
+        </div>
+    </div>
+
+    <div class="calendar-container">
+        <div class="calendar-header">
+            <div>
+                <h3 class="section-title">
+                    {{ month_name }} {{ year }}
+                </h3>
+            </div>
+            <div>
+                <button type="button" class="btn btn-outline-secondary" onclick="previousMonth()">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </button>
+                <span class="mx-3"></span>
+                <button type="button" class="btn btn-outline-secondary" onclick="nextMonth()">
+                    Next <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="calendar-grid">
+            <!-- Day headers -->
+            <div class="calendar-day-header">Sun</div>
+            <div class="calendar-day-header">Mon</div>
+            <div class="calendar-day-header">Tue</div>
+            <div class="calendar-day-header">Wed</div>
+            <div class="calendar-day-header">Thu</div>
+            <div class="calendar-day-header">Fri</div>
+            <div class="calendar-day-header">Sat</div>
+            
+            <!-- Calendar days -->
+            {% for day_data in calendar_data %}
+                <div class="calendar-day {% if day_data.is_weekend %}other-month{% endif %} 
+                                    {% if day_data.date == now.strftime('%Y-%m-%d') %}today{% endif %} 
+                                    {% if day_data.has_booking %}has-booking{% endif %}"
+                     onclick="showDayBookings('{{ day_data.date }}')">
+                    <div class="calendar-day-number">{{ day_data.date_num }}</div>
+                    
+                    {% if day_data.has_booking %}
+                        {% for booking in day_data.bookings %}
+                            <div class="calendar-day-booking" onclick="event.stopPropagation(); showBookingDetails({{ booking.id }})">
+                                {{ booking.student_email[:10] }}{% if booking.student_email|length > 10 %}...{% endif %}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Legend -->
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color today-color"></div>
+                <span>Today</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color booking-color"></div>
+                <span>Has Bookings</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bookings Modal -->
+<div class="booking-modal" id="bookingsModal">
+    <div class="booking-modal-content">
+        <div class="booking-modal-header">
+            <h3 class="section-title" id="modalTitle">Bookings</h3>
+            <button type="button" class="booking-modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div id="modalBody">
+            <!-- Bookings will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<!-- Booking Details Modal -->
+<div class="booking-modal" id="bookingDetailsModal">
+    <div class="booking-modal-content">
+        <div class="booking-modal-header">
+            <h3 class="section-title" id="detailsModalTitle">Booking Details</h3>
+            <button type="button" class="booking-modal-close" onclick="closeDetailsModal()">&times;</button>
+        </div>
+        <div id="detailsModalBody">
+            <!-- Booking details will be loaded here -->
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Calendar navigation
+    function previousMonth() {
+        let year = {{ year }};
+        let month = {{ month }};
+        
+        if (month === 1) {
+            year = year - 1;
+            month = 12;
+        } else {
+            month = month - 1;
+        }
+        
+        window.location.href = `{{ url_for('tutor.bookings_calendar') }}?year=${year}&month=${month}`;
+    }
+    
+    function nextMonth() {
+        let year = {{ year }};
+        let month = {{ month }};
+        
+        if (month === 12) {
+            year = year + 1;
+            month = 1;
+        } else {
+            month = month + 1;
+        }
+        
+        window.location.href = `{{ url_for('tutor.bookings_calendar') }}?year=${year}&month=${month}`;
+    }
+    
+    // Show bookings for a specific day
+    function showDayBookings(date) {
+        const modal = document.getElementById('bookingsModal');
+        const title = document.getElementById('modalTitle');
+        const body = document.getElementById('modalBody');
+        
+        // Set title
+        const dateObj = new Date(date);
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        title.textContent = dateObj.toLocaleDateString('en-US', options);
+        
+        // Load bookings
+        body.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+        
+        fetch(`/tutor/bookings/day-bookings?date=${date}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.bookings.length > 0) {
+                        body.innerHTML = data.bookings.map(booking => `
+                            <div class="booking-item">
+                                <div class="booking-header">
+                                    <div class="booking-title">${booking.student_email}</div>
+                                    <span class="booking-status status-${booking.status.toLowerCase()}">${booking.status}</span>
+                                </div>
+                                <div class="booking-details">
+                                    <div class="booking-detail">
+                                        <i class="fas fa-book"></i>
+                                        ${booking.course_title}
+                                    </div>
+                                    <div class="booking-detail">
+                                        <i class="fas fa-clock"></i>
+                                        ${booking.scheduled_time}
+                                    </div>
+                                    <div class="booking-detail">
+                                        <i class="fas fa-hourglass-half"></i>
+                                        ${booking.duration} minutes
+                                    </div>
+                                </div>
+                                <div class="booking-actions">
+                                    <a href="{{ url_for('tutor.booking_details', booking_id='__ID__') }}".replace('__ID__', ${booking.id})" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i> View Details
+                                    </a>
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        body.innerHTML = '<div class="alert alert-info">No bookings for this day</div>';
+                    }
+                } else {
+                    body.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                body.innerHTML = '<div class="alert alert-danger">Error loading bookings</div>';
+            });
+        
+        modal.style.display = 'block';
+    }
+    
+    // Show booking details
+    function showBookingDetails(bookingId) {
+        const modal = document.getElementById('bookingDetailsModal');
+        const title = document.getElementById('detailsModalTitle');
+        const body = document.getElementById('detailsModalBody');
+        
+        // Set title
+        title.textContent = 'Booking Details';
+        
+        // Load booking details
+        body.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+        
+        fetch(`/tutor/booking-details/${bookingId}`)
+            .then(response => response.text())
+            .then(html => {
+                body.innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                body.innerHTML = '<div class="alert alert-danger">Error loading booking details</div>';
+            });
+        
+        modal.style.display = 'block';
+    }
+    
+    // Close modals
+    function closeModal() {
+        document.getElementById('bookingsModal').style.display = 'none';
+    }
+    
+    function closeDetailsModal() {
+        document.getElementById('bookingDetailsModal').style.display = 'none';
+    }
+    
+    // Close modals when clicking outside
+    window.onclick = function(event) {
+        const bookingsModal = document.getElementById('bookingsModal');
+        const detailsModal = document.getElementById('bookingDetailsModal');
+        
+        if (event.target === bookingsModal) {
+            closeModal();
+        }
+        
+        if (event.target === detailsModal) {
+            closeDetailsModal();
+        }
+    }
+</script>
+{% endblock %}

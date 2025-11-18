@@ -1,0 +1,266 @@
+{% extends "course/base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block course_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Course Syllabus</h1>
+    {% if current_user.is_authenticated and current_user.is_tutor() %}
+    <a href="{{ url_for('course.create_syllabus', course_id=course.id) }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Add Module
+    </a>
+    {% endif %}
+</div>
+
+<!-- Progress Overview -->
+{% if enrollment %}
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Your Progress</h5>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="text-center">
+                    <div class="progress-ring" style="width: 80px; height: 80px;">
+                        <svg width="80" height="80">
+                            <circle class="progress-ring-circle" stroke="#e9ecef" stroke-width="5" fill="transparent" r="36" cx="40" cy="40"></circle>
+                            <circle class="progress-ring-circle" stroke="#28a745" stroke-width="5" fill="transparent" r="36" cx="40" cy="40" data-percent="{{ enrollment.progress_percentage }}"></circle>
+                        </svg>
+                        <div class="progress-text" style="margin-top: -50px;">{{ "%.0f"|format(enrollment.progress_percentage) }}%</div>
+                    </div>
+                    <small class="text-muted">Overall Progress</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h4 class="text-primary">{{ syllabus_items|length }}</h4>
+                    <small class="text-muted">Total Modules</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h4 class="text-success">{{ syllabus_items|selectattr('progress.is_completed')|list|length }}</h4>
+                    <small class="text-muted">Completed</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h4 class="text-warning">{{ syllabus_items|rejectattr('progress.is_completed')|list|length }}</h4>
+                    <small class="text-muted">Remaining</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Syllabus Items -->
+<div class="accordion" id="syllabusAccordion">
+    {% for syllabus_item in syllabus_items %}
+    <div class="accordion-item mb-3">
+        <h2 class="accordion-header" id="heading{{ syllabus_item.id }}">
+            <button class="accordion-button {% if not loop.first %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ syllabus_item.id }}">
+                <div class="d-flex justify-content-between align-items-center w-100">
+                    <div>
+                        <span class="badge bg-primary me-2">{{ loop.index }}</span>
+                        <strong>{{ syllabus_item.title }}</strong>
+                        {% if syllabus_item.is_milestone %}
+                        <span class="badge bg-warning ms-2">Milestone</span>
+                        {% endif %}
+                    </div>
+                    <div>
+                        {% if enrollment and syllabus_item.progress %}
+                            {% if syllabus_item.progress.is_completed %}
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            {% endif %}
+                        {% endif %}
+                        {% if syllabus_item.estimated_hours %}
+                        <small class="text-muted"><i class="fas fa-clock"></i> {{ syllabus_item.estimated_hours }}h</small>
+                        {% endif %}
+                    </div>
+                </div>
+            </button>
+        </h2>
+        <div id="collapse{{ syllabus_item.id }}" class="accordion-collapse collapse {% if loop.first %}show{% endif %}" data-bs-parent="#syllabusAccordion">
+            <div class="accordion-body">
+                {% if syllabus_item.description %}
+                <p>{{ syllabus_item.description }}</p>
+                {% endif %}
+                
+                {% if syllabus_item.content %}
+                <div class="mb-3">
+                    {{ syllabus_item.content|safe }}
+                </div>
+                {% endif %}
+                
+                <!-- Topics -->
+                {% if syllabus_item.topics %}
+                <h6>Topics</h6>
+                <div class="list-group mb-3">
+                    {% for topic in syllabus_item.topics|sort(attribute='order_index') %}
+                    <div class="list-group-item topic-item {% if enrollment and topic.progress and topic.progress.is_completed %}completed{% endif %}">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-book-open me-2"></i>
+                                {{ topic.title }}
+                                {% if topic.is_required %}
+                                <span class="badge bg-danger ms-2">Required</span>
+                                {% endif %}
+                            </div>
+                            <div>
+                                {% if enrollment and topic.progress %}
+                                    {% if topic.progress.is_completed %}
+                                    <i class="fas fa-check-circle text-success"></i>
+                                    {% else %}
+                                    <i class="far fa-circle text-muted"></i>
+                                    {% endif %}
+                                {% endif %}
+                                {% if topic.estimated_minutes %}
+                                <small class="text-muted ms-2">{{ topic.estimated_minutes }}m</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- Materials -->
+                {% if syllabus_item.materials %}
+                <h6>Materials</h6>
+                <div class="row mb-3">
+                    {% for material in syllabus_item.materials|sort(attribute='order_index') %}
+                    <div class="col-md-6 mb-2">
+                        <div class="d-flex align-items-center">
+                            <i class="material-icon me-2">
+                                {% if material.file_type == 'PDF' %}fas fa-file-pdf
+                                {% elif material.file_type == 'Video' %}fas fa-video
+                                {% elif material.file_type == 'Document' %}fas fa-file-word
+                                {% elif material.file_type == 'Image' %}fas fa-image
+                                {% elif material.file_type == 'Link' %}fas fa-link
+                                {% else %}fas fa-file
+                                {% endif %}
+                            </i>
+                            <div>
+                                <div>{{ material.title }}</div>
+                                <small class="text-muted">{{ material.file_type }}</small>
+                            </div>
+                            {% if material.file_path or material.file_url %}
+                            <a href="{{ url_for('course.download_material', material_id=material.id) }}" class="ms-auto">
+                                <i class="fas fa-download"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- Assignments -->
+                {% if syllabus_item.assignments %}
+                <h6>Assignments</h6>
+                <div class="list-group mb-3">
+                    {% for assignment in syllabus_item.assignments|sort(attribute='order_index') %}
+                    <a href="{{ url_for('course.assignment_detail', assignment_id=assignment.id) }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-tasks me-2"></i>
+                                {{ assignment.title }}
+                                <span class="badge bg-secondary ms-2">{{ assignment.assignment_type }}</span>
+                            </div>
+                            <div>
+                                {% if assignment.due_date %}
+                                <small class="text-muted">Due: {{ assignment.due_date.strftime('%b %d') }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- Quizzes -->
+                {% if syllabus_item.quizzes %}
+                <h6>Quizzes</h6>
+                <div class="list-group mb-3">
+                    {% for quiz in syllabus_item.quizzes %}
+                    <a href="{{ url_for('course.quiz_detail', quiz_id=quiz.id) }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-question-circle me-2"></i>
+                                {{ quiz.title }}
+                                {% if quiz.is_published %}
+                                <span class="badge bg-success ms-2">Published</span>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <small class="text-muted">{{ quiz.questions|length }} questions</small>
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- Actions -->
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    {% if enrollment %}
+                    <div>
+                        {% if syllabus_item.progress and syllabus_item.progress.is_completed %}
+                        <span class="badge bg-success">Completed</span>
+                        {% else %}
+                        <form method="POST" action="{{ url_for('course.update_progress', progress_id=syllabus_item.progress.id if syllabus_item.progress else '') }}">
+                            <input type="hidden" name="is_completed" value="1">
+                            <button type="submit" class="btn btn-sm btn-success">Mark as Complete</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    {% if current_user.is_authenticated and current_user.is_tutor() %}
+                    <div class="btn-group">
+                        <a href="{{ url_for('course.edit_syllabus', syllabus_id=syllabus_item.id) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <a href="{{ url_for('course.create_topic', syllabus_id=syllabus_item.id) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-plus"></i> Add Topic
+                        </a>
+                        <a href="{{ url_for('course.create_material', syllabus_id=syllabus_item.id) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-plus"></i> Add Material
+                        </a>
+                        <a href="{{ url_for('course.create_assignment', syllabus_id=syllabus_item.id) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-plus"></i> Add Assignment
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-book fa-3x text-muted mb-3"></i>
+        <h3>No syllabus available yet</h3>
+        <p class="text-muted">The course syllabus will be available soon.</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Progress animation
+        const progressRings = document.querySelectorAll('.progress-ring-circle');
+        progressRings.forEach(function(ring) {
+            const radius = ring.r.baseVal.value;
+            const circumference = radius * 2 * Math.PI;
+            const percent = ring.getAttribute('data-percent');
+            const offset = circumference - percent / 100 * circumference;
+            
+            ring.style.strokeDasharray = `${circumference} ${circumference}`;
+            ring.style.strokeDashoffset = offset;
+        });
+    });
+</script>
+{% endblock %}

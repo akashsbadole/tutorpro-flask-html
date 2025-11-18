@@ -1,0 +1,468 @@
+{% extends "tutor/base.html" %}
+
+{% block title %}Reschedule Demo - TutorPro{% endblock %}
+
+{% block head %}
+<style>
+    .reschedule-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .demo-info {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .section-title {
+        color: #495057;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .student-info {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .student-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        margin-right: 1rem;
+        object-fit: cover;
+    }
+    
+    .student-details h4 {
+        margin: 0 0 0.25rem 0;
+        color: #495057;
+    }
+    
+    .student-details p {
+        margin: 0;
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+    
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .info-item {
+        display: flex;
+        align-items: center;
+    }
+    
+    .info-label {
+        font-weight: 500;
+        color: #6c757d;
+        margin-right: 0.5rem;
+        min-width: 100px;
+    }
+    
+    .info-value {
+        color: #495057;
+    }
+    
+    .reschedule-form {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-label {
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+        color: #495057;
+    }
+    
+    .form-control {
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        padding: 0.75rem;
+        transition: border-color 0.3s ease;
+    }
+    
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    .form-text {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
+    }
+    
+    .btn-primary {
+        background: #667eea;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+        background: #5a67d8;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-secondary:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-danger {
+        background: #dc3545;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-danger:hover {
+        background: #c82333;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2rem;
+    }
+    
+    .alert {
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .alert-info {
+        background-color: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+    }
+    
+    .availability-check {
+        background: #f8f9fa;
+        border-radius: 0.25rem;
+        padding: 1rem;
+        margin-top: 1rem;
+        display: none;
+    }
+    
+    .availability-check.show {
+        display: block;
+    }
+    
+    .availability-status {
+        font-weight: 600;
+        margin-top: 0.5rem;
+    }
+    
+    .availability-status.available {
+        color: #28a745;
+    }
+    
+    .availability-status.unavailable {
+        color: #dc3545;
+    }
+    
+    @media (max-width: 768px) {
+        .student-info {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .student-avatar {
+            margin-right: 0;
+            margin-bottom: 1rem;
+        }
+        
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+            gap: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block tutor_content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Reschedule Demo</h1>
+        <div>
+            <a href="{{ url_for('tutor.demo_details', demo_id=demo.id) }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Demo Details
+            </a>
+        </div>
+    </div>
+
+    <div class="reschedule-container">
+        <!-- Demo Information -->
+        <div class="demo-info">
+            <h2 class="section-title">Current Demo Information</h2>
+            <div class="student-info">
+                {% if demo.student.user_profile and demo.student.user_profile.profile_picture %}
+                    <img src="{{ url_for('static', filename='profile_pictures/' + demo.student.user_profile.profile_picture) }}" 
+                         alt="{{ demo.student.user_profile.full_name }}" class="student-avatar">
+                {% else %}
+                    <img src="{{ url_for('static', filename='images/default-avatar.png') }}" 
+                         alt="Student Avatar" class="student-avatar">
+                {% endif %}
+                <div class="student-details">
+                    <h4>{{ demo.student.user_profile.full_name if demo.student.user_profile else demo.student.email }}</h4>
+                    <p>{{ demo.student.email }}</p>
+                </div>
+            </div>
+            
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Subject:</span>
+                    <span class="info-value">{{ demo.subject }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Current Date:</span>
+                    <span class="info-value">{{ demo.scheduled_date.strftime('%Y-%m-%d') }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Current Time:</span>
+                    <span class="info-value">{{ demo.scheduled_time.strftime('%H:%M') }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Duration:</span>
+                    <span class="info-value">{{ demo.duration_minutes }} minutes</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Alert -->
+        {% if current_time and demo.scheduled_date and demo.scheduled_time %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Note:</strong> The current time is {{ current_time.strftime('%Y-%m-%d %H:%M') }}. 
+                Please select a new date and time that is at least 24 hours in advance.
+            </div>
+        {% endif %}
+        
+        <!-- Reschedule Form -->
+        <div class="reschedule-form">
+            <h2 class="section-title">Reschedule Demo</h2>
+            
+            <form method="POST" action="{{ url_for('tutor.update_demo_schedule', demo_id=demo.id) }}" id="rescheduleForm">
+                {{ form.hidden_tag() }}
+                
+                <!-- Date and Time Selection -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label" for="scheduled_date">{{ form.scheduled_date.label }}</label>
+                            {{ form.scheduled_date(class="form-control", id="scheduled_date") }}
+                            {% if form.scheduled_date.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.scheduled_date.errors[0] }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label" for="scheduled_time">{{ form.scheduled_time.label }}</label>
+                            {{ form.scheduled_time(class="form-control", id="scheduled_time") }}
+                            {% if form.scheduled_time.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.scheduled_time.errors[0] }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Duration -->
+                <div class="form-group">
+                    <label class="form-label" for="duration_minutes">{{ form.duration_minutes.label }}</label>
+                    {{ form.duration_minutes(class="form-control", id="duration_minutes") }}
+                    <small class="form-text">Demo duration must be between 15 and 120 minutes</small>
+                    {% if form.duration_minutes.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.duration_minutes.errors[0] }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Meeting Link -->
+                <div class="form-group">
+                    <label class="form-label" for="meeting_link">{{ form.meeting_link.label }}</label>
+                    {{ form.meeting_link(class="form-control", id="meeting_link", placeholder="https://meet.google.com/xxx-xxx-xxx") }}
+                    <small class="form-text">Optional: Provide a meeting link if you have one ready</small>
+                    {% if form.meeting_link.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.meeting_link.errors[0] }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Notes -->
+                <div class="form-group">
+                    <label class="form-label" for="notes">{{ form.notes.label }}</label>
+                    {{ form.notes(class="form-control", id="notes", rows="3", placeholder="Any special instructions or notes for the demo...") }}
+                    {% if form.notes.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.notes.errors[0] }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Availability Check -->
+                <div class="availability-check" id="availabilityCheck">
+                    <div class="availability-status" id="availabilityStatus"></div>
+                </div>
+                
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <div>
+                        <a href="{{ url_for('tutor.demo_details', demo_id=demo.id) }}" class="btn btn-secondary">
+                            Cancel
+                        </a>
+                        <button type="button" class="btn btn-danger" onclick="confirmCancellation()">
+                            Cancel Demo
+                        </button>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Reschedule Demo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Cancellation Confirmation Modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelModalLabel">Cancel Demo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to cancel this demo request? This action cannot be undone.</p>
+                <div class="mb-3">
+                    <label class="form-label">Reason for cancellation (optional):</label>
+                    <textarea class="form-control" id="cancelReason" rows="3" placeholder="Please explain why you're cancelling this demo..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Keep Demo</button>
+                <button type="button" class="btn btn-danger" id="confirmCancelBtn">Cancel Demo</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Date and Time Validation
+    const scheduledDateInput = document.getElementById('scheduled_date');
+    const scheduledTimeInput = document.getElementById('scheduled_time');
+    const durationInput = document.getElementById('duration_minutes');
+    const availabilityCheck = document.getElementById('availabilityCheck');
+    const availabilityStatus = document.getElementById('availabilityStatus');
+    
+    // Set minimum date to tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowString = tomorrow.toISOString().split('T')[0];
+    scheduledDateInput.min = tomorrowString;
+    
+    // Check availability when date/time changes
+    function checkAvailability() {
+        const date = scheduledDateInput.value;
+        const time = scheduledTimeInput.value;
+        const duration = parseInt(durationInput.value) || 30;
+        
+        if (!date || !time) {
+            availabilityCheck.classList.remove('show');
+            return;
+        }
+        
+        // In a real app, this would make an AJAX call to check availability
+        // For now, we'll simulate the check
+        const datetime = new Date(`${date}T${time}`);
+        const now = new Date();
+        
+        // Check if datetime is at least 24 hours in the future
+        const hoursDiff = (datetime - now) / (1000 * 60 * 60);
+        
+        if (hoursDiff < 24) {
+            availabilityCheck.classList.add('show');
+            availabilityStatus.textContent = 'Selected time must be at least 24 hours in advance';
+            availabilityStatus.className = 'availability-status unavailable';
+        } else {
+            // Simulate availability check
+            const isAvailable = Math.random() > 0.2; // 80% chance of being available
+            
+            if (isAvailable) {
+                availabilityCheck.classList.add('show');
+                availabilityStatus.textContent = '✓ Time slot is available';
+                availabilityStatus.className = 'availability-status available';
+            } else {
+                availabilityCheck.classList.add('show');
+                availabilityStatus.textContent = '✗ This time slot is not available. Please choose another time.';
+                availabilityStatus.className = 'availability-status unavailable';
+            }
+        }
+    }
+    
+    // Add event listeners
+    scheduledDateInput.addEventListener('change', checkAvailability);
+    scheduledTimeInput.addEventListener('change', checkAvailability);
+    durationInput.addEventListener('change', checkAvailability);
+    
+    // Cancellation confirmation
+    function confirmCancellation() {
+        const modal = new bootstrap.Modal(document.getElementById('cancelModal'));
+        modal.show();
+    }
+    
+    // Handle cancel button click
+    document.getElementById('confirmCancelBtn').addEventListener('click', () => {
+        const reason = document.getElementById('cancelReason').value;
+        
+        // In a real app, this would make an AJAX call to cancel the demo
+        // For now, we'll just redirect
+        if (confirm('Are you sure you want to cancel this demo?')) {
+            window.location.href = "{{ url_for('tutor.cancel_demo', demo_id=demo.id) }}";
+        }
+    });
+</script>
+
+{% endblock %}

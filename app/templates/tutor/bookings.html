@@ -1,0 +1,485 @@
+{% extends "tutor/base.html" %}
+
+{% block title %}Bookings - TutorPro{% endblock %}
+
+{% block head %}
+<style>
+    .bookings-container {
+        display: flex;
+        gap: 2rem;
+    }
+    
+    .bookings-sidebar {
+        flex: 0 0 300px;
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        height: fit-content;
+    }
+    
+    .bookings-main {
+        flex: 1;
+    }
+    
+    .section-title {
+        color: #495057;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .stats-card {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        transition: transform 0.3s ease;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .stats-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #667eea;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stats-label {
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+    
+    .filter-section {
+        margin-bottom: 2rem;
+    }
+    
+    .filter-title {
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: #495057;
+    }
+    
+    .filter-item {
+        margin-bottom: 0.75rem;
+    }
+    
+    .filter-link {
+        display: block;
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        text-decoration: none;
+        color: #495057;
+        transition: all 0.3s ease;
+    }
+    
+    .filter-link:hover {
+        background: #f8f9fa;
+    }
+    
+    .filter-link.active {
+        background: #667eea;
+        color: white;
+    }
+    
+    .booking-item {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+    }
+    
+    .booking-item:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+    
+    .booking-item.status-pending {
+        border-left-color: #ffc107;
+    }
+    
+    .booking-item.status-confirmed {
+        border-left-color: #28a745;
+    }
+    
+    .booking-item.status-completed {
+        border-left-color: #17a2b8;
+    }
+    
+    .booking-item.status-cancelled {
+        border-left-color: #dc3545;
+    }
+    
+    .booking-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .booking-title {
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    .booking-status {
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    
+    .status-pending {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .status-confirmed {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .status-completed {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+    
+    .status-cancelled {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .booking-details {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .booking-detail {
+        display: flex;
+        align-items: center;
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+    
+    .booking-detail i {
+        margin-right: 0.5rem;
+        width: 16px;
+        text-align: center;
+    }
+    
+    .booking-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.75rem;
+        font-size: 0.875rem;
+    }
+    
+    .calendar-link {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        transition: all 0.3s ease;
+    }
+    
+    .calendar-link:hover {
+        background: #5a67d8;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .export-link {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        transition: all 0.3s ease;
+    }
+    
+    .export-link:hover {
+        background: #218838;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .pagination {
+        display: flex;
+        justify-content: center;
+        margin-top: 2rem;
+    }
+    
+    .page-link {
+        color: #667eea;
+        border: 1px solid #dee2e6;
+        margin: 0 0.25rem;
+        border-radius: 0.25rem;
+        padding: 0.5rem 0.75rem;
+        transition: all 0.3s ease;
+    }
+    
+    .page-link:hover {
+        background: #667eea;
+        color: white;
+    }
+    
+    .page-item.active .page-link {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+    }
+    
+    @media (max-width: 768px) {
+        .bookings-container {
+            flex-direction: column;
+        }
+        
+        .bookings-sidebar {
+            flex: 1;
+        }
+        
+        .booking-details {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .booking-actions {
+            flex-wrap: wrap;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block tutor_content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Bookings</h1>
+        <div>
+            <a href="{{ url_for('tutor.availability') }}" class="btn btn-outline-primary me-2">
+                <i class="fas fa-calendar-alt me-2"></i>Availability
+            </a>
+            <a href="{{ url_for('tutor.bookings_calendar') }}" class="btn calendar-link">
+                <i class="fas fa-calendar me-2"></i>Calendar View
+            </a>
+        </div>
+    </div>
+
+    <div class="bookings-container">
+        <!-- Sidebar -->
+        <div class="bookings-sidebar">
+            <!-- Statistics -->
+            <div class="stats-card">
+                <div class="stats-value">{{ total_bookings }}</div>
+                <div class="stats-label">Total Bookings</div>
+            </div>
+            
+            <div class="stats-card">
+                <div class="stats-value">{{ upcoming_bookings }}</div>
+                <div class="stats-label">Upcoming</div>
+            </div>
+            
+            <div class="stats-card">
+                <div class="stats-value">{{ completed_bookings }}</div>
+                <div class="stats-label">Completed</div>
+            </div>
+            
+            <!-- Filters -->
+            <div class="filter-section">
+                <h5 class="filter-title">Filter by Status</h5>
+                <div class="filter-item">
+                    <a href="{{ url_for('tutor.bookings') }}" class="filter-link {% if not status %}active{% endif %}">
+                        All Bookings
+                    </a>
+                </div>
+                <div class="filter-item">
+                    <a href="{{ url_for('tutor.bookings', status='Pending') }}" class="filter-link {% if status == 'Pending' %}active{% endif %}">
+                        Pending
+                    </a>
+                </div>
+                <div class="filter-item">
+                    <a href="{{ url_for('tutor.bookings', status='Confirmed') }}" class="filter-link {% if status == 'Confirmed' %}active{% endif %}">
+                        Confirmed
+                    </a>
+                </div>
+                <div class="filter-item">
+                    <a href="{{ url_for('tutor.bookings', status='Completed') }}" class="filter-link {% if status == 'Completed' %}active{% endif %}">
+                        Completed
+                    </a>
+                </div>
+                <div class="filter-item">
+                    <a href="{{ url_for('tutor.bookings', status='Cancelled') }}" class="filter-link {% if status == 'Cancelled' %}active{% endif %}">
+                        Cancelled
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Date Filters -->
+            <div class="filter-section">
+                <h5 class="filter-title">Filter by Date</h5>
+                <div class="filter-item">
+                    <a href="{{ url_for('tutor.bookings', date_filter='today') }}" class="filter-link {% if date_filter == 'today' %}active{% endif %}">
+                        Today
+                    </a>
+                </div>
+                <div class="filter-item">
+                    <a href="{{ url_for('tutor.bookings', date_filter='week') }}" class="filter-link {% if date_filter == 'week' %}active{% endif %}">
+                        This Week
+                    </a>
+                </div>
+                <div class="filter-item">
+                    <a href="{{ url_for('tutor.bookings', date_filter='month') }}" class="filter-link {% if date_filter == 'month' %}active{% endif %}">
+                        This Month
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Export -->
+            <div class="mt-4">
+                <a href="{{ url_for('tutor.export_bookings') }}" class="btn export-link w-100">
+                    <i class="fas fa-download me-2"></i>Export to CSV
+                </a>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="bookings-main">
+            <!-- Bookings List -->
+            {% if bookings.items %}
+                {% for booking in bookings.items %}
+                    <div class="booking-item status-{{ booking.status.lower() }}">
+                        <div class="booking-header">
+                            <div class="booking-title">
+                                {{ booking.student.email }} - {{ booking.course.title }}
+                            </div>
+                            <span class="booking-status status-{{ booking.status.lower() }}">
+                                {{ booking.status }}
+                            </span>
+                        </div>
+                        
+                        <div class="booking-details">
+                            <div class="booking-detail">
+                                <i class="fas fa-calendar"></i>
+                                {{ booking.scheduled_time.strftime('%Y-%m-%d %H:%M') }}
+                            </div>
+                            <div class="booking-detail">
+                                <i class="fas fa-clock"></i>
+                                {{ booking.duration_minutes }} minutes
+                            </div>
+                            <div class="booking-detail">
+                                <i class="fas fa-money-bill-wave"></i>
+                                {{ booking.amount }} {{ booking.currency }}
+                            </div>
+                            <div class="booking-detail">
+                                <i class="fas fa-user"></i>
+                                {{ booking.student.user_profile.full_name if booking.student.user_profile else booking.student.email }}
+                            </div>
+                        </div>
+                        
+                        {% if booking.notes %}
+                            <div class="mt-2">
+                                <strong>Notes:</strong> {{ booking.notes }}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="booking-actions">
+                            <a href="{{ url_for('tutor.booking_details', booking_id=booking.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye"></i> View Details
+                            </a>
+                            
+                            {% if booking.status == 'Pending' %}
+                                <form method="POST" action="{{ url_for('tutor.confirm_booking', booking_id=booking.id) }}" style="display: inline;">
+                                    <button type="submit" class="btn btn-sm btn-success">
+                                        <i class="fas fa-check"></i> Confirm
+                                    </button>
+                                </form>
+                                <form method="POST" action="{{ url_for('tutor.cancel_booking', booking_id=booking.id) }}" style="display: inline;">
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to cancel this booking?')">
+                                        <i class="fas fa-times"></i> Cancel
+                                    </button>
+                                </form>
+                            {% endif %}
+                            
+                            {% if booking.status == 'Confirmed' %}
+                                <a href="{{ url_for('tutor.reschedule_booking', booking_id=booking.id) }}" class="btn btn-sm btn-outline-warning">
+                                    <i class="fas fa-calendar-alt"></i> Reschedule
+                                </a>
+                            {% endif %}
+                            
+                            {% if booking.status == 'Completed' %}
+                                <a href="{{ url_for('tutor.booking_feedback', booking_id=booking.id) }}" class="btn btn-sm btn-outline-info">
+                                    <i class="fas fa-comment"></i> Collect Feedback
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+                
+                <!-- Pagination -->
+                {% if bookings.pages > 1 %}
+                    <nav aria-label="Bookings pagination">
+                        <ul class="pagination">
+                            {% if bookings.has_prev %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('tutor.bookings', page=bookings.prev_num, status=status, date_filter=date_filter) }}">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for page_num in bookings.iter_pages() %}
+                                {% if page_num %}
+                                    {% if page_num != bookings.page %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('tutor.bookings', page=page_num, status=status, date_filter=date_filter) }}">
+                                                {{ page_num }}
+                                            </a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ page_num }}</span>
+                                        </li>
+                                    {% endif %}
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if bookings.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('tutor.bookings', page=bookings.next_num, status=status, date_filter=date_filter) }}">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No bookings found. {% if status %}Try changing the filter criteria.{% else %}Your bookings will appear here once students book your services.{% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}

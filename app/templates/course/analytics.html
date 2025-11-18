@@ -1,0 +1,503 @@
+{% extends "course/base.html" %}
+
+{% block title %}Course Analytics{% endblock %}
+
+{% block course_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Course Analytics</h1>
+    <div class="btn-group">
+        <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+            <i class="fas fa-calendar"></i> Time Period
+        </button>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="#" data-period="7">Last 7 Days</a></li>
+            <li><a class="dropdown-item" href="#" data-period="30">Last 30 Days</a></li>
+            <li><a class="dropdown-item" href="#" data-period="90">Last 90 Days</a></li>
+            <li><a class="dropdown-item" href="#" data-period="365">Last Year</a></li>
+            <li><a class="dropdown-item" href="#" data-period="all">All Time</a></li>
+        </ul>
+    </div>
+    <button class="btn btn-outline-secondary" onclick="exportReport()">
+        <i class="fas fa-download"></i> Export Report
+    </button>
+</div>
+
+<!-- Course Info -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Course: {{ course.title }}</h5>
+        {% if course.description %}
+        <p class="card-text">{{ course.description }}</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Key Metrics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h4 class="card-title">{{ total_enrollments }}</h4>
+                <p class="card-text">Total Enrollments</p>
+                <small class="text-white-50">
+                    <i class="fas fa-arrow-{{ 'up' if enrollment_growth >= 0 else 'down' }}"></i> 
+                    {{ enrollment_growth|abs }}% from last period
+                </small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h4 class="card-title">{{ completion_rate }}%</h4>
+                <p class="card-text">Completion Rate</p>
+                <small class="text-white-50">
+                    <i class="fas fa-arrow-{{ 'up' if completion_rate_change >= 0 else 'down' }}"></i> 
+                    {{ completion_rate_change|abs }}% from last period
+                </small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h4 class="card-title">{{ average_score }}%</h4>
+                <p class="card-text">Average Score</p>
+                <small class="text-white-50">
+                    <i class="fas fa-arrow-{{ 'up' if average_score_change >= 0 else 'down' }}"></i> 
+                    {{ average_score_change|abs }}% from last period
+                </small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h4 class="card-title">{{ average_completion_time }} days</h4>
+                <p class="card-text">Avg. Completion Time</p>
+                <small class="text-white-50">
+                    <i class="fas fa-arrow-{{ 'up' if completion_time_change >= 0 else 'down' }}"></i> 
+                    {{ completion_time_change|abs }} days from last period
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Enrollment Trends</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="enrollmentChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Completion Status</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="completionChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Module Progress</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="moduleProgressChart" height="150"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Assignment Performance</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="assignmentPerformanceChart" height="150"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Engagement Metrics -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Engagement Metrics</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h4 class="text-primary">{{ average_time_spent }} min</h4>
+                    <p class="text-muted">Avg. Time per Session</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h4 class="text-success">{{ login_frequency }}x</h4>
+                    <p class="text-muted">Avg. Logins per Week</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h4 class="text-info">{{ video_completion_rate }}%</h4>
+                    <p class="text-muted">Video Completion Rate</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h4 class="text-warning">{{ discussion_participation }}%</h4>
+                    <p class="text-muted">Discussion Participation</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Performers -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Top Performers</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Progress</th>
+                                <th>Score</th>
+                                <th>Time Spent</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in top_performers %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="{{ student.profile_image or url_for('static', filename='images/default-avatar.png') }}" 
+                                             alt="{{ student.full_name }}" 
+                                             class="rounded-circle me-2" 
+                                             style="width: 24px; height: 24px; object-fit: cover;">
+                                        {{ student.full_name }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="progress" style="height: 8px; width: 60px;">
+                                        <div class="progress-bar" role="progressbar" 
+                                             style="width: {{ student.progress_percentage }}%"
+                                             aria-valuenow="{{ student.progress_percentage }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                    <small>{{ student.progress_percentage }}%</small>
+                                </td>
+                                <td>{{ student.average_score }}%</td>
+                                <td>{{ student.time_spent }}h</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">At-Risk Students</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Progress</th>
+                                <th>Last Activity</th>
+                                <th>Risk Factors</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in at_risk_students %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="{{ student.profile_image or url_for('static', filename='images/default-avatar.png') }}" 
+                                             alt="{{ student.full_name }}" 
+                                             class="rounded-circle me-2" 
+                                             style="width: 24px; height: 24px; object-fit: cover;">
+                                        {{ student.full_name }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="progress" style="height: 8px; width: 60px;">
+                                        <div class="progress-bar bg-warning" role="progressbar" 
+                                             style="width: {{ student.progress_percentage }}%"
+                                             aria-valuenow="{{ student.progress_percentage }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                    <small>{{ student.progress_percentage }}%</small>
+                                </td>
+                                <td>{{ student.last_activity }}</td>
+                                <td>
+                                    {% if student.risk_factors %}
+                                    {% for factor in student.risk_factors %}
+                                    <span class="badge bg-danger me-1">{{ factor }}</span>
+                                    {% endfor %}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Content Analytics -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Content Analytics</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Most Viewed Modules</h6>
+                <div class="list-group">
+                    {% for module in most_viewed_modules %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">{{ module.title }}</h6>
+                            <small class="text-muted">{{ module.views }} views</small>
+                        </div>
+                        <div class="text-end">
+                            <small class="text-muted">{{ module.avg_completion_rate }}% avg. completion</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h6>Most Challenging Assignments</h6>
+                <div class="list-group">
+                    {% for assignment in challenging_assignments %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">{{ assignment.title }}</h6>
+                            <small class="text-muted">{{ assignment.submission_count }} submissions</small>
+                        </div>
+                        <div class="text-end">
+                            <small class="text-muted">{{ assignment.average_score }}% avg. score</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Feedback and Reviews -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Student Feedback</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="text-center">
+                    <h3>{{ average_rating }} <small class="text-muted">/ 5.0</small></h3>
+                    <div class="mb-2">
+                        {% for i in range(5) %}
+                        <i class="fas fa-star {{ 'text-warning' if i < average_rating else 'text-muted' }}"></i>
+                        {% endfor %}
+                    </div>
+                    <p class="text-muted">{{ total_reviews }} reviews</p>
+                </div>
+            </div>
+            <div class="col-md-8">
+                {% for rating in rating_distribution %}
+                <div class="d-flex align-items-center mb-2">
+                    <span class="me-2">{{ rating.stars }} <i class="fas fa-star text-warning"></i></span>
+                    <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: {{ rating.percentage }}%"
+                             aria-valuenow="{{ rating.percentage }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                        </div>
+                    </div>
+                    <span class="text-muted">{{ rating.count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <hr>
+        
+        <h6>Recent Feedback</h6>
+        <div class="list-group">
+            {% for review in recent_reviews %}
+            <div class="list-group-item">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="mb-1">{{ review.student_name }}</h6>
+                        <div class="mb-2">
+                            {% for i in range(5) %}
+                            <i class="fas fa-star {{ 'text-warning' if i < review.rating else 'text-muted' }}"></i>
+                            {% endfor %}
+                        </div>
+                        <p class="mb-1">{{ review.comment }}</p>
+                    </div>
+                    <small class="text-muted">{{ review.date }}</small>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Time period filter
+        const periodButtons = document.querySelectorAll('.dropdown-item[data-period]');
+        periodButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const period = this.getAttribute('data-period');
+                console.log('Filtering by period:', period);
+                // In a real implementation, this would reload the page with the new period
+                window.location.href = `${window.location.pathname}?period=${period}`;
+            });
+        });
+        
+        // Enrollment Trends Chart
+        const enrollmentCtx = document.getElementById('enrollmentChart').getContext('2d');
+        new Chart(enrollmentCtx, {
+            type: 'line',
+            data: {
+                labels: {{ enrollment_chart.labels|tojson }},
+                datasets: [{
+                    label: 'Enrollments',
+                    data: {{ enrollment_chart.data|tojson }},
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        
+        // Completion Status Chart
+        const completionCtx = document.getElementById('completionChart').getContext('2d');
+        new Chart(completionCtx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ completion_chart.labels|tojson }},
+                datasets: [{
+                    data: {{ completion_chart.data|tojson }},
+                    backgroundColor: [
+                        'rgba(40, 167, 69, 0.8)',
+                        'rgba(255, 193, 7, 0.8)',
+                        'rgba(220, 53, 69, 0.8)',
+                        'rgba(108, 117, 125, 0.8)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+        
+        // Module Progress Chart
+        const moduleProgressCtx = document.getElementById('moduleProgressChart').getContext('2d');
+        new Chart(moduleProgressCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ module_progress_chart.labels|tojson }},
+                datasets: [{
+                    label: 'Average Completion Rate',
+                    data: {{ module_progress_chart.data|tojson }},
+                    backgroundColor: 'rgba(54, 162, 235, 0.8)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+        
+        // Assignment Performance Chart
+        const assignmentPerformanceCtx = document.getElementById('assignmentPerformanceChart').getContext('2d');
+        new Chart(assignmentPerformanceCtx, {
+            type: 'radar',
+            data: {
+                labels: {{ assignment_performance_chart.labels|tojson }},
+                datasets: [{
+                    label: 'Average Score',
+                    data: {{ assignment_performance_chart.data|tojson }},
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgb(255, 99, 132)',
+                    pointBackgroundColor: 'rgb(255, 99, 132)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+        
+        // Export report function
+        window.exportReport = function() {
+            // In a real implementation, this would generate and download a report
+            console.log('Exporting report...');
+            alert('Report export would start here. Options: PDF, Excel, CSV');
+        };
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,284 @@
+{% extends "course/base.html" %}
+
+{% block title %}Quiz Results: {{ quiz.title }}{% endblock %}
+
+{% block course_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Quiz Results: {{ quiz.title }}</h1>
+    <div class="d-flex gap-2">
+        {% if quiz.show_correct_answers and quiz.allow_review %}
+        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#reviewModal">
+            <i class="fas fa-eye"></i> Review Answers
+        </button>
+        {% endif %}
+        {% if quiz.max_attempts > attempt.attempt_number %}
+        <a href="{{ url_for('course.take_quiz', quiz_id=quiz.id) }}" class="btn btn-primary">
+            <i class="fas fa-redo"></i> Retake Quiz
+        </a>
+        {% endif %}
+        <a href="{{ url_for('course.course_assignments', course_id=quiz.syllabus.course_id) }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Assignments
+        </a>
+    </div>
+</div>
+
+<!-- Results Summary -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Your Performance</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <h6 class="text-muted">Score</h6>
+                            <div class="d-flex align-items-center">
+                                <h2 class="mb-0 me-2">{{ "%.1f"|format(attempt.score) }} / {{ quiz.max_score }}</h2>
+                                <span class="badge bg-{% if attempt.passed %}success{% else %}danger{% endif %}">
+                                    {% if attempt.passed %}PASSED{% else %}FAILED{% endif %}
+                                </span>
+                            </div>
+                            <div class="progress mt-2" style="height: 10px;">
+                                <div class="progress-bar bg-{% if attempt.passed %}success{% else %}danger{% endif %}" 
+                                     role="progressbar" 
+                                     style="width: {{ (attempt.score / quiz.max_score * 100)|round(1) }}%"
+                                     aria-valuenow="{{ (attempt.score / quiz.max_score * 100)|round(1) }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <h6 class="text-muted">Percentage</h6>
+                            <h2 class="mb-0">{{ "%.1f"|format(attempt.score / quiz.max_score * 100) }}%</h2>
+                            <small class="text-muted">Passing: {{ "%.1f"|format(quiz.passing_score / quiz.max_score * 100) }}%</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <h6 class="text-muted">Time Taken</h6>
+                            <h4 class="mb-0">
+                                {% if attempt.time_taken %}
+                                    {% set minutes = (attempt.time_taken // 60) %}
+                                    {% set seconds = (attempt.time_taken % 60) %}
+                                    {{ minutes }}m {{ seconds }}s
+                                {% else %}
+                                    Not recorded
+                                {% endif %}
+                            </h4>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <h6 class="text-muted">Attempt</h6>
+                            <h4 class="mb-0">{{ attempt.attempt_number }} of {{ quiz.max_attempts }}</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <h6 class="text-muted">Completed</h6>
+                            <h4 class="mb-0">{{ attempt.completed_at.strftime('%b %d, %Y %I:%M %p') if attempt.completed_at else 'N/A' }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h5 class="card-title">Quiz Statistics</h5>
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <strong>Total Questions:</strong> {{ total_questions }}
+                    </li>
+                    <li class="mb-2">
+                        <strong>Correct Answers:</strong> {{ correct_answers }}
+                    </li>
+                    <li class="mb-2">
+                        <strong>Incorrect Answers:</strong> {{ total_questions - correct_answers }}
+                    </li>
+                    <li class="mb-2">
+                        <strong>Accuracy:</strong> {{ "%.1f"|format((correct_answers / total_questions * 100) if total_questions > 0 else 0) }}%
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Breakdown -->
+{% if question_results %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Question Breakdown</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% for result in question_results %}
+            <div class="col-md-6 mb-3">
+                <div class="card {% if result.is_correct %}border-success{% else %}border-danger{% endif %}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h6 class="card-title">Question {{ result.question_number }}</h6>
+                                <p class="card-text">{{ result.question_text }}</p>
+                                
+                                {% if result.question_type == 'multiple_choice' or result.question_type == 'multiple_select' %}
+                                <p class="mb-1"><strong>Your Answer:</strong> {{ result.user_answer or 'Not answered' }}</p>
+                                {% if quiz.show_correct_answers %}
+                                <p class="mb-1"><strong>Correct Answer:</strong> {{ result.correct_answer }}</p>
+                                {% endif %}
+                                
+                                {% elif result.question_type == 'true_false' %}
+                                <p class="mb-1"><strong>Your Answer:</strong> {{ 'True' if result.user_answer == 'true' else ('False' if result.user_answer == 'false' else 'Not answered') }}</p>
+                                {% if quiz.show_correct_answers %}
+                                <p class="mb-1"><strong>Correct Answer:</strong> {{ 'True' if result.correct_answer == 'true' else 'False' }}</p>
+                                {% endif %}
+                                
+                                {% elif result.question_type == 'short_answer' or result.question_type == 'essay' %}
+                                <p class="mb-1"><strong>Your Answer:</strong> {{ result.user_answer or 'Not answered' }}</p>
+                                {% if quiz.show_correct_answers and result.correct_answer %}
+                                <p class="mb-1"><strong>Expected Answer:</strong> {{ result.correct_answer }}</p>
+                                {% endif %}
+                                {% endif %}
+                                
+                                {% if result.explanation %}
+                                <p class="mb-0"><small class="text-muted"><strong>Explanation:</strong> {{ result.explanation }}</small></p>
+                                {% endif %}
+                            </div>
+                            <div class="ms-3">
+                                <span class="badge bg-{% if result.is_correct %}success{% else %}danger{% endif %}">
+                                    {% if result.is_correct %}Correct{% else %}Incorrect{% endif %}
+                                </span>
+                                <div class="text-center mt-2">
+                                    <strong>{{ result.points_earned }}/{{ result.points_possible }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Feedback -->
+{% if attempt.feedback %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Instructor Feedback</h5>
+    </div>
+    <div class="card-body">
+        <p class="card-text">{{ attempt.feedback }}</p>
+    </div>
+</div>
+{% endif %}
+
+<!-- Review Modal -->
+{% if quiz.show_correct_answers and quiz.allow_review %}
+<div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reviewModalLabel">Review Quiz Answers</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="accordion" id="reviewAccordion">
+                    {% for result in question_results %}
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="reviewHeading{{ loop.index }}">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                    data-bs-target="#reviewCollapse{{ loop.index }}" aria-expanded="false" 
+                                    aria-controls="reviewCollapse{{ loop.index }}">
+                                <div class="d-flex justify-content-between align-items-center w-100">
+                                    <span>Question {{ result.question_number }}</span>
+                                    <span class="badge bg-{% if result.is_correct %}success{% else %}danger{% endif %}">
+                                        {% if result.is_correct %}Correct{% else %}Incorrect{% endif %}
+                                    </span>
+                                </div>
+                            </button>
+                        </h2>
+                        <div id="reviewCollapse{{ loop.index }}" class="accordion-collapse collapse" 
+                             aria-labelledby="reviewHeading{{ loop.index }}" data-bs-parent="#reviewAccordion">
+                            <div class="accordion-body">
+                                <p class="mb-2"><strong>Question:</strong> {{ result.question_text }}</p>
+                                
+                                {% if result.question_type == 'multiple_choice' or result.question_type == 'multiple_select' %}
+                                <p class="mb-1"><strong>Your Answer:</strong> {{ result.user_answer or 'Not answered' }}</p>
+                                <p class="mb-1"><strong>Correct Answer:</strong> {{ result.correct_answer }}</p>
+                                
+                                {% elif result.question_type == 'true_false' %}
+                                <p class="mb-1"><strong>Your Answer:</strong> {{ 'True' if result.user_answer == 'true' else ('False' if result.user_answer == 'false' else 'Not answered') }}</p>
+                                <p class="mb-1"><strong>Correct Answer:</strong> {{ 'True' if result.correct_answer == 'true' else 'False' }}</p>
+                                
+                                {% elif result.question_type == 'short_answer' or result.question_type == 'essay' %}
+                                <p class="mb-1"><strong>Your Answer:</strong> {{ result.user_answer or 'Not answered' }}</p>
+                                {% if result.correct_answer %}
+                                <p class="mb-1"><strong>Expected Answer:</strong> {{ result.correct_answer }}</p>
+                                {% endif %}
+                                {% endif %}
+                                
+                                <p class="mb-1"><strong>Points:</strong> {{ result.points_earned }}/{{ result.points_possible }}</p>
+                                
+                                {% if result.explanation %}
+                                <p class="mb-0"><strong>Explanation:</strong> {{ result.explanation }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Print functionality
+        const printBtn = document.createElement('button');
+        printBtn.className = 'btn btn-outline-secondary me-2';
+        printBtn.innerHTML = '<i class="fas fa-print"></i> Print Results';
+        printBtn.addEventListener('click', function() {
+            window.print();
+        });
+        
+        // Add print button to the header
+        const headerDiv = document.querySelector('.d-flex.justify-content-between.align-items-center');
+        if (headerDiv) {
+            headerDiv.insertBefore(printBtn, headerDiv.firstChild);
+        }
+        
+        // Download results as PDF (placeholder for actual implementation)
+        const downloadBtn = document.createElement('button');
+        downloadBtn.className = 'btn btn-outline-primary me-2';
+        downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download PDF';
+        downloadBtn.addEventListener('click', function() {
+            // In a real implementation, this would generate and download a PDF
+            alert('PDF download feature would be implemented here.');
+        });
+        
+        // Add download button to the header
+        if (headerDiv) {
+            headerDiv.insertBefore(downloadBtn, headerDiv.firstChild);
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,350 @@
+{% extends "base.html" %}
+
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+    .course-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: none;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .course-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .course-thumbnail {
+        height: 200px;
+        object-fit: cover;
+    }
+    
+    .progress-ring {
+        transform: rotate(-90deg);
+    }
+    
+    .progress-ring-circle {
+        transition: stroke-dashoffset 0.35s;
+        stroke: #4CAF50;
+        stroke-dasharray: 126;
+    }
+    
+    .syllabus-item {
+        border-left: 4px solid #007bff;
+        padding-left: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .syllabus-item.completed {
+        border-left-color: #28a745;
+    }
+    
+    .milestone {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .assignment-card {
+        border-left: 4px solid #ffc107;
+        margin-bottom: 15px;
+    }
+    
+    .assignment-card.submitted {
+        border-left-color: #28a745;
+    }
+    
+    .assignment-card.overdue {
+        border-left-color: #dc3545;
+    }
+    
+    .discussion-card {
+        border-left: 4px solid #17a2b8;
+        margin-bottom: 15px;
+    }
+    
+    .discussion-card.pinned {
+        background-color: #fff3cd;
+        border-left-color: #ffc107;
+    }
+    
+    .quiz-card {
+        border-left: 4px solid #6f42c1;
+        margin-bottom: 15px;
+    }
+    
+    .badge-achievement {
+        font-size: 1.2rem;
+        padding: 10px;
+        border-radius: 50%;
+        margin: 5px;
+    }
+    
+    .material-icon {
+        font-size: 2rem;
+        color: #007bff;
+    }
+    
+    .topic-item {
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        background-color: #f8f9fa;
+    }
+    
+    .topic-item.completed {
+        background-color: #d4edda;
+    }
+    
+    .file-upload-area {
+        border: 2px dashed #007bff;
+        border-radius: 10px;
+        padding: 30px;
+        text-align: center;
+        background-color: #f8f9fa;
+        transition: all 0.3s ease;
+    }
+    
+    .file-upload-area:hover {
+        background-color: #e9ecef;
+        border-color: #0056b3;
+    }
+    
+    .rubric-criteria {
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .quiz-option {
+        padding: 10px;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        cursor: pointer;
+    }
+    
+    .quiz-option:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .quiz-option.selected {
+        background-color: #007bff;
+        color: white;
+    }
+    
+    .quiz-option.correct {
+        background-color: #28a745;
+        color: white;
+    }
+    
+    .quiz-option.incorrect {
+        background-color: #dc3545;
+        color: white;
+    }
+    
+    .discussion-post {
+        border-left: 3px solid #dee2e6;
+        padding-left: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .discussion-post.reply {
+        margin-left: 30px;
+        border-left-color: #adb5bd;
+    }
+    
+    .course-nav {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .course-nav .nav-link {
+        color: #495057;
+        border-radius: 5px;
+        margin-bottom: 5px;
+    }
+    
+    .course-nav .nav-link.active {
+        background-color: #007bff;
+        color: white;
+    }
+    
+    .course-nav .nav-link:hover {
+        background-color: #e9ecef;
+    }
+    
+    .course-nav .nav-link.active:hover {
+        background-color: #0056b3;
+    }
+    
+    @media (max-width: 768px) {
+        .course-card {
+            margin-bottom: 20px;
+        }
+        
+        .course-thumbnail {
+            height: 150px;
+        }
+        
+        .course-nav {
+            padding: 10px;
+        }
+        
+        .discussion-post.reply {
+            margin-left: 15px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        {% if course %}
+        <div class="col-md-3">
+            <div class="course-nav">
+                <h5>{{ course.title }}</h5>
+                <nav class="nav flex-column">
+                    <a class="nav-link" href="{{ url_for('course.course_detail', course_id=course.id) }}">
+                        <i class="fas fa-home"></i> Overview
+                    </a>
+                    <a class="nav-link" href="{{ url_for('course.course_syllabus', course_id=course.id) }}">
+                        <i class="fas fa-book"></i> Syllabus
+                    </a>
+                    <a class="nav-link" href="{{ url_for('course.course_assignments', course_id=course.id) }}">
+                        <i class="fas fa-tasks"></i> Assignments
+                    </a>
+                    <a class="nav-link" href="{{ url_for('course.course_discussions', course_id=course.id) }}">
+                        <i class="fas fa-comments"></i> Discussions
+                    </a>
+                    <a class="nav-link" href="{{ url_for('course.course_progress', course_id=course.id) }}">
+                        <i class="fas fa-chart-line"></i> Progress
+                    </a>
+                    {% if current_user.is_tutor() or current_user.is_admin() %}
+                    <a class="nav-link" href="{{ url_for('course.edit_course', course_id=course.id) }}">
+                        <i class="fas fa-edit"></i> Edit Course
+                    </a>
+                    {% endif %}
+                </nav>
+            </div>
+        </div>
+        <div class="col-md-9">
+        {% else %}
+        <div class="col-12">
+        {% endif %}
+            {% block course_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    // File upload preview
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInputs = document.querySelectorAll('input[type="file"]');
+        fileInputs.forEach(function(input) {
+            input.addEventListener('change', function(e) {
+                const fileName = e.target.files[0]?.name;
+                const label = input.nextElementSibling;
+                if (label && fileName) {
+                    label.textContent = fileName;
+                }
+            });
+        });
+        
+        // Drag and drop functionality
+        const uploadAreas = document.querySelectorAll('.file-upload-area');
+        uploadAreas.forEach(function(area) {
+            area.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.style.backgroundColor = '#e9ecef';
+            });
+            
+            area.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                this.style.backgroundColor = '#f8f9fa';
+            });
+            
+            area.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.style.backgroundColor = '#f8f9fa';
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    const fileInput = this.querySelector('input[type="file"]');
+                    if (fileInput) {
+                        fileInput.files = files;
+                        const event = new Event('change', { bubbles: true });
+                        fileInput.dispatchEvent(event);
+                    }
+                }
+            });
+        });
+        
+        // Quiz option selection
+        const quizOptions = document.querySelectorAll('.quiz-option');
+        quizOptions.forEach(function(option) {
+            option.addEventListener('click', function() {
+                // Remove selected class from all options in the same question
+                const questionOptions = this.parentElement.querySelectorAll('.quiz-option');
+                questionOptions.forEach(function(opt) {
+                    opt.classList.remove('selected');
+                });
+                
+                // Add selected class to clicked option
+                this.classList.add('selected');
+                
+                // Check the corresponding radio button
+                const radioInput = this.querySelector('input[type="radio"]');
+                if (radioInput) {
+                    radioInput.checked = true;
+                }
+            });
+        });
+        
+        // Progress animation
+        const progressRings = document.querySelectorAll('.progress-ring-circle');
+        progressRings.forEach(function(ring) {
+            const radius = ring.r.baseVal.value;
+            const circumference = radius * 2 * Math.PI;
+            const percent = ring.getAttribute('data-percent');
+            const offset = circumference - percent / 100 * circumference;
+            
+            ring.style.strokeDasharray = `${circumference} ${circumference}`;
+            ring.style.strokeDashoffset = offset;
+        });
+        
+        // Auto-save functionality for text areas
+        const textAreas = document.querySelectorAll('textarea[data-auto-save]');
+        textAreas.forEach(function(textarea) {
+            const saveKey = textarea.getAttribute('data-auto-save');
+            
+            // Load saved content
+            const savedContent = localStorage.getItem(saveKey);
+            if (savedContent && !textarea.value) {
+                textarea.value = savedContent;
+            }
+            
+            // Save content on change
+            textarea.addEventListener('input', function() {
+                localStorage.setItem(saveKey, this.value);
+            });
+        });
+        
+        // Rich text editor initialization (if needed)
+        const richTextEditors = document.querySelectorAll('.rich-text-editor');
+        richTextEditors.forEach(function(editor) {
+            // Initialize rich text editor here
+            // This is a placeholder for a rich text editor library
+        });
+    });
+</script>
+{% endblock %}

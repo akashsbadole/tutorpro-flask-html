@@ -1,0 +1,288 @@
+{% extends "payment/base.html" %}
+
+{% block title %}Payment Methods - TutorPro{% endblock %}
+
+{% block payment_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Payment Methods</h2>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPaymentMethodModal">
+        <i class="fas fa-plus me-2"></i>Add Payment Method
+    </button>
+</div>
+
+<!-- Existing Payment Methods -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Your Payment Methods</h5>
+    </div>
+    <div class="card-body">
+        {% if payment_methods %}
+        <div class="row">
+            {% for method in payment_methods %}
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 {{ 'border-primary' if method.is_default else '' }}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="payment-method-icon 
+                                    {{ 'upi-icon' if method.payment_type == 'UPI' else '' }}
+                                    {{ 'paypal-icon' if method.payment_type == 'PayPal' else '' }}
+                                    {{ 'card-icon' if method.payment_type in ['Credit Card', 'Debit Card'] else '' }}">
+                                    {% if method.payment_type == 'UPI' %}
+                                        <i class="fas fa-mobile-alt"></i>
+                                    {% elif method.payment_type == 'PayPal' %}
+                                        <i class="fab fa-paypal"></i>
+                                    {% else %}
+                                        <i class="fas fa-credit-card"></i>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <h6 class="card-subtitle mb-0">{{ method.payment_type }}</h6>
+                                    {% if method.is_default %}
+                                    <span class="badge bg-primary">Default</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item" href="#" onclick="setDefaultMethod({{ method.id }})">
+                                            <i class="fas fa-star me-2"></i>Set as Default
+                                        </a>
+                                    </li>
+                                    {% if not method.is_default %}
+                                    <li>
+                                        <a class="dropdown-item text-danger" href="#" onclick="deletePaymentMethod({{ method.id }})">
+                                            <i class="fas fa-trash me-2"></i>Delete
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <p class="card-text">
+                                {% if method.payment_type == 'UPI' %}
+                                    <strong>UPI ID:</strong> {{ method.method_details }}
+                                {% elif method.payment_type == 'PayPal' %}
+                                    <strong>Email:</strong> {{ method.method_details }}
+                                {% else %}
+                                    <strong>Card:</strong> **** **** **** {{ method.method_details[-4:] }}
+                                {% endif %}
+                            </p>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                Added on {{ method.created_at.strftime('%d %b %Y') }}
+                            </small>
+                            <div>
+                                {% if method.is_active %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-credit-card fa-4x text-muted mb-3"></i>
+            <h4 class="text-muted">No payment methods</h4>
+            <p class="text-muted">Add a payment method to make bookings and payments.</p>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPaymentMethodModal">
+                <i class="fas fa-plus me-2"></i>Add Payment Method
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add Payment Method Modal -->
+<div class="modal fade" id="addPaymentMethodModal" tabindex="-1" aria-labelledby="addPaymentMethodModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addPaymentMethodModalLabel">Add Payment Method</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('payment.payment_methods') }}">
+                {{ form.hidden_tag() }}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        {{ form.payment_type.label(class="form-label") }}
+                        {{ form.payment_type(class="form-select", onchange="togglePaymentMethodDetails()") }}
+                        {% if form.payment_type.errors %}
+                            <div class="text-danger">
+                                {% for error in form.payment_type.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- UPI Details -->
+                    <div id="upi-details" class="payment-method-details" style="display: none;">
+                        <div class="mb-3">
+                            <label class="form-label">UPI ID</label>
+                            <input type="text" name="upi_id" class="form-control" placeholder="username@upi">
+                            <small class="form-text text-muted">Enter your UPI ID (e.g., username@upi)</small>
+                        </div>
+                    </div>
+                    
+                    <!-- PayPal Details -->
+                    <div id="paypal-details" class="payment-method-details" style="display: none;">
+                        <div class="mb-3">
+                            <label class="form-label">PayPal Email</label>
+                            <input type="email" name="paypal_email" class="form-control" placeholder="your@email.com">
+                            <small class="form-text text-muted">Enter your PayPal email address</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Card Details -->
+                    <div id="card-details" class="payment-method-details" style="display: none;">
+                        <div class="mb-3">
+                            <label class="form-label">Card Number</label>
+                            <input type="text" name="card_number" class="form-control" placeholder="1234 5678 9012 3456">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Expiry Date</label>
+                                <input type="text" name="card_expiry" class="form-control" placeholder="MM/YY">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">CVV</label>
+                                <input type="text" name="card_cvv" class="form-control" placeholder="123">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            {{ form.is_default(class="form-check-input") }}
+                            {{ form.is_default.label(class="form-check-label") }}
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Payment Method</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Delete Payment Method</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this payment method?</p>
+                <p class="text-muted">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+function togglePaymentMethodDetails() {
+    const paymentType = document.querySelector('select[name="payment_type"]').value;
+    const allDetails = document.querySelectorAll('.payment-method-details');
+    
+    // Hide all payment method details
+    allDetails.forEach(detail => {
+        detail.style.display = 'none';
+    });
+    
+    // Show relevant payment method details
+    if (paymentType === 'UPI') {
+        document.getElementById('upi-details').style.display = 'block';
+    } else if (paymentType === 'PayPal') {
+        document.getElementById('paypal-details').style.display = 'block';
+    } else if (paymentType === 'Credit Card' || paymentType === 'Debit Card') {
+        document.getElementById('card-details').style.display = 'block';
+    }
+}
+
+function setDefaultMethod(methodId) {
+    if (confirm('Are you sure you want to set this as your default payment method?')) {
+        // Create a form to submit the request
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/payment/methods/${methodId}/set-default`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function deletePaymentMethod(methodId) {
+    const deleteForm = document.getElementById('deleteForm');
+    deleteForm.action = `/payment/methods/${methodId}/delete`;
+    
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    deleteModal.show();
+}
+
+// Handle form submission for adding payment method
+document.querySelector('form').addEventListener('submit', function(e) {
+    const paymentType = document.querySelector('select[name="payment_type"]').value;
+    let methodDetails = '';
+    
+    if (paymentType === 'UPI') {
+        methodDetails = document.querySelector('input[name="upi_id"]').value;
+    } else if (paymentType === 'PayPal') {
+        methodDetails = document.querySelector('input[name="paypal_email"]').value;
+    } else if (paymentType === 'Credit Card' || paymentType === 'Debit Card') {
+        methodDetails = document.querySelector('input[name="card_number"]').value;
+    }
+    
+    // Set the method_details field value
+    document.querySelector('input[name="method_details"]').value = methodDetails;
+});
+
+// Format card number input
+document.addEventListener('DOMContentLoaded', function() {
+    const cardNumberInput = document.querySelector('input[name="card_number"]');
+    if (cardNumberInput) {
+        cardNumberInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\s/g, '');
+            let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+            e.target.value = formattedValue;
+        });
+    }
+    
+    const cardExpiryInput = document.querySelector('input[name="card_expiry"]');
+    if (cardExpiryInput) {
+        cardExpiryInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 2) {
+                value = value.slice(0, 2) + '/' + value.slice(2, 4);
+            }
+            e.target.value = value;
+        });
+    }
+});
+</script>
+{% endblock %}

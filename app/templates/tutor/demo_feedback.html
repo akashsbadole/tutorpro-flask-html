@@ -1,0 +1,415 @@
+{% extends "tutor/base.html" %}
+
+{% block title %}Demo Feedback - TutorPro{% endblock %}
+
+{% block head %}
+<style>
+    .feedback-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .demo-info {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .section-title {
+        color: #495057;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .student-info {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .student-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        margin-right: 1rem;
+        object-fit: cover;
+    }
+    
+    .student-details h4 {
+        margin: 0 0 0.25rem 0;
+        color: #495057;
+    }
+    
+    .student-details p {
+        margin: 0;
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+    
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .info-item {
+        display: flex;
+        align-items: center;
+    }
+    
+    .info-label {
+        font-weight: 500;
+        color: #6c757d;
+        margin-right: 0.5rem;
+        min-width: 100px;
+    }
+    
+    .info-value {
+        color: #495057;
+    }
+    
+    .feedback-form {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .rating-section {
+        margin-bottom: 2rem;
+    }
+    
+    .rating-label {
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+        color: #495057;
+    }
+    
+    .rating-stars {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .star {
+        font-size: 2rem;
+        color: #dee2e6;
+        cursor: pointer;
+        transition: color 0.3s ease;
+    }
+    
+    .star:hover,
+    .star.active {
+        color: #ffc107;
+    }
+    
+    .rating-text {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-top: 0.5rem;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-label {
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+        color: #495057;
+    }
+    
+    .form-control {
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        padding: 0.75rem;
+        transition: border-color 0.3s ease;
+    }
+    
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    .form-text {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
+    }
+    
+    .btn-primary {
+        background: #667eea;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+        background: #5a67d8;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-secondary:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .feedback-preview {
+        background: #f8f9fa;
+        border-radius: 0.25rem;
+        padding: 1rem;
+        margin-top: 1rem;
+        display: none;
+    }
+    
+    .feedback-preview.show {
+        display: block;
+    }
+    
+    .preview-title {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #495057;
+    }
+    
+    .preview-rating {
+        display: flex;
+        gap: 0.25rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .preview-star {
+        color: #ffc107;
+        font-size: 1.25rem;
+    }
+    
+    .preview-comment {
+        color: #495057;
+        font-style: italic;
+    }
+    
+    @media (max-width: 768px) {
+        .student-info {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .student-avatar {
+            margin-right: 0;
+            margin-bottom: 1rem;
+        }
+        
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block tutor_content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Collect Demo Feedback</h1>
+        <div>
+            <a href="{{ url_for('tutor.demo_details', demo_id=demo.id) }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Demo Details
+            </a>
+        </div>
+    </div>
+
+    <div class="feedback-container">
+        <!-- Demo Information -->
+        <div class="demo-info">
+            <h2 class="section-title">Demo Information</h2>
+            <div class="student-info">
+                {% if demo.student.user_profile and demo.student.user_profile.profile_picture %}
+                    <img src="{{ url_for('static', filename='profile_pictures/' + demo.student.user_profile.profile_picture) }}" 
+                         alt="{{ demo.student.user_profile.full_name }}" class="student-avatar">
+                {% else %}
+                    <img src="{{ url_for('static', filename='images/default-avatar.png') }}" 
+                         alt="Student Avatar" class="student-avatar">
+                {% endif %}
+                <div class="student-details">
+                    <h4>{{ demo.student.user_profile.full_name if demo.student.user_profile else demo.student.email }}</h4>
+                    <p>{{ demo.student.email }}</p>
+                </div>
+            </div>
+            
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Subject:</span>
+                    <span class="info-value">{{ demo.subject }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Date:</span>
+                    <span class="info-value">{{ demo.scheduled_date.strftime('%Y-%m-%d') }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Time:</span>
+                    <span class="info-value">{{ demo.scheduled_time.strftime('%H:%M') }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Duration:</span>
+                    <span class="info-value">{{ demo.duration_minutes }} minutes</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Feedback Form -->
+        <div class="feedback-form">
+            <h2 class="section-title">Student Feedback</h2>
+            
+            <form method="POST" action="{{ url_for('tutor.submit_feedback', demo_id=demo.id) }}" id="feedbackForm">
+                {{ form.hidden_tag() }}
+                
+                <!-- Rating Section -->
+                <div class="rating-section">
+                    <label class="rating-label">Overall Rating</label>
+                    <div class="rating-stars">
+                        <i class="fas fa-star star" data-rating="1"></i>
+                        <i class="fas fa-star star" data-rating="2"></i>
+                        <i class="fas fa-star star" data-rating="3"></i>
+                        <i class="fas fa-star star" data-rating="4"></i>
+                        <i class="fas fa-star star" data-rating="5"></i>
+                    </div>
+                    <div class="rating-text">Click stars to rate the demo session</div>
+                    <input type="hidden" name="rating" id="ratingInput" value="0">
+                </div>
+                
+                <!-- Comment Section -->
+                <div class="form-group">
+                    <label class="form-label" for="comment">{{ form.comment.label }}</label>
+                    {{ form.comment(class="form-control", rows="4", placeholder="Share your feedback about the demo session...") }}
+                    {% if form.comment.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.comment.errors[0] }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Additional Comments -->
+                <div class="form-group">
+                    <label class="form-label" for="additional_comments">Additional Comments (Optional)</label>
+                    {{ form.additional_comments(class="form-control", rows="3", placeholder="Any other feedback or suggestions...") }}
+                </div>
+                
+                <!-- Submit Buttons -->
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('tutor.demo_details', demo_id=demo.id) }}" class="btn btn-secondary">
+                        Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane me-2"></i>Submit Feedback
+                    </button>
+                </div>
+            </form>
+            
+            <!-- Feedback Preview -->
+            <div class="feedback-preview" id="feedbackPreview">
+                <div class="preview-title">Feedback Preview</div>
+                <div class="preview-rating" id="previewRating"></div>
+                <div class="preview-comment" id="previewComment"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Star Rating Functionality
+    const stars = document.querySelectorAll('.star');
+    const ratingInput = document.getElementById('ratingInput');
+    const feedbackForm = document.getElementById('feedbackForm');
+    const feedbackPreview = document.getElementById('feedbackPreview');
+    const previewRating = document.getElementById('previewRating');
+    const previewComment = document.getElementById('previewComment');
+    
+    stars.forEach(star => {
+        star.addEventListener('click', () => {
+            const rating = star.getAttribute('data-rating');
+            ratingInput.value = rating;
+            
+            // Update star display
+            stars.forEach((s, index) => {
+                if (index < rating) {
+                    s.classList.add('active');
+                } else {
+                    s.classList.remove('active');
+                }
+            });
+            
+            // Update preview
+            updatePreview();
+        });
+        
+        star.addEventListener('mouseover', () => {
+            const rating = star.getAttribute('data-rating');
+            stars.forEach((s, index) => {
+                if (index < rating) {
+                    s.style.color = '#ffc107';
+                } else {
+                    s.style.color = '#dee2e6';
+                }
+            });
+        });
+    });
+    
+    document.querySelector('.rating-stars').addEventListener('mouseleave', () => {
+        const rating = ratingInput.value;
+        stars.forEach((s, index) => {
+            if (index < rating) {
+                s.style.color = '#ffc107';
+            } else {
+                s.style.color = '#dee2e6';
+            }
+        });
+    });
+    
+    // Update preview function
+    function updatePreview() {
+        const rating = ratingInput.value;
+        const comment = document.getElementById('comment').value;
+        
+        if (rating > 0 || comment) {
+            feedbackPreview.classList.add('show');
+            
+            // Update rating preview
+            previewRating.innerHTML = '';
+            for (let i = 0; i < 5; i++) {
+                const star = document.createElement('i');
+                star.className = 'fas fa-star preview-star';
+                if (i < rating) {
+                    star.style.color = '#ffc107';
+                } else {
+                    star.style.color = '#dee2e6';
+                }
+                previewRating.appendChild(star);
+            }
+            
+            // Update comment preview
+            previewComment.textContent = comment || 'No comment provided';
+        } else {
+            feedbackPreview.classList.remove('show');
+        }
+    }
+    
+    // Update preview on comment change
+    document.getElementById('comment').addEventListener('input', updatePreview);
+</script>
+
+{% endblock %}

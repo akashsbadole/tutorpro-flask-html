@@ -1,0 +1,222 @@
+{% extends "course/base.html" %}
+
+{% block title %}My Courses{% endblock %}
+
+{% block course_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>My Courses</h1>
+    <div class="btn-group">
+        <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+            <i class="fas fa-filter"></i> Filter
+        </button>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="?status=all">All Courses</a></li>
+            <li><a class="dropdown-item" href="?status=active">Active</a></li>
+            <li><a class="dropdown-item" href="?status=completed">Completed</a></li>
+        </ul>
+    </div>
+</div>
+
+<!-- Course Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h4 class="text-primary">{{ enrollments|length }}</h4>
+                <p class="card-text">Total Enrollments</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h4 class="text-success">{{ enrollments|selectattr('completion_date')|list|length }}</h4>
+                <p class="card-text">Completed</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h4 class="text-warning">{{ enrollments|rejectattr('completion_date')|list|length }}</h4>
+                <p class="card-text">In Progress</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h4 class="text-info">{{ "%.1f"|format(enrollments|map(attribute='progress_percentage')|list|sum / (enrollments|length or 1)) }}%</h4>
+                <p class="card-text">Average Progress</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Courses Grid -->
+<div class="row">
+    {% for enrollment in enrollments %}
+    <div class="col-md-6 mb-4">
+        <div class="card course-card">
+            {% if enrollment.course.thumbnail_url %}
+            <img src="{{ enrollment.course.thumbnail_url }}" class="card-img-top course-thumbnail" alt="{{ enrollment.course.title }}">
+            {% else %}
+            <div class="card-img-top course-thumbnail d-flex align-items-center justify-content-center bg-light">
+                <i class="fas fa-book fa-3x text-muted"></i>
+            </div>
+            {% endif %}
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">{{ enrollment.course.title }}</h5>
+                <p class="card-text text-muted small">
+                    <i class="fas fa-tag"></i> {{ enrollment.course.subject.name }}
+                    <span class="ms-2"><i class="fas fa-signal"></i> {{ enrollment.course.level }}</span>
+                </p>
+                
+                <!-- Progress Bar -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="small">Progress</span>
+                        <span class="small fw-bold">{{ "%.0f"|format(enrollment.progress_percentage) }}%</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" style="width: {{ enrollment.progress_percentage }}%"></div>
+                    </div>
+                </div>
+                
+                <!-- Course Info -->
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <small class="text-muted">
+                            <i class="fas fa-clock"></i> {{ enrollment.course.duration_hours }}h total
+                        </small>
+                    </div>
+                    <div class="col-6 text-end">
+                        <small class="text-muted">
+                            Enrolled: {{ enrollment.enrollment_date.strftime('%b %d, %Y') }}
+                        </small>
+                    </div>
+                </div>
+                
+                <!-- Status Badge -->
+                <div class="mb-3 text-center">
+                    {% if enrollment.completion_date %}
+                    <span class="badge bg-success fs-6">Completed</span>
+                    <div class="small text-muted mt-1">
+                        {{ enrollment.completion_date.strftime('%b %d, %Y') }}
+                    </div>
+                    {% else %}
+                    <span class="badge bg-warning fs-6">In Progress</span>
+                    {% endif %}
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="mt-auto">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('course.course_detail', course_id=enrollment.course.id) }}" class="btn btn-outline-primary">
+                            <i class="fas fa-eye"></i> View Course
+                        </a>
+                        <a href="{{ url_for('course.course_syllabus', course_id=enrollment.course.id) }}" class="btn btn-outline-primary">
+                            <i class="fas fa-book"></i> Syllabus
+                        </a>
+                        <a href="{{ url_for('course.course_assignments', course_id=enrollment.course.id) }}" class="btn btn-outline-primary">
+                            <i class="fas fa-tasks"></i> Assignments
+                        </a>
+                        <a href="{{ url_for('course.course_progress', course_id=enrollment.course.id) }}" class="btn btn-outline-primary">
+                            <i class="fas fa-chart-line"></i> Progress
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+    <div class="col-12">
+        <div class="text-center py-5">
+            <i class="fas fa-graduation-cap fa-3x text-muted mb-3"></i>
+            <h3>No courses enrolled yet</h3>
+            <p class="text-muted">Browse our course catalog and enroll in courses that interest you.</p>
+            <a href="{{ url_for('course.courses') }}" class="btn btn-primary">
+                <i class="fas fa-search"></i> Browse Courses
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if enrollments.pages > 1 %}
+<nav aria-label="Course pagination">
+    <ul class="pagination justify-content-center">
+        {% if enrollments.has_prev %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('course.my_courses', page=enrollments.prev_num) }}">Previous</a>
+        </li>
+        {% endif %}
+        
+        {% for page_num in enrollments.iter_pages() %}
+            {% if page_num %}
+                {% if page_num != enrollments.page %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('course.my_courses', page=page_num) }}">{{ page_num }}</a>
+                </li>
+                {% else %}
+                <li class="page-item active">
+                    <span class="page-link">{{ page_num }}</span>
+                </li>
+                {% endif %}
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">...</span>
+            </li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if enrollments.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('course.my_courses', page=enrollments.next_num) }}">Next</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Animate progress bars on page load
+        const progressBars = document.querySelectorAll('.progress-bar');
+        
+        setTimeout(function() {
+            progressBars.forEach(function(bar) {
+                bar.style.transition = 'width 1s ease-in-out';
+            });
+        }, 100);
+        
+        // Filter functionality
+        const filterButtons = document.querySelectorAll('.dropdown-item');
+        filterButtons.forEach(function(button) {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const url = new URL(this.href);
+                const status = url.searchParams.get('status');
+                
+                // Apply visual filtering (in a real implementation, this would filter the courses)
+                console.log('Filtering by status:', status);
+            });
+        });
+        
+        // Course card hover effects
+        const courseCards = document.querySelectorAll('.course-card');
+        courseCards.forEach(function(card) {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-5px)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+    });
+</script>
+{% endblock %}

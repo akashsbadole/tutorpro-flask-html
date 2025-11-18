@@ -1,0 +1,316 @@
+{% extends "demo/base.html" %}
+
+{% block title %}My Demo Classes - TutorPro{% endblock %}
+
+{% block demo_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>My Demo Classes</h1>
+    <div>
+        <a href="{{ url_for('demo.create') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Create Demo
+        </a>
+        <a href="{{ url_for('demo.calendar') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-calendar me-2"></i>Calendar View
+        </a>
+    </div>
+</div>
+
+<!-- Status Filter -->
+<div class="mb-4">
+    <div class="btn-group" role="group">
+        <a href="{{ url_for('demo.index') }}" class="btn btn-outline-primary {{ 'active' if not status }}">
+            All
+        </a>
+        <a href="{{ url_for('demo.index', status='Requested') }}" class="btn btn-outline-primary {{ 'active' if status == 'Requested' }}">
+            Requested
+        </a>
+        <a href="{{ url_for('demo.index', status='Confirmed') }}" class="btn btn-outline-primary {{ 'active' if status == 'Confirmed' }}">
+            Confirmed
+        </a>
+        <a href="{{ url_for('demo.index', status='Scheduled') }}" class="btn btn-outline-primary {{ 'active' if status == 'Scheduled' }}">
+            Scheduled
+        </a>
+        <a href="{{ url_for('demo.index', status='Ongoing') }}" class="btn btn-outline-primary {{ 'active' if status == 'Ongoing' }}">
+            Ongoing
+        </a>
+        <a href="{{ url_for('demo.index', status='Completed') }}" class="btn btn-outline-primary {{ 'active' if status == 'Completed' }}">
+            Completed
+        </a>
+        <a href="{{ url_for('demo.index', status='Cancelled') }}" class="btn btn-outline-primary {{ 'active' if status == 'Cancelled' }}">
+            Cancelled
+        </a>
+    </div>
+</div>
+
+<!-- Demo Classes List -->
+{% if demos.items %}
+    <div class="row">
+        {% for demo_class in demos.items %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="demo-card">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <div class="demo-title">{{ demo_class.title }}</div>
+                        <div class="demo-time">
+                            <i class="fas fa-calendar me-1"></i>
+                            {{ demo_class.scheduled_time.strftime('%B %d, %Y at %I:%M %p') }}
+                        </div>
+                        <div class="demo-time">
+                            <i class="fas fa-clock me-1"></i>
+                            {{ demo_class.duration_minutes }} minutes
+                        </div>
+                        {% if demo_class.course %}
+                        <div class="demo-time">
+                            <i class="fas fa-book me-1"></i>
+                            {{ demo_class.course.title }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <span class="demo-status status-{{ demo_class.status.lower().replace('_', '-') }}">
+                            {{ demo_class.status.replace('_', ' ').title() }}
+                        </span>
+                        {% if demo_class.conversion_status != 'Not_Converted' %}
+                        <span class="conversion-status conversion-{{ demo_class.conversion_status.lower().replace('_', '-') }}">
+                            {{ demo_class.conversion_status.replace('_', ' ').title() }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if demo_class.description %}
+                <div class="mb-3">
+                    <p class="text-muted small mb-0">{{ demo_class.description[:100] }}{% if demo_class.description|length > 100 %}...{% endif %}</p>
+                </div>
+                {% endif %}
+                
+                <div class="demo-participants mb-3">
+                    <i class="fas fa-user me-1"></i>
+                    {{ demo_class.student.user_profile.full_name if demo_class.student.user_profile else demo_class.student.email }}
+                    {% if demo_class.is_group_demo %}
+                        <span class="badge bg-info ms-2">Group Demo</span>
+                    {% endif %}
+                </div>
+                
+                <!-- Feedback Summary -->
+                {% if demo_class.feedback %}
+                <div class="feedback-summary">
+                    <div class="feedback-item">
+                        <span class="feedback-label">Student Rating:</span>
+                        <span class="feedback-value">
+                            {{ demo_class.feedback.student_rating }}/5
+                            <span class="rating-stars">
+                                {% for i in range(demo_class.feedback.student_rating) %}
+                                    <i class="fas fa-star"></i>
+                                {% endfor %}
+                            </span>
+                        </span>
+                    </div>
+                    {% if demo_class.feedback.would_recommend %}
+                    <div class="feedback-item">
+                        <span class="feedback-label">Recommendation:</span>
+                        <span class="feedback-value text-success">
+                            <i class="fas fa-thumbs-up me-1"></i>Would Recommend
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                <div class="demo-actions">
+                    {% if demo_class.status == 'Scheduled' or demo_class.status == 'Ongoing' %}
+                        {% if current_user.is_tutor() and current_user.tutor_profile and demo_class.tutor_id == current_user.tutor_profile.id %}
+                        <a href="{{ url_for('demo.start', id=demo_class.id) }}" class="btn-start">
+                            <i class="fas fa-play me-1"></i>Start Demo
+                        </a>
+                        {% elif current_user.id == demo_class.student_id %}
+                        <a href="{{ demo_class.meeting_url }}" target="_blank" class="btn-start">
+                            <i class="fas fa-video me-1"></i>Join Demo
+                        </a>
+                        {% endif %}
+                    {% endif %}
+                    
+                    {% if demo_class.status == 'Completed' and not demo_class.feedback %}
+                        {% if current_user.id == demo_class.student_id or (current_user.is_tutor() and current_user.tutor_profile and demo_class.tutor_id == current_user.tutor_profile.id) %}
+                        <a href="{{ url_for('demo.feedback', id=demo_class.id) }}" class="btn-feedback">
+                            <i class="fas fa-star me-1"></i>Add Feedback
+                        </a>
+                        {% endif %}
+                    {% endif %}
+                    
+                    {% if current_user.is_tutor() and current_user.tutor_profile and demo_class.tutor_id == current_user.tutor_profile.id %}
+                        <a href="{{ url_for('demo.edit', id=demo_class.id) }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-edit me-1"></i>Edit
+                        </a>
+                    {% endif %}
+                    
+                    <a href="{{ url_for('demo.details', id=demo_class.id) }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-info-circle me-1"></i>Details
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if demos.pages > 1 %}
+    <nav aria-label="Demo Classes pagination">
+        <ul class="pagination justify-content-center">
+            {% if demos.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('demo.index', page=demos.prev_num, status=status) }}">Previous</a>
+            </li>
+            {% endif %}
+            
+            {% for page_num in demos.iter_pages() %}
+                {% if page_num %}
+                    {% if page_num != demos.page %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('demo.index', page=page_num, status=status) }}">{{ page_num }}</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ page_num }}</span>
+                    </li>
+                    {% endif %}
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if demos.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('demo.index', page=demos.next_num, status=status) }}">Next</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+{% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-chalkboard-teacher fa-3x text-muted mb-3"></i>
+        <h3 class="text-muted">No demo classes found</h3>
+        <p class="text-muted">
+            {% if status %}
+                No {{ status.lower().replace('_', ' ') }} demo classes found. 
+                <a href="{{ url_for('demo.index') }}">View all demos</a>
+            {% else %}
+                {% if current_user.is_tutor() %}
+                    You haven't created any demo classes yet. 
+                    <a href="{{ url_for('demo.create') }}">Create your first demo</a>
+                {% else %}
+                    You haven't requested any demo classes yet. 
+                    <a href="{{ url_for('demo.request_demo') }}">Request a demo class</a>
+                {% endif %}
+            {% endif %}
+        </p>
+    </div>
+{% endif %}
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+    {% if current_user.is_tutor() %}
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-plus fa-2x text-primary mb-3"></i>
+                <h5 class="card-title">Create Demo</h5>
+                <p class="card-text">Schedule a new demo class for students</p>
+                <a href="{{ url_for('demo.create') }}" class="btn btn-primary">Create Now</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-list fa-2x text-info mb-3"></i>
+                <h5 class="card-title">View Requests</h5>
+                <p class="card-text">Check pending demo requests from students</p>
+                <a href="{{ url_for('demo.requests') }}" class="btn btn-info">View Requests</a>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-md-6">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-search fa-2x text-success mb-3"></i>
+                <h5 class="card-title">Find Tutors</h5>
+                <p class="card-text">Browse available tutors and request demo classes</p>
+                <a href="{{ url_for('main.tutors') }}" class="btn btn-success">Browse Tutors</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-calendar-alt fa-2x text-warning mb-3"></i>
+                <h5 class="card-title">View Calendar</h5>
+                <p class="card-text">See all your demo classes in calendar view</p>
+                <a href="{{ url_for('demo.calendar') }}" class="btn btn-warning">View Calendar</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Auto-refresh for ongoing demos
+    let refreshInterval;
+    
+    function startAutoRefresh() {
+        refreshInterval = setInterval(function() {
+            // Check for demo status updates
+            fetch('{{ url_for("demo.index") }}', {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.text())
+            .then(html => {
+                // Update demo cards if status changed
+                // This is a simplified version - in production, you'd want more sophisticated diffing
+            })
+            .catch(error => console.error('Error refreshing demos:', error));
+        }, 30000); // Refresh every 30 seconds
+    }
+    
+    function stopAutoRefresh() {
+        if (refreshInterval) {
+            clearInterval(refreshInterval);
+        }
+    }
+    
+    // Start auto-refresh when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        startAutoRefresh();
+    });
+    
+    // Stop auto-refresh when page is hidden
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            stopAutoRefresh();
+        } else {
+            startAutoRefresh();
+        }
+    });
+    
+    // Join demo with confirmation
+    document.querySelectorAll('.btn-start').forEach(function(button) {
+        button.addEventListener('click', function(e) {
+            const demoStatus = this.closest('.demo-card').querySelector('.demo-status').textContent.trim();
+            
+            if (demoStatus === 'Ongoing') {
+                if (!confirm('This demo is already in progress. Are you sure you want to join?')) {
+                    e.preventDefault();
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

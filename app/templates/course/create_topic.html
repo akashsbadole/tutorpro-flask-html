@@ -1,0 +1,333 @@
+{% extends "course/base.html" %}
+
+{% block title %}Create Topic{% endblock %}
+
+{% block course_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Create Topic</h1>
+    <div class="btn-group">
+        <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+            <i class="fas fa-book"></i> Module: {{ syllabus.title }}
+        </button>
+        <ul class="dropdown-menu">
+            {% for item in syllabus.course.syllabus %}
+            <li>
+                <a class="dropdown-item {% if item.id == syllabus.id %}active{% endif %}" 
+                   href="{{ url_for('course.create_topic', syllabus_id=item.id) }}">
+                    {{ item.title }}
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    <a href="{{ url_for('course.course_syllabus', course_id=syllabus.course_id) }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Syllabus
+    </a>
+</div>
+
+<!-- Course and Module Info -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h5 class="card-title">Course: {{ syllabus.course.title }}</h5>
+            </div>
+            <div class="col-md-6">
+                <h5 class="card-title">Module: {{ syllabus.title }}</h5>
+                {% if syllabus.description %}
+                <p class="card-text">{{ syllabus.description }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Topic Form -->
+<div class="card">
+    <div class="card-header">
+        <h4 class="mb-0">Topic Details</h4>
+    </div>
+    <div class="card-body">
+        <form method="POST" enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="mb-3">
+                        {{ form.title.label(class="form-label") }}
+                        {{ form.title(class="form-control") }}
+                        {% if form.title.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.title.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.description.label(class="form-label") }}
+                        {{ form.description(class="form-control", rows="4") }}
+                        {% if form.description.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.description.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.content.label(class="form-label") }}
+                        {{ form.content(class="form-control", rows="8") }}
+                        {% if form.content.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.content.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.order_index.label(class="form-label") }}
+                        {{ form.order_index(class="form-control", type="number", min="1") }}
+                        {% if form.order_index.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.order_index.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.topic_type.label(class="form-label") }}
+                        {{ form.topic_type(class="form-select") }}
+                        {% if form.topic_type.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.topic_type.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.estimated_minutes.label(class="form-label") }}
+                        <div class="input-group">
+                            {{ form.estimated_minutes(class="form-control", type="number", step="5", min="5") }}
+                            <span class="input-group-text">minutes</span>
+                        </div>
+                        {% if form.estimated_minutes.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.estimated_minutes.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.video_url.label(class="form-label") }}
+                        {{ form.video_url(class="form-control") }}
+                        {% if form.video_url.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.video_url.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.material_file.label(class="form-label") }}
+                        {{ form.material_file(class="form-control") }}
+                        {% if form.material_file.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.material_file.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="form-text">Upload PDF, DOC, DOCX, PPT, PPTX, or ZIP files (Max 50MB)</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <div class="form-check">
+                            {{ form.is_required(class="form-check-input") }}
+                            {{ form.is_required.label(class="form-check-label") }}
+                            <div class="form-text">This topic is required for module completion</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <div class="form-check">
+                            {{ form.is_published(class="form-check-input") }}
+                            {{ form.is_published.label(class="form-check-label") }}
+                            <div class="form-text">Students can see this topic immediately</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <div class="form-check">
+                            {{ form.allow_comments(class="form-check-input") }}
+                            {{ form.allow_comments.label(class="form-check-label") }}
+                            <div class="form-text">Allow students to comment on this topic</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-grid gap-2 d-flex justify-content-end">
+                <a href="{{ url_for('course.course_syllabus', course_id=syllabus.course_id) }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Topic Creation Tips -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">Topic Creation Tips</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6><i class="fas fa-book text-primary"></i> Content Structure</h6>
+                <ul>
+                    <li>Keep content focused and concise</li>
+                    <li>Use clear headings and subheadings</li>
+                    <li>Include practical examples</li>
+                    <li>Add interactive elements when possible</li>
+                    <li>Use multimedia to enhance learning</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6><i class="fas fa-clock text-info"></i> Time Management</h6>
+                <ul>
+                    <li>Estimate realistic completion times</li>
+                    <li>Consider different learning speeds</li>
+                    <li>Include time for practice</li>
+                    <li>Plan for review and reflection</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <h6><i class="fas fa-video text-success"></i> Media Integration</h6>
+                <ul>
+                    <li>Use high-quality videos</li>
+                    <li>Provide transcripts for accessibility</li>
+                    <li>Optimize file sizes for faster loading</li>
+                    <li>Test media on different devices</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6><i class="fas fa-file-alt text-warning"></i> Materials</h6>
+                <ul>
+                    <li>Use PDFs for consistent formatting</li>
+                    <li>Provide downloadable resources</li>
+                    <li>Include supplementary materials</li>
+                    <li>Organize materials logically</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-save form data
+        const form = document.querySelector('form');
+        const inputs = form.querySelectorAll('input, textarea, select');
+        
+        inputs.forEach(function(input) {
+            const saveKey = `topic_create_${input.name}`;
+            
+            // Load saved data
+            const savedData = localStorage.getItem(saveKey);
+            if (savedData && !input.value) {
+                if (input.type === 'checkbox') {
+                    input.checked = savedData === 'true';
+                } else {
+                    input.value = savedData;
+                }
+            }
+            
+            // Save data on change
+            input.addEventListener('change', function() {
+                const value = input.type === 'checkbox' ? input.checked.toString() : this.value;
+                localStorage.setItem(saveKey, value);
+            });
+        });
+        
+        // Character counter for text areas
+        const textAreas = form.querySelectorAll('textarea');
+        textAreas.forEach(function(textarea) {
+            const counter = document.createElement('div');
+            counter.className = 'form-text text-end';
+            counter.style.fontSize = '0.875rem';
+            
+            textarea.parentNode.insertBefore(counter, textarea.nextSibling);
+            
+            function updateCounter() {
+                const length = textarea.value.length;
+                counter.textContent = `${length} characters`;
+            }
+            
+            textarea.addEventListener('input', updateCounter);
+            updateCounter();
+        });
+        
+        // File upload validation
+        const fileInput = document.querySelector('input[type="file"]');
+        if (fileInput) {
+            fileInput.addEventListener('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    const maxSize = 50 * 1024 * 1024; // 50MB
+                    const allowedTypes = ['application/pdf', 'application/msword', 
+                                         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                                         'application/vnd.ms-powerpoint', 
+                                         'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                                         'application/zip'];
+                    
+                    if (file.size > maxSize) {
+                        alert('File size must be less than 50MB');
+                        this.value = '';
+                    } else if (!allowedTypes.includes(file.type)) {
+                        alert('Please upload a PDF, DOC, DOCX, PPT, PPTX, or ZIP file');
+                        this.value = '';
+                    }
+                }
+            });
+        }
+        
+        // Clear saved data on form submission
+        form.addEventListener('submit', function() {
+            inputs.forEach(function(input) {
+                const saveKey = `topic_create_${input.name}`;
+                localStorage.removeItem(saveKey);
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,467 @@
+{% extends "course/base.html" %}
+
+{% block title %}Create Achievement{% endblock %}
+
+{% block course_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Create Achievement</h1>
+    <a href="{{ url_for('course.course_progress', course_id=course.id) }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Progress
+    </a>
+</div>
+
+<!-- Course Info -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Course: {{ course.title }}</h5>
+        {% if course.description %}
+        <p class="card-text">{{ course.description }}</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Achievement Form -->
+<div class="card">
+    <div class="card-header">
+        <h4 class="mb-0">Achievement Details</h4>
+    </div>
+    <div class="card-body">
+        <form method="POST" enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="mb-3">
+                        {{ form.title.label(class="form-label") }}
+                        {{ form.title(class="form-control") }}
+                        {% if form.title.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.title.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.description.label(class="form-label") }}
+                        {{ form.description(class="form-control", rows="4") }}
+                        {% if form.description.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.description.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.criteria.label(class="form-label") }}
+                        {{ form.criteria(class="form-control", rows="3") }}
+                        {% if form.criteria.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.criteria.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.achievement_type.label(class="form-label") }}
+                        {{ form.achievement_type(class="form-select") }}
+                        {% if form.achievement_type.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.achievement_type.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.badge_icon.label(class="form-label") }}
+                        {{ form.badge_icon(class="form-control") }}
+                        {% if form.badge_icon.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.badge_icon.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="form-text">Enter FontAwesome icon class (e.g., "fas fa-trophy")</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.badge_color.label(class="form-label") }}
+                        {{ form.badge_color(class="form-control") }}
+                        {% if form.badge_color.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.badge_color.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="form-text">Enter Bootstrap color class (e.g., "primary", "success", "warning")</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.points_value.label(class="form-label") }}
+                        <div class="input-group">
+                            {{ form.points_value(class="form-control", type="number", min="0") }}
+                            <span class="input-group-text">points</span>
+                        </div>
+                        {% if form.points_value.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.points_value.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.badge_image.label(class="form-label") }}
+                        {{ form.badge_image(class="form-control") }}
+                        {% if form.badge_image.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.badge_image.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="form-text">Upload custom badge image (PNG, JPG, SVG, Max 2MB)</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.trigger_condition.label(class="form-label") }}
+                        {{ form.trigger_condition(class="form-select") }}
+                        {% if form.trigger_condition.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.trigger_condition.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.trigger_value.label(class="form-label") }}
+                        {{ form.trigger_value(class="form-control", type="number", min="1") }}
+                        {% if form.trigger_value.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.trigger_value.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.secret_code.label(class="form-label") }}
+                        {{ form.secret_code(class="form-control") }}
+                        {% if form.secret_code.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.secret_code.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="form-text">Optional secret code for hidden achievements</div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.order_index.label(class="form-label") }}
+                        {{ form.order_index(class="form-control", type="number", min="1") }}
+                        {% if form.order_index.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.order_index.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <div class="form-check">
+                            {{ form.is_active(class="form-check-input") }}
+                            {{ form.is_active.label(class="form-check-label") }}
+                            <div class="form-text">This achievement is currently available</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <div class="form-check">
+                            {{ form.is_hidden(class="form-check-input") }}
+                            {{ form.is_hidden.label(class="form-check-label") }}
+                            <div class="form-text">Hide this achievement until unlocked</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <div class="form-check">
+                            {{ form.is_repeatable(class="form-check-input") }}
+                            {{ form.is_repeatable.label(class="form-check-label") }}
+                            <div class="form-text">Can be earned multiple times</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-grid gap-2 d-flex justify-content-end">
+                <a href="{{ url_for('course.course_progress', course_id=course.id) }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Achievement Preview -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">Achievement Preview</h5>
+    </div>
+    <div class="card-body">
+        <div id="achievementPreview" class="text-center">
+            <div class="badge bg-primary p-3 mb-3" style="font-size: 2rem;">
+                <i class="fas fa-trophy"></i>
+            </div>
+            <h5>Achievement Title</h5>
+            <p class="text-muted">Achievement description will appear here...</p>
+            <div class="row">
+                <div class="col-md-4">
+                    <strong>Type:</strong> <span class="badge bg-secondary">Type</span>
+                </div>
+                <div class="col-md-4">
+                    <strong>Points:</strong> <span class="badge bg-info">0</span>
+                </div>
+                <div class="col-md-4">
+                    <strong>Criteria:</strong> <span>Not set</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Achievement Creation Tips -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">Achievement Creation Tips</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6><i class="fas fa-trophy text-warning"></i> Design Principles</h6>
+                <ul>
+                    <li>Create meaningful achievements</li>
+                    <li>Balance difficulty and reward</li>
+                    <li>Use clear, descriptive titles</li>
+                    <li>Provide engaging descriptions</li>
+                    <li>Align with learning objectives</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6><i class="fas fa-gamepad text-info"></i> Gamification</h6>
+                <ul>
+                    <li>Use progressive difficulty</li>
+                    <li>Create achievement chains</li>
+                    <li>Include both easy and hard goals</li>
+                    <li>Reward consistent participation</li>
+                    <li>Recognize mastery and excellence</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <h6><i class="fas fa-bullseye text-success"></i> Trigger Conditions</h6>
+                <ul>
+                    <li>Set clear, measurable criteria</li>
+                    <li>Test triggers thoroughly</li>
+                    <li>Consider edge cases</li>
+                    <li>Ensure fair progression</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6><i class="fas fa-shield-alt text-primary"></i> Best Practices</h6>
+                <ul>
+                    <li>Keep achievements relevant</li>
+                    <li>Avoid excessive grinding</li>
+                    <li>Provide variety in challenges</li>
+                    <li>Update achievements regularly</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-save form data
+        const form = document.querySelector('form');
+        const inputs = form.querySelectorAll('input, textarea, select');
+        
+        inputs.forEach(function(input) {
+            const saveKey = `achievement_create_${input.name}`;
+            
+            // Load saved data
+            const savedData = localStorage.getItem(saveKey);
+            if (savedData && !input.value) {
+                if (input.type === 'checkbox') {
+                    input.checked = savedData === 'true';
+                } else {
+                    input.value = savedData;
+                }
+            }
+            
+            // Save data on change
+            input.addEventListener('change', function() {
+                const value = input.type === 'checkbox' ? input.checked.toString() : this.value;
+                localStorage.setItem(saveKey, value);
+            });
+        });
+        
+        // Character counter for text areas
+        const textAreas = form.querySelectorAll('textarea');
+        textAreas.forEach(function(textarea) {
+            const counter = document.createElement('div');
+            counter.className = 'form-text text-end';
+            counter.style.fontSize = '0.875rem';
+            
+            textarea.parentNode.insertBefore(counter, textarea.nextSibling);
+            
+            function updateCounter() {
+                const length = textarea.value.length;
+                counter.textContent = `${length} characters`;
+            }
+            
+            textarea.addEventListener('input', updateCounter);
+            updateCounter();
+        });
+        
+        // Achievement preview
+        function updatePreview() {
+            const titleInput = document.querySelector('input[name="title"]');
+            const descriptionInput = document.querySelector('textarea[name="description"]');
+            const typeSelect = document.querySelector('select[name="achievement_type"]');
+            const iconInput = document.querySelector('input[name="badge_icon"]');
+            const colorInput = document.querySelector('input[name="badge_color"]');
+            const pointsInput = document.querySelector('input[name="points_value"]');
+            const criteriaInput = document.querySelector('textarea[name="criteria"]');
+            
+            const preview = document.getElementById('achievementPreview');
+            
+            // Update title
+            const titleElement = preview.querySelector('h5');
+            titleElement.textContent = titleInput.value || 'Achievement Title';
+            
+            // Update description
+            const descriptionElement = preview.querySelector('p');
+            descriptionElement.textContent = descriptionInput.value || 'Achievement description will appear here...';
+            
+            // Update badge icon and color
+            const badgeElement = preview.querySelector('.badge');
+            if (iconInput.value) {
+                badgeElement.innerHTML = `<i class="${iconInput.value}"></i>`;
+            } else {
+                badgeElement.innerHTML = '<i class="fas fa-trophy"></i>';
+            }
+            
+            if (colorInput.value) {
+                badgeElement.className = `badge bg-${colorInput.value} p-3 mb-3`;
+            } else {
+                badgeElement.className = 'badge bg-primary p-3 mb-3';
+            }
+            
+            // Update type, points, and criteria
+            const typeElement = preview.querySelector('.row .col-md-4:first-child .badge');
+            typeElement.textContent = typeSelect.options[typeSelect.selectedIndex].text;
+            typeElement.className = 'badge bg-secondary';
+            
+            const pointsElement = preview.querySelector('.row .col-md-4:nth-child(2) .badge');
+            pointsElement.textContent = pointsInput.value || '0';
+            pointsElement.className = 'badge bg-info';
+            
+            const criteriaElement = preview.querySelector('.row .col-md-4:nth-child(3) span');
+            criteriaElement.textContent = criteriaInput.value || 'Not set';
+        }
+        
+        // Add event listeners for preview updates
+        const previewInputs = form.querySelectorAll('input[name="title"], textarea[name="description"], select[name="achievement_type"], input[name="badge_icon"], input[name="badge_color"], input[name="points_value"], textarea[name="criteria"]');
+        previewInputs.forEach(function(input) {
+            input.addEventListener('input', updatePreview);
+            input.addEventListener('change', updatePreview);
+        });
+        
+        // Initialize preview
+        updatePreview();
+        
+        // File upload validation
+        const fileInput = document.querySelector('input[type="file"]');
+        if (fileInput) {
+            fileInput.addEventListener('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    const maxSize = 2 * 1024 * 1024; // 2MB
+                    const allowedTypes = ['image/png', 'image/jpeg', 'image/svg+xml'];
+                    
+                    if (file.size > maxSize) {
+                        alert('File size must be less than 2MB');
+                        this.value = '';
+                    } else if (!allowedTypes.includes(file.type)) {
+                        alert('Please upload a PNG, JPG, or SVG file');
+                        this.value = '';
+                    } else {
+                        // Update preview with image
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const badgeElement = document.querySelector('#achievementPreview .badge');
+                            badgeElement.style.backgroundImage = `url(${e.target.result})`;
+                            badgeElement.style.backgroundSize = 'contain';
+                            badgeElement.style.backgroundRepeat = 'no-repeat';
+                            badgeElement.style.backgroundPosition = 'center';
+                            badgeElement.innerHTML = '';
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                }
+            });
+        }
+        
+        // Clear saved data on form submission
+        form.addEventListener('submit', function() {
+            inputs.forEach(function(input) {
+                const saveKey = `achievement_create_${input.name}`;
+                localStorage.removeItem(saveKey);
+            });
+        });
+    });
+</script>
+{% endblock %}

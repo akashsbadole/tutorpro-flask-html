@@ -1,0 +1,321 @@
+{% extends "course/base.html" %}
+
+{% block title %}Achievements & Certificates{% endblock %}
+
+{% block course_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Achievements & Certificates</h1>
+    <div class="btn-group">
+        <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+            <i class="fas fa-filter"></i> Filter
+        </button>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="#" data-filter="all">All Achievements</a></li>
+            <li><a class="dropdown-item" href="#" data-filter="earned">Earned</a></li>
+            <li><a class="dropdown-item" href="#" data-filter="locked">Locked</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="#" data-filter="course">Course Progress</a></li>
+            <li><a class="dropdown-item" href="#" data-filter="assignment">Assignment</a></li>
+            <li><a class="dropdown-item" href="#" data-filter="participation">Participation</a></li>
+            <li><a class="dropdown-item" href="#" data-filter="milestone">Milestone</a></li>
+        </ul>
+    </div>
+</div>
+
+<!-- Course Info -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Course: {{ course.title }}</h5>
+        {% if course.description %}
+        <p class="card-text">{{ course.description }}</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Achievement Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h4 class="card-title">{{ earned_achievements|length }}</h4>
+                <p class="card-text">Earned</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-secondary text-white">
+            <div class="card-body text-center">
+                <h4 class="card-title">{{ total_achievements - earned_achievements|length }}</h4>
+                <p class="card-text">Locked</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h4 class="card-title">{{ total_points }}</h4>
+                <p class="card-text">Points</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h4 class="card-title">{{ certificates|length }}</h4>
+                <p class="card-text">Certificates</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Progress Overview -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Progress Overview</h5>
+    </div>
+    <div class="card-body">
+        <div class="progress mb-3" style="height: 25px;">
+            <div class="progress-bar bg-success" role="progressbar" 
+                 style="width: {{ (earned_achievements|length / total_achievements * 100)|round(1) }}%"
+                 aria-valuenow="{{ earned_achievements|length }}" 
+                 aria-valuemin="0" 
+                 aria-valuemax="{{ total_achievements }}">
+                {{ (earned_achievements|length / total_achievements * 100)|round(1) }}% Complete
+            </div>
+        </div>
+        <p class="mb-0">You've earned {{ earned_achievements|length }} out of {{ total_achievements }} achievements in this course.</p>
+    </div>
+</div>
+
+<!-- Achievements Grid -->
+<div class="row" id="achievementsContainer">
+    {% for achievement in all_achievements %}
+    <div class="col-md-3 col-sm-6 mb-4 achievement-item" 
+         data-status="{{ 'earned' if achievement in earned_achievements else 'locked' }}"
+         data-type="{{ achievement.achievement_type }}">
+        <div class="card h-100 {% if achievement in earned_achievements %}border-success{% else %}border-secondary opacity-75{% endif %}">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    {% if achievement in earned_achievements %}
+                    <div class="badge bg-{{ achievement.badge_color or 'primary' }} p-3" 
+                         style="font-size: 2rem;">
+                        {% if achievement.badge_image %}
+                        <img src="{{ url_for('static', filename='uploads/achievements/' + achievement.badge_image) }}" 
+                             alt="{{ achievement.title }}" style="max-width: 64px; max-height: 64px;">
+                        {% else %}
+                        <i class="{{ achievement.badge_icon or 'fas fa-trophy' }}"></i>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="badge bg-secondary p-3" style="font-size: 2rem;">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <h6 class="card-title">{{ achievement.title }}</h6>
+                <p class="card-text small">{{ achievement.description }}</p>
+                
+                <div class="mt-auto">
+                    <div class="mb-2">
+                        <span class="badge bg-{{ achievement.badge_color or 'secondary' }}">
+                            {{ achievement.achievement_type.replace('_', ' ').title() }}
+                        </span>
+                        <span class="badge bg-info">{{ achievement.points_value }} pts</span>
+                    </div>
+                    
+                    {% if achievement in earned_achievements %}
+                    <small class="text-success">
+                        <i class="fas fa-check-circle"></i> Earned
+                    </small>
+                    {% else %}
+                    <small class="text-muted">
+                        <i class="fas fa-lock"></i> Locked
+                    </small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Certificates Section -->
+{% if certificates %}
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">Certificates</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% for certificate in certificates %}
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="card-title">{{ certificate.title }}</h6>
+                                <p class="card-text">{{ certificate.description }}</p>
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar"></i> 
+                                    Issued: {{ certificate.issued_at.strftime('%B %d, %Y') if certificate.issued_at else 'N/A' }}
+                                </small>
+                            </div>
+                            <div class="text-end">
+                                <div class="badge bg-success mb-2">
+                                    <i class="fas fa-certificate"></i> Certificate
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-sm btn-outline-primary" 
+                                            onclick="viewCertificate('{{ certificate.id }}')">
+                                        <i class="fas fa-eye"></i> View
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-success" 
+                                            onclick="downloadCertificate('{{ certificate.id }}')">
+                                        <i class="fas fa-download"></i> Download
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Achievement Details Modal -->
+<div class="modal fade" id="achievementModal" tabindex="-1" aria-labelledby="achievementModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="achievementModalLabel">Achievement Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div class="mb-3">
+                    <div class="badge bg-primary p-3" style="font-size: 3rem;">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                </div>
+                <h4 id="modalAchievementTitle">Achievement Title</h4>
+                <p id="modalAchievementDescription">Achievement description</p>
+                <div class="mb-3">
+                    <span class="badge bg-secondary" id="modalAchievementType">Type</span>
+                    <span class="badge bg-info" id="modalAchievementPoints">0 pts</span>
+                </div>
+                <div class="mb-3">
+                    <h6>Criteria</h6>
+                    <p id="modalAchievementCriteria">Achievement criteria</p>
+                </div>
+                <div id="modalAchievementEarned" class="text-success" style="display: none;">
+                    <i class="fas fa-check-circle"></i> Earned on <span id="modalEarnedDate"></span>
+                </div>
+                <div id="modalAchievementLocked" class="text-muted" style="display: none;">
+                    <i class="fas fa-lock"></i> Not yet earned
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Filter functionality
+        const filterButtons = document.querySelectorAll('.dropdown-item[data-filter]');
+        const achievementItems = document.querySelectorAll('.achievement-item');
+        
+        filterButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const filter = this.getAttribute('data-filter');
+                
+                // Update active state
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Filter achievements
+                achievementItems.forEach(item => {
+                    if (filter === 'all') {
+                        item.style.display = 'block';
+                    } else if (filter === 'earned' || filter === 'locked') {
+                        const status = item.getAttribute('data-status');
+                        item.style.display = status === filter ? 'block' : 'none';
+                    } else {
+                        const type = item.getAttribute('data-type');
+                        item.style.display = type === filter ? 'block' : 'none';
+                    }
+                });
+            });
+        });
+        
+        // Achievement click handler
+        achievementItems.forEach(item => {
+            item.addEventListener('click', function() {
+                const card = this.querySelector('.card');
+                const title = card.querySelector('.card-title').textContent;
+                const description = card.querySelector('.card-text').textContent;
+                const type = card.querySelector('.badge').textContent;
+                const points = card.querySelectorAll('.badge')[1].textContent;
+                const isEarned = this.getAttribute('data-status') === 'earned';
+                
+                // Update modal content
+                document.getElementById('modalAchievementTitle').textContent = title;
+                document.getElementById('modalAchievementDescription').textContent = description;
+                document.getElementById('modalAchievementType').textContent = type;
+                document.getElementById('modalAchievementPoints').textContent = points;
+                
+                // Show/hide earned or locked status
+                if (isEarned) {
+                    document.getElementById('modalAchievementEarned').style.display = 'block';
+                    document.getElementById('modalAchievementLocked').style.display = 'none';
+                    // In a real implementation, this would show the actual earned date
+                    document.getElementById('modalEarnedDate').textContent = 'N/A';
+                } else {
+                    document.getElementById('modalAchievementEarned').style.display = 'none';
+                    document.getElementById('modalAchievementLocked').style.display = 'block';
+                }
+                
+                // Show modal
+                const modal = new bootstrap.Modal(document.getElementById('achievementModal'));
+                modal.show();
+            });
+        });
+        
+        // View certificate function
+        window.viewCertificate = function(certificateId) {
+            // In a real implementation, this would open a modal or navigate to a certificate view page
+            console.log('Viewing certificate:', certificateId);
+            alert('Certificate viewer would open here for certificate ID: ' + certificateId);
+        };
+        
+        // Download certificate function
+        window.downloadCertificate = function(certificateId) {
+            // In a real implementation, this would trigger a PDF download
+            console.log('Downloading certificate:', certificateId);
+            alert('Certificate download would start here for certificate ID: ' + certificateId);
+        };
+        
+        // Add hover effects to achievement cards
+        const achievementCards = document.querySelectorAll('.achievement-item .card');
+        achievementCards.forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-5px)';
+                this.style.transition = 'transform 0.3s ease';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+    });
+</script>
+{% endblock %}

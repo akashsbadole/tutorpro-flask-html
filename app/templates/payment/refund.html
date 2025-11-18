@@ -1,0 +1,254 @@
+{% extends "payment/base.html" %}
+
+{% block title %}Request Refund - TutorPro{% endblock %}
+
+{% block payment_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Request Refund</h2>
+    <a href="{{ url_for('payment.receipt', payment_id=payment.gateway_transaction_id) }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Receipt
+    </a>
+</div>
+
+<!-- Original Payment Details -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Original Payment Details</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Transaction ID:</strong> {{ payment.transaction_id }}</p>
+                <p><strong>Payment Date:</strong> {{ payment.processed_at.strftime('%d %B %Y') if payment.processed_at else payment.created_at.strftime('%d %B %Y') }}</p>
+                <p><strong>Payment Method:</strong> 
+                    {% if payment.payment_method %}
+                        {{ payment.payment_method.payment_type }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Amount Paid:</strong> <span class="text-primary">{{ payment.currency }} {{ "%.2f"|format(payment.amount) }}</span></p>
+                <p><strong>Booking:</strong> #{{ payment.booking_id }}</p>
+                <p><strong>Status:</strong> 
+                    <span class="payment-status status-{{ payment.status.lower() }}">
+                        {{ payment.status }}
+                    </span>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Refund Policy -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Refund Policy</h5>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Refund Policy:</strong> 
+            Refunds are available within {{ current_app.config.get('REFUND_POLICY_DAYS', 7) }} days of the original payment date.
+            Refund processing typically takes 5-7 business days to appear in your account.
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <h6><i class="fas fa-check-circle text-success me-2"></i>Refundable</h6>
+                <ul>
+                    <li>Technical issues during the session</li>
+                    <li>Tutor no-show or cancellation</li>
+                    <li>Platform-related problems</li>
+                    <li>Double charging errors</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6><i class="fas fa-times-circle text-danger me-2"></i>Non-Refundable</h6>
+                <ul>
+                    <li>Student no-show or late cancellation</li>
+                    <li>Completed sessions without issues</li>
+                    <li>Requests after the refund period</li>
+                    <li>Personal scheduling conflicts</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Refund Form -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Refund Request</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" id="refundForm">
+            {{ form.hidden_tag() }}
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    {{ form.refund_amount.label(class="form-label") }}
+                    <div class="input-group">
+                        <span class="input-group-text">{{ payment.currency }}</span>
+                        {{ form.refund_amount(class="form-control", max=payment.amount, step="0.01") }}
+                    </div>
+                    {% if form.refund_amount.errors %}
+                        <div class="text-danger">
+                            {% for error in form.refund_amount.errors %}
+                                <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <small class="form-text text-muted">Maximum refundable amount: {{ payment.currency }} {{ "%.2f"|format(payment.amount) }}</small>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Refund Type</label>
+                    <select class="form-select" id="refundType" onchange="updateRefundReason()">
+                        <option value="">Select a reason type</option>
+                        <option value="technical">Technical Issue</option>
+                        <option value="tutor">Tutor Issue</option>
+                        <option value="platform">Platform Issue</option>
+                        <option value="billing">Billing Error</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                {{ form.refund_reason.label(class="form-label") }}
+                {{ form.refund_reason(class="form-control", rows="5", placeholder="Please provide detailed reason for your refund request...") }}
+                {% if form.refund_reason.errors %}
+                    <div class="text-danger">
+                        {% for error in form.refund_reason.errors %}
+                            <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <small class="form-text text-muted">Please provide as much detail as possible to help us process your request quickly.</small>
+            </div>
+            
+            <div class="mb-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="confirmTerms" required>
+                    <label class="form-check-label" for="confirmTerms">
+                        I understand that refund processing may take 5-7 business days and that the final decision is at the discretion of TutorPro.
+                    </label>
+                </div>
+            </div>
+            
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Important:</strong> Once submitted, your refund request will be reviewed by our team. 
+                You will receive an email notification about the decision within 2-3 business days.
+            </div>
+            
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('payment.receipt', payment_id=payment.gateway_transaction_id) }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Cancel
+                </a>
+                <button type="submit" class="btn btn-warning" id="submitRefundBtn">
+                    <i class="fas fa-undo me-2"></i>Submit Refund Request
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Refund Status Timeline -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">Refund Process</h5>
+    </div>
+    <div class="card-body">
+        <div class="payment-timeline">
+            <div class="timeline-item">
+                <div class="timeline-date">Step 1</div>
+                <div class="timeline-content">
+                    <strong>Request Submitted</strong>
+                    <p class="mb-0">Your refund request is submitted and awaiting review.</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">Step 2</div>
+                <div class="timeline-content">
+                    <strong>Review Process</strong>
+                    <p class="mb-0">Our team reviews your request and makes a decision within 2-3 business days.</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">Step 3</div>
+                <div class="timeline-content">
+                    <strong>Decision Notification</strong>
+                    <p class="mb-0">You receive an email about the refund decision.</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">Step 4</div>
+                <div class="timeline-content">
+                    <strong>Refund Processing</strong>
+                    <p class="mb-0">If approved, refund is processed and appears in your account within 5-7 business days.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+function updateRefundReason() {
+    const refundType = document.getElementById('refundType').value;
+    const reasonField = document.querySelector('textarea[name="refund_reason"]');
+    
+    // Pre-fill reason based on type
+    const reasonTemplates = {
+        'technical': 'I experienced technical issues during the session (audio/video problems, connection drops, etc.)',
+        'tutor': 'The tutor did not show up for the scheduled session or cancelled at the last minute',
+        'platform': 'There was an issue with the TutorPro platform that affected my session',
+        'billing': 'I was charged incorrectly or multiple times for the same session',
+        'other': ''
+    };
+    
+    if (reasonTemplates[refundType]) {
+        reasonField.value = reasonTemplates[refundType];
+    }
+}
+
+document.getElementById('refundForm').addEventListener('submit', function(e) {
+    // Validate refund amount doesn't exceed original payment
+    const refundAmount = parseFloat(document.querySelector('input[name="refund_amount"]').value);
+    const originalAmount = parseFloat('{{ payment.amount }}');
+    
+    if (refundAmount > originalAmount) {
+        e.preventDefault();
+        alert('Refund amount cannot exceed the original payment amount.');
+        return false;
+    }
+    
+    // Validate terms confirmation
+    if (!document.getElementById('confirmTerms').checked) {
+        e.preventDefault();
+        alert('Please confirm that you understand the refund terms and conditions.');
+        return false;
+    }
+    
+    // Show loading state
+    const submitBtn = document.getElementById('submitRefundBtn');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+    submitBtn.disabled = true;
+    
+    // Submit form after a short delay
+    setTimeout(() => {
+        e.target.submit();
+    }, 1000);
+});
+
+// Auto-focus on refund amount field
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelector('input[name="refund_amount"]').focus();
+});
+</script>
+{% endblock %}

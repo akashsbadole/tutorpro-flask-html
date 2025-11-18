@@ -1,0 +1,193 @@
+{% extends "course/base.html" %}
+
+{% block title %}Create Syllabus{% endblock %}
+
+{% block course_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Create Syllabus Module</h1>
+    <a href="{{ url_for('course.course_syllabus', course_id=course.id) }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Syllabus
+    </a>
+</div>
+
+<!-- Course Info -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Course: {{ course.title }}</h5>
+        {% if course.description %}
+        <p class="card-text">{{ course.description }}</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Syllabus Form -->
+<div class="card">
+    <div class="card-header">
+        <h4 class="mb-0">Module Details</h4>
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="mb-3">
+                        {{ form.title.label(class="form-label") }}
+                        {{ form.title(class="form-control") }}
+                        {% if form.title.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.title.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.description.label(class="form-label") }}
+                        {{ form.description(class="form-control", rows="4") }}
+                        {% if form.description.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.description.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        {{ form.order_index.label(class="form-label") }}
+                        {{ form.order_index(class="form-control", type="number", min="1") }}
+                        {% if form.order_index.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.order_index.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.estimated_hours.label(class="form-label") }}
+                        <div class="input-group">
+                            {{ form.estimated_hours(class="form-control", type="number", step="0.5", min="0.5") }}
+                            <span class="input-group-text">hours</span>
+                        </div>
+                        {% if form.estimated_hours.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.estimated_hours.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <div class="form-check">
+                    {{ form.is_published(class="form-check-input") }}
+                    {{ form.is_published.label(class="form-check-label") }}
+                    <div class="form-text">Students can see this module immediately</div>
+                </div>
+            </div>
+            
+            <div class="d-grid gap-2 d-flex justify-content-end">
+                <a href="{{ url_for('course.course_syllabus', course_id=course.id) }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Module Creation Tips -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">Module Creation Tips</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6><i class="fas fa-book text-primary"></i> Content Structure</h6>
+                <ul>
+                    <li>Break down complex topics into manageable chunks</li>
+                    <li>Use clear, descriptive titles</li>
+                    <li>Include learning objectives</li>
+                    <li>Provide real-world examples</li>
+                    <li>Balance theory and practice</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6><i class="fas fa-clock text-info"></i> Time Management</h6>
+                <ul>
+                    <li>Estimate realistic completion times</li>
+                    <li>Consider different learning speeds</li>
+                    <li>Include time for practice</li>
+                    <li>Plan for review sessions</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-save form data
+        const form = document.querySelector('form');
+        const inputs = form.querySelectorAll('input, textarea, select');
+        
+        inputs.forEach(function(input) {
+            const saveKey = `syllabus_create_${input.name}`;
+            
+            // Load saved data
+            const savedData = localStorage.getItem(saveKey);
+            if (savedData && !input.value) {
+                if (input.type === 'checkbox') {
+                    input.checked = savedData === 'true';
+                } else {
+                    input.value = savedData;
+                }
+            }
+            
+            // Save data on change
+            input.addEventListener('change', function() {
+                const value = input.type === 'checkbox' ? input.checked.toString() : this.value;
+                localStorage.setItem(saveKey, value);
+            });
+        });
+        
+        // Character counter for text areas
+        const textAreas = form.querySelectorAll('textarea');
+        textAreas.forEach(function(textarea) {
+            const counter = document.createElement('div');
+            counter.className = 'form-text text-end';
+            counter.style.fontSize = '0.875rem';
+            
+            textarea.parentNode.insertBefore(counter, textarea.nextSibling);
+            
+            function updateCounter() {
+                const length = textarea.value.length;
+                counter.textContent = `${length} characters`;
+            }
+            
+            textarea.addEventListener('input', updateCounter);
+            updateCounter();
+        });
+        
+        // Clear saved data on form submission
+        form.addEventListener('submit', function() {
+            inputs.forEach(function(input) {
+                const saveKey = `syllabus_create_${input.name}`;
+                localStorage.removeItem(saveKey);
+            });
+        });
+    });
+</script>
+{% endblock %}

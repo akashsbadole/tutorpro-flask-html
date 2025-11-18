@@ -1,0 +1,240 @@
+{% extends "payment/base.html" %}
+
+{% block title %}Payment Receipt - TutorPro{% endblock %}
+
+{% block payment_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Payment Receipt</h2>
+    <div>
+        <button type="button" class="btn btn-outline-primary me-2" onclick="window.print()">
+            <i class="fas fa-print me-2"></i>Print
+        </button>
+        <button type="button" class="btn btn-outline-secondary" onclick="downloadReceipt()">
+            <i class="fas fa-download me-2"></i>Download
+        </button>
+    </div>
+</div>
+
+<!-- Receipt Header -->
+<div class="card mb-4">
+    <div class="card-body text-center">
+        <h3 class="mb-3">Payment Receipt</h3>
+        <p class="text-muted mb-1">TutorPro Educational Services</p>
+        <p class="text-muted mb-0">Receipt #{{ payment.gateway_transaction_id }}</p>
+    </div>
+</div>
+
+<!-- Payment Details -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Payment Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <p class="text-muted mb-1">Transaction ID</p>
+                    <p class="fw-bold font-monospace">{{ payment.transaction_id }}</p>
+                </div>
+                <div class="mb-3">
+                    <p class="text-muted mb-1">Payment Method</p>
+                    <p class="fw-bold">
+                        {% if payment.payment_method %}
+                            {{ payment.payment_method.payment_type }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="mb-3">
+                    <p class="text-muted mb-1">Payment Gateway</p>
+                    <p class="fw-bold">{{ payment.payment_gateway }}</p>
+                </div>
+                <div class="mb-3">
+                    <p class="text-muted mb-1">Payment Date</p>
+                    <p class="fw-bold">{{ payment.processed_at.strftime('%d %B %Y, %I:%M %p') if payment.processed_at else payment.created_at.strftime('%d %B %Y, %I:%M %p') }}</p>
+                </div>
+                <div>
+                    <p class="text-muted mb-1">Status</p>
+                    <span class="payment-status status-{{ payment.status.lower() }}">
+                        {{ payment.status }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Booking Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <p class="text-muted mb-1">Tutor</p>
+                    <p class="fw-bold">{{ payment.booking.tutor.user.first_name }} {{ payment.booking.tutor.user.last_name }}</p>
+                </div>
+                <div class="mb-3">
+                    <p class="text-muted mb-1">Subject</p>
+                    <p class="fw-bold">{{ payment.booking.course.title if payment.booking.course else 'General Tutoring' }}</p>
+                </div>
+                <div class="mb-3">
+                    <p class="text-muted mb-1">Session Date</p>
+                    <p class="fw-bold">{{ payment.booking.scheduled_time.strftime('%d %B %Y') }}</p>
+                </div>
+                <div class="mb-3">
+                    <p class="text-muted mb-1">Session Time</p>
+                    <p class="fw-bold">{{ payment.booking.scheduled_time.strftime('%I:%M %p') }}</p>
+                </div>
+                <div>
+                    <p class="text-muted mb-1">Duration</p>
+                    <p class="fw-bold">{{ payment.booking.duration_minutes }} minutes</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Summary -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Payment Summary</h5>
+    </div>
+    <div class="card-body">
+        <div class="payment-summary">
+            <div class="summary-row">
+                <span>Session Fee</span>
+                <span>{{ payment.currency }} {{ "%.2f"|format(payment.amount) }}</span>
+            </div>
+            <div class="summary-row">
+                <span>Platform Fee</span>
+                <span>{{ payment.currency }} 0.00</span>
+            </div>
+            <div class="summary-row">
+                <span>Taxes</span>
+                <span>{{ payment.currency }} 0.00</span>
+            </div>
+            <div class="summary-row">
+                <span class="fw-bold">Total Paid</span>
+                <span class="fw-bold text-primary">{{ payment.currency }} {{ "%.2f"|format(payment.amount) }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Timeline -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Payment Timeline</h5>
+    </div>
+    <div class="card-body">
+        <div class="payment-timeline">
+            <div class="timeline-item">
+                <div class="timeline-date">{{ payment.created_at.strftime('%d %b %Y, %I:%M %p') }}</div>
+                <div class="timeline-content">
+                    <strong>Payment Initiated</strong>
+                    <p class="mb-0">Payment process started for booking #{{ payment.booking_id }}</p>
+                </div>
+            </div>
+            
+            {% if payment.processed_at %}
+            <div class="timeline-item">
+                <div class="timeline-date">{{ payment.processed_at.strftime('%d %b %Y, %I:%M %p') }}</div>
+                <div class="timeline-content">
+                    <strong>Payment Completed</strong>
+                    <p class="mb-0">Payment successfully processed via {{ payment.payment_gateway }}</p>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% for transaction in payment.transactions %}
+            <div class="timeline-item">
+                <div class="timeline-date">{{ transaction.created_at.strftime('%d %b %Y, %I:%M %p') }}</div>
+                <div class="timeline-content">
+                    <strong>{{ transaction.transaction_type }}</strong>
+                    <p class="mb-0">{{ transaction.description }}</p>
+                    {% if transaction.completed_at %}
+                    <small class="text-muted">Completed: {{ transaction.completed_at.strftime('%d %b %Y, %I:%M %p') }}</small>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Contact Information -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Need Help?</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6><i class="fas fa-envelope me-2"></i>Email Support</h6>
+                <p>support@tutorpro.com</p>
+                <p class="text-muted">We typically respond within 24 hours</p>
+            </div>
+            <div class="col-md-6">
+                <h6><i class="fas fa-phone me-2"></i>Phone Support</h6>
+                <p>+1 (555) 123-4567</p>
+                <p class="text-muted">Available Mon-Fri, 9AM-6PM EST</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+function downloadReceipt() {
+    // Create a temporary element to hold the receipt content
+    const element = document.createElement('div');
+    element.innerHTML = document.querySelector('.container').innerHTML;
+    
+    // Add print-specific styles
+    const style = document.createElement('style');
+    style.innerHTML = `
+        @media print {
+            body { font-family: Arial, sans-serif; }
+            .card { border: 1px solid #ddd; margin-bottom: 20px; }
+            .card-header { background-color: #f8f9fa; padding: 10px; font-weight: bold; }
+            .card-body { padding: 15px; }
+            .btn, .dropdown { display: none; }
+        }
+    `;
+    element.appendChild(style);
+    
+    // Create a new window for printing
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Payment Receipt - {{ payment.gateway_transaction_id }}</title>
+            ${style.outerHTML}
+        </head>
+        <body>
+            ${element.innerHTML}
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+    
+    // Wait for the content to load before printing
+    printWindow.onload = function() {
+        printWindow.print();
+    };
+}
+
+// Auto-print if URL parameter is present
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('print') === 'true') {
+        setTimeout(() => {
+            window.print();
+        }, 1000);
+    }
+});
+</script>
+{% endblock %}

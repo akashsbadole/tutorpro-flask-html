@@ -1,0 +1,557 @@
+{% extends "course/base.html" %}
+
+{% block title %}Course Enrollments{% endblock %}
+
+{% block course_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Course Enrollments</h1>
+    <div class="d-flex gap-2">
+        {% if current_user.is_authenticated and (current_user.is_admin or current_user.is_tutor) %}
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#enrollStudentModal">
+            <i class="fas fa-user-plus"></i> Enroll Student
+        </button>
+        {% endif %}
+        <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#bulkActionsModal">
+            <i class="fas fa-tasks"></i> Bulk Actions
+        </button>
+    </div>
+</div>
+
+<!-- Course Info -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Course: {{ course.title }}</h5>
+        {% if course.description %}
+        <p class="card-text">{{ course.description }}</p>
+        {% endif %}
+        <div class="row">
+            <div class="col-md-3">
+                <strong>Capacity:</strong> {{ course.max_students or 'Unlimited' }}
+            </div>
+            <div class="col-md-3">
+                <strong>Enrolled:</strong> {{ enrollments|length }}
+            </div>
+            <div class="col-md-3">
+                <strong>Available:</strong> {{ (course.max_students - enrollments|length) if course.max_students else 'Unlimited' }}
+            </div>
+            <div class="col-md-3">
+                <strong>Price:</strong> ${{ course.price if course.price else '0.00' }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enrollment Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h4 class="card-title">{{ enrollments|length }}</h4>
+                <p class="card-text">Total Enrolled</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h4 class="card-title">{{ active_enrollments|length }}</h4>
+                <p class="card-text">Active Students</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h4 class="card-title">{{ pending_enrollments|length }}</h4>
+                <p class="card-text">Pending</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h4 class="card-title">{{ completed_enrollments|length }}</h4>
+                <p class="card-text">Completed</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search and Filter -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-4">
+                <input type="text" class="form-control" name="search" placeholder="Search by name or email..." value="{{ request.args.get('search', '') }}">
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" name="status">
+                    <option value="">All Status</option>
+                    <option value="active" {% if request.args.get('status') == 'active' %}selected{% endif %}>Active</option>
+                    <option value="pending" {% if request.args.get('status') == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="completed" {% if request.args.get('status') == 'completed' %}selected{% endif %}>Completed</option>
+                    <option value="suspended" {% if request.args.get('status') == 'suspended' %}selected{% endif %}>Suspended</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" name="progress">
+                    <option value="">All Progress</option>
+                    <option value="not_started" {% if request.args.get('progress') == 'not_started' %}selected{% endif %}>Not Started</option>
+                    <option value="in_progress" {% if request.args.get('progress') == 'in_progress' %}selected{% endif %}>In Progress</option>
+                    <option value="near_completion" {% if request.args.get('progress') == 'near_completion' %}selected{% endif %}>Near Completion</option>
+                    <option value="completed" {% if request.args.get('progress') == 'completed' %}selected{% endif %}>Completed</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Enrollments Table -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Student Enrollments</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="selectAll">
+                            </div>
+                        </th>
+                        <th>Student</th>
+                        <th>Enrollment Date</th>
+                        <th>Status</th>
+                        <th>Progress</th>
+                        <th>Last Activity</th>
+                        <th>Grade</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for enrollment in enrollments %}
+                    <tr>
+                        <td>
+                            <div class="form-check">
+                                <input class="form-check-input enrollment-checkbox" type="checkbox" value="{{ enrollment.id }}">
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <img src="{{ enrollment.student.profile_image or url_for('static', filename='images/default-avatar.png') }}" 
+                                     alt="{{ enrollment.student.full_name }}" 
+                                     class="rounded-circle me-2" 
+                                     style="width: 32px; height: 32px; object-fit: cover;">
+                                <div>
+                                    <div class="fw-bold">{{ enrollment.student.full_name }}</div>
+                                    <small class="text-muted">{{ enrollment.student.email }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ enrollment.enrolled_at.strftime('%b %d, %Y') if enrollment.enrolled_at else 'N/A' }}</td>
+                        <td>
+                            <span class="badge bg-{{ 
+                                'success' if enrollment.status == 'active' else 
+                                'warning' if enrollment.status == 'pending' else 
+                                'info' if enrollment.status == 'completed' else 
+                                'danger' if enrollment.status == 'suspended' else 'secondary' 
+                            }}">
+                                {{ enrollment.status.title() }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="progress me-2" style="width: 100px; height: 8px;">
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: {{ enrollment.progress_percentage or 0 }}%"
+                                         aria-valuenow="{{ enrollment.progress_percentage or 0 }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                    </div>
+                                </div>
+                                <small>{{ "%.0f"|format(enrollment.progress_percentage or 0) }}%</small>
+                            </div>
+                        </td>
+                        <td>{{ enrollment.last_activity.strftime('%b %d, %Y') if enrollment.last_activity else 'Never' }}</td>
+                        <td>
+                            {% if enrollment.final_grade %}
+                            <span class="badge bg-primary">{{ "%.1f"|format(enrollment.final_grade) }}%</span>
+                            {% else %}
+                            <span class="text-muted">Not graded</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary" onclick="viewStudentProgress({{ enrollment.id }})">
+                                    <i class="fas fa-chart-line"></i>
+                                </button>
+                                <button class="btn btn-outline-info" onclick="messageStudent({{ enrollment.student.id }})">
+                                    <i class="fas fa-envelope"></i>
+                                </button>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="#" onclick="editEnrollment({{ enrollment.id }})">Edit Enrollment</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="viewGrades({{ enrollment.id }})">View Grades</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="resetProgress({{ enrollment.id }})">Reset Progress</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        {% if enrollment.status == 'active' %}
+                                        <li><a class="dropdown-item text-warning" href="#" onclick="suspendEnrollment({{ enrollment.id }})">Suspend</a></li>
+                                        {% elif enrollment.status == 'suspended' %}
+                                        <li><a class="dropdown-item text-success" href="#" onclick="reactivateEnrollment({{ enrollment.id }})">Reactivate</a></li>
+                                        {% endif %}
+                                        <li><a class="dropdown-item text-danger" href="#" onclick="unenrollStudent({{ enrollment.id }})">Unenroll</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if enrollments.pages > 1 %}
+        <nav aria-label="Enrollments pagination">
+            <ul class="pagination justify-content-center">
+                {% if enrollments.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('course.enrollments', course_id=course.id, page=enrollments.prev_num, **request.args) }}">Previous</a>
+                </li>
+                {% endif %}
+                
+                {% for page_num in enrollments.iter_pages() %}
+                {% if page_num %}
+                <li class="page-item {% if page_num == enrollments.page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('course.enrollments', course_id=course.id, page=page_num, **request.args) }}">{{ page_num }}</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                </li>
+                {% endif %}
+                {% endfor %}
+                
+                {% if enrollments.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('course.enrollments', course_id=course.id, page=enrollments.next_num, **request.args) }}">Next</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+<!-- Enroll Student Modal -->
+<div class="modal fade" id="enrollStudentModal" tabindex="-1" aria-labelledby="enrollStudentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="enrollStudentModalLabel">Enroll Student</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="enrollStudentForm">
+                    <div class="mb-3">
+                        <label for="studentSearch" class="form-label">Search Students</label>
+                        <input type="text" class="form-control" id="studentSearch" placeholder="Type name or email to search...">
+                        <div id="studentSearchResults" class="mt-2"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="enrollmentType" class="form-label">Enrollment Type</label>
+                        <select class="form-select" id="enrollmentType">
+                            <option value="regular">Regular Enrollment</option>
+                            <option value="audit">Audit (No Grade)</option>
+                            <option value="complimentary">Complimentary</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="enrollmentNotes" class="form-label">Notes (Optional)</label>
+                        <textarea class="form-control" id="enrollmentNotes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="enrollSelectedStudent()">Enroll Student</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Actions Modal -->
+<div class="modal fade" id="bulkActionsModal" tabindex="-1" aria-labelledby="bulkActionsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bulkActionsModalLabel">Bulk Actions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Selected <span id="selectedCount">0</span> students</p>
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-primary" onclick="bulkMessage()">
+                        <i class="fas fa-envelope"></i> Send Message
+                    </button>
+                    <button type="button" class="btn btn-outline-warning" onclick="bulkSuspend()">
+                        <i class="fas fa-pause"></i> Suspend
+                    </button>
+                    <button type="button" class="btn btn-outline-success" onclick="bulkReactivate()">
+                        <i class="fas fa-play"></i> Reactivate
+                    </button>
+                    <button type="button" class="btn btn-outline-info" onclick="bulkResetProgress()">
+                        <i class="fas fa-redo"></i> Reset Progress
+                    </button>
+                    <button type="button" class="btn btn-outline-danger" onclick="bulkUnenroll()">
+                        <i class="fas fa-user-times"></i> Unenroll
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Select all functionality
+        const selectAllCheckbox = document.getElementById('selectAll');
+        const enrollmentCheckboxes = document.querySelectorAll('.enrollment-checkbox');
+        
+        selectAllCheckbox.addEventListener('change', function() {
+            enrollmentCheckboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateSelectedCount();
+        });
+        
+        enrollmentCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                updateSelectedCount();
+                
+                // Update select all checkbox state
+                const allChecked = Array.from(enrollmentCheckboxes).every(cb => cb.checked);
+                const someChecked = Array.from(enrollmentCheckboxes).some(cb => cb.checked);
+                
+                selectAllCheckbox.checked = allChecked;
+                selectAllCheckbox.indeterminate = someChecked && !allChecked;
+            });
+        });
+        
+        function updateSelectedCount() {
+            const selectedCount = document.querySelectorAll('.enrollment-checkbox:checked').length;
+            document.getElementById('selectedCount').textContent = selectedCount;
+        }
+        
+        // Student search functionality
+        const studentSearch = document.getElementById('studentSearch');
+        const studentSearchResults = document.getElementById('studentSearchResults');
+        let selectedStudentId = null;
+        
+        studentSearch.addEventListener('input', function() {
+            const query = this.value.trim();
+            
+            if (query.length < 2) {
+                studentSearchResults.innerHTML = '';
+                selectedStudentId = null;
+                return;
+            }
+            
+            // In a real implementation, this would make an AJAX request to search students
+            // For demo purposes, we'll show mock results
+            setTimeout(() => {
+                studentSearchResults.innerHTML = `
+                    <div class="list-group">
+                        <a href="#" class="list-group-item list-group-item-action" onclick="selectStudent(1, 'John Doe', 'john@example.com')">
+                            <div class="d-flex align-items-center">
+                                <img src="${window.location.origin}/static/images/default-avatar.png" alt="John Doe" class="rounded-circle me-2" style="width: 32px; height: 32px; object-fit: cover;">
+                                <div>
+                                    <div class="fw-bold">John Doe</div>
+                                    <small class="text-muted">john@example.com</small>
+                                </div>
+                            </div>
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action" onclick="selectStudent(2, 'Jane Smith', 'jane@example.com')">
+                            <div class="d-flex align-items-center">
+                                <img src="${window.location.origin}/static/images/default-avatar.png" alt="Jane Smith" class="rounded-circle me-2" style="width: 32px; height: 32px; object-fit: cover;">
+                                <div>
+                                    <div class="fw-bold">Jane Smith</div>
+                                    <small class="text-muted">jane@example.com</small>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                `;
+            }, 300);
+        });
+        
+        window.selectStudent = function(id, name, email) {
+            selectedStudentId = id;
+            studentSearch.value = `${name} (${email})`;
+            studentSearchResults.innerHTML = '';
+        };
+        
+        window.enrollSelectedStudent = function() {
+            if (!selectedStudentId) {
+                alert('Please select a student to enroll');
+                return;
+            }
+            
+            const enrollmentType = document.getElementById('enrollmentType').value;
+            const notes = document.getElementById('enrollmentNotes').value;
+            
+            // In a real implementation, this would make an AJAX request to enroll the student
+            console.log('Enrolling student:', selectedStudentId, enrollmentType, notes);
+            alert('Student enrolled successfully!');
+            
+            // Close modal and reset form
+            const modal = bootstrap.Modal.getInstance(document.getElementById('enrollStudentModal'));
+            modal.hide();
+            document.getElementById('enrollStudentForm').reset();
+            selectedStudentId = null;
+            
+            // Reload page to show new enrollment
+            window.location.reload();
+        };
+        
+        // Action functions
+        window.viewStudentProgress = function(enrollmentId) {
+            // In a real implementation, this would navigate to the student's progress page
+            console.log('Viewing progress for enrollment:', enrollmentId);
+            alert('Student progress viewer would open here');
+        };
+        
+        window.messageStudent = function(studentId) {
+            // In a real implementation, this would open a messaging interface
+            console.log('Messaging student:', studentId);
+            alert('Message composer would open here');
+        };
+        
+        window.editEnrollment = function(enrollmentId) {
+            // In a real implementation, this would open an enrollment edit form
+            console.log('Editing enrollment:', enrollmentId);
+            alert('Enrollment editor would open here');
+        };
+        
+        window.viewGrades = function(enrollmentId) {
+            // In a real implementation, this would show the student's grades
+            console.log('Viewing grades for enrollment:', enrollmentId);
+            alert('Grade viewer would open here');
+        };
+        
+        window.resetProgress = function(enrollmentId) {
+            if (confirm('Are you sure you want to reset this student\'s progress? This action cannot be undone.')) {
+                // In a real implementation, this would make an AJAX request to reset progress
+                console.log('Resetting progress for enrollment:', enrollmentId);
+                alert('Progress reset successfully!');
+                window.location.reload();
+            }
+        };
+        
+        window.suspendEnrollment = function(enrollmentId) {
+            if (confirm('Are you sure you want to suspend this enrollment?')) {
+                // In a real implementation, this would make an AJAX request to suspend
+                console.log('Suspending enrollment:', enrollmentId);
+                alert('Enrollment suspended successfully!');
+                window.location.reload();
+            }
+        };
+        
+        window.reactivateEnrollment = function(enrollmentId) {
+            if (confirm('Are you sure you want to reactivate this enrollment?')) {
+                // In a real implementation, this would make an AJAX request to reactivate
+                console.log('Reactivating enrollment:', enrollmentId);
+                alert('Enrollment reactivated successfully!');
+                window.location.reload();
+            }
+        };
+        
+        window.unenrollStudent = function(enrollmentId) {
+            if (confirm('Are you sure you want to unenroll this student? This action cannot be undone.')) {
+                // In a real implementation, this would make an AJAX request to unenroll
+                console.log('Unenrolling student:', enrollmentId);
+                alert('Student unenrolled successfully!');
+                window.location.reload();
+            }
+        };
+        
+        // Bulk action functions
+        window.bulkMessage = function() {
+            const selectedIds = Array.from(document.querySelectorAll('.enrollment-checkbox:checked')).map(cb => cb.value);
+            if (selectedIds.length === 0) {
+                alert('Please select at least one student');
+                return;
+            }
+            console.log('Bulk messaging students:', selectedIds);
+            alert('Bulk message composer would open here');
+        };
+        
+        window.bulkSuspend = function() {
+            const selectedIds = Array.from(document.querySelectorAll('.enrollment-checkbox:checked')).map(cb => cb.value);
+            if (selectedIds.length === 0) {
+                alert('Please select at least one student');
+                return;
+            }
+            if (confirm(`Are you sure you want to suspend ${selectedIds.length} student(s)?`)) {
+                console.log('Bulk suspending students:', selectedIds);
+                alert('Students suspended successfully!');
+                window.location.reload();
+            }
+        };
+        
+        window.bulkReactivate = function() {
+            const selectedIds = Array.from(document.querySelectorAll('.enrollment-checkbox:checked')).map(cb => cb.value);
+            if (selectedIds.length === 0) {
+                alert('Please select at least one student');
+                return;
+            }
+            if (confirm(`Are you sure you want to reactivate ${selectedIds.length} student(s)?`)) {
+                console.log('Bulk reactivating students:', selectedIds);
+                alert('Students reactivated successfully!');
+                window.location.reload();
+            }
+        };
+        
+        window.bulkResetProgress = function() {
+            const selectedIds = Array.from(document.querySelectorAll('.enrollment-checkbox:checked')).map(cb => cb.value);
+            if (selectedIds.length === 0) {
+                alert('Please select at least one student');
+                return;
+            }
+            if (confirm(`Are you sure you want to reset progress for ${selectedIds.length} student(s)? This action cannot be undone.`)) {
+                console.log('Bulk resetting progress for students:', selectedIds);
+                alert('Progress reset successfully!');
+                window.location.reload();
+            }
+        };
+        
+        window.bulkUnenroll = function() {
+            const selectedIds = Array.from(document.querySelectorAll('.enrollment-checkbox:checked')).map(cb => cb.value);
+            if (selectedIds.length === 0) {
+                alert('Please select at least one student');
+                return;
+            }
+            if (confirm(`Are you sure you want to unenroll ${selectedIds.length} student(s)? This action cannot be undone.`)) {
+                console.log('Bulk unenrolling students:', selectedIds);
+                alert('Students unenrolled successfully!');
+                window.location.reload();
+            }
+        };
+    });
+</script>
+{% endblock %}

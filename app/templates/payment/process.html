@@ -1,0 +1,258 @@
+{% extends "payment/base.html" %}
+
+{% block title %}Process Payment - TutorPro{% endblock %}
+
+{% block payment_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Process Payment</h2>
+    <a href="{{ url_for('payment.payment_history') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Payments
+    </a>
+</div>
+
+<!-- Booking Details -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Booking Details</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Tutor:</strong> {{ booking.tutor.user.first_name }} {{ booking.tutor.user.last_name }}</p>
+                <p><strong>Subject:</strong> {{ booking.course.title if booking.course else 'General Tutoring' }}</p>
+                <p><strong>Duration:</strong> {{ booking.duration_minutes }} minutes</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Date:</strong> {{ booking.scheduled_time.strftime('%d %B %Y') }}</p>
+                <p><strong>Time:</strong> {{ booking.scheduled_time.strftime('%I:%M %p') }}</p>
+                <p><strong>Amount Due:</strong> <span class="text-primary fs-5">{{ booking.currency }} {{ "%.2f"|format(booking.amount) }}</span></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Method Selection -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Select Payment Method</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" id="paymentMethodForm">
+            {{ form.hidden_tag() }}
+            
+            <div class="mb-4">
+                <label class="form-label">Available Payment Methods</label>
+                <div class="row">
+                    {% for method in payment_methods %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card payment-method-card h-100 {{ 'border-primary' if method.is_default else '' }}" 
+                             onclick="selectPaymentMethod({{ method.id }})" style="cursor: pointer;">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="payment-method-icon 
+                                        {{ 'upi-icon' if method.payment_type == 'UPI' else '' }}
+                                        {{ 'paypal-icon' if method.payment_type == 'PayPal' else '' }}
+                                        {{ 'card-icon' if method.payment_type in ['Credit Card', 'Debit Card'] else '' }}">
+                                        {% if method.payment_type == 'UPI' %}
+                                            <i class="fas fa-mobile-alt"></i>
+                                        {% elif method.payment_type == 'PayPal' %}
+                                            <i class="fab fa-paypal"></i>
+                                        {% else %}
+                                            <i class="fas fa-credit-card"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="card-subtitle mb-1">{{ method.payment_type }}</h6>
+                                        {% if method.payment_type == 'UPI' %}
+                                            <p class="card-text mb-0">{{ method.method_details }}</p>
+                                        {% elif method.payment_type == 'PayPal' %}
+                                            <p class="card-text mb-0">{{ method.method_details }}</p>
+                                        {% else %}
+                                            <p class="card-text mb-0">**** **** **** {{ method.method_details[-4:] }}</p>
+                                        {% endif %}
+                                        {% if method.is_default %}
+                                        <span class="badge bg-primary">Default</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="payment_method_id" 
+                                               value="{{ method.id }}" id="method_{{ method.id }}"
+                                               {{ 'checked' if method.is_default or loop.first else '' }}>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                {% if not payment_methods %}
+                <div class="text-center py-4">
+                    <i class="fas fa-credit-card fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No payment methods</h5>
+                    <p class="text-muted">Please add a payment method to proceed with payment.</p>
+                    <a href="{{ url_for('payment.payment_methods') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Add Payment Method
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            
+            {% if payment_methods %}
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    {{ form.amount.label(class="form-label") }}
+                    <div class="input-group">
+                        <span class="input-group-text">{{ booking.currency }}</span>
+                        {{ form.amount(class="form-control", value=booking.amount, readonly=true) }}
+                    </div>
+                    {% if form.amount.errors %}
+                        <div class="text-danger">
+                            {% for error in form.amount.errors %}
+                                <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    {{ form.currency.label(class="form-label") }}
+                    {{ form.currency(class="form-select", value=booking.currency, readonly=true) }}
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                {{ form.description.label(class="form-label") }}
+                {{ form.description(class="form-control", rows="3", placeholder="Optional payment description...") }}
+                {% if form.description.errors %}
+                    <div class="text-danger">
+                        {% for error in form.description.errors %}
+                            <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Payment Information:</strong> 
+                Your payment will be processed securely through the selected payment method. 
+                You will receive a confirmation email once the payment is completed.
+            </div>
+            
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('payment.payment_history') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Cancel
+                </a>
+                <button type="submit" class="btn btn-primary" id="proceedPaymentBtn" disabled>
+                    <i class="fas fa-lock me-2"></i>Proceed to Payment
+                </button>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<!-- Payment Method Information -->
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="fas fa-mobile-alt fa-2x text-success mb-3"></i>
+                <h6>UPI Payments</h6>
+                <p class="small text-muted">Fast and secure payments using UPI apps like PhonePe, Google Pay, Paytm, etc.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="fab fa-paypal fa-2x text-info mb-3"></i>
+                <h6>PayPal</h6>
+                <p class="small text-muted">Pay with PayPal using your balance, linked bank account, or cards.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="fas fa-credit-card fa-2x text-warning mb-3"></i>
+                <h6>Credit/Debit Cards</h6>
+                <p class="small text-muted">Direct payment using Visa, Mastercard, American Express, and more.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+function selectPaymentMethod(methodId) {
+    // Select the radio button for the clicked method
+    const radioBtn = document.getElementById(`method_${methodId}`);
+    if (radioBtn) {
+        radioBtn.checked = true;
+        
+        // Enable the proceed button
+        document.getElementById('proceedPaymentBtn').disabled = false;
+        
+        // Update visual selection
+        document.querySelectorAll('.payment-method-card').forEach(card => {
+            card.classList.remove('border-primary', 'border-3');
+        });
+        
+        const selectedCard = radioBtn.closest('.payment-method-card');
+        selectedCard.classList.add('border-primary', 'border-3');
+    }
+}
+
+document.getElementById('paymentMethodForm').addEventListener('submit', function(e) {
+    // Validate payment method selection
+    const selectedMethod = document.querySelector('input[name="payment_method_id"]:checked');
+    if (!selectedMethod) {
+        e.preventDefault();
+        alert('Please select a payment method to proceed.');
+        return false;
+    }
+    
+    // Show loading state
+    const submitBtn = document.getElementById('proceedPaymentBtn');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+    submitBtn.disabled = true;
+    
+    // Submit form after a short delay
+    setTimeout(() => {
+        e.target.submit();
+    }, 1000);
+});
+
+// Auto-select default payment method
+document.addEventListener('DOMContentLoaded', function() {
+    const defaultMethod = document.querySelector('input[name="payment_method_id"]:checked');
+    if (defaultMethod) {
+        const card = defaultMethod.closest('.payment-method-card');
+        card.classList.add('border-primary', 'border-3');
+        document.getElementById('proceedPaymentBtn').disabled = false;
+    }
+});
+
+// Add hover effect to payment method cards
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.payment-method-card');
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            if (!this.querySelector('input[name="payment_method_id"]').checked) {
+                this.classList.add('shadow');
+            }
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            if (!this.querySelector('input[name="payment_method_id"]').checked) {
+                this.classList.remove('shadow');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,242 @@
+{% extends "meeting/base.html" %}
+
+{% block title %}My Meetings - TutorPro{% endblock %}
+
+{% block meeting_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>My Meetings</h1>
+    <div>
+        <a href="{{ url_for('meeting.create') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Create Meeting
+        </a>
+        <a href="{{ url_for('meeting.calendar') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-calendar me-2"></i>Calendar View
+        </a>
+    </div>
+</div>
+
+<!-- Status Filter -->
+<div class="mb-4">
+    <div class="btn-group" role="group">
+        <a href="{{ url_for('meeting.index') }}" class="btn btn-outline-primary {{ 'active' if not status }}">
+            All
+        </a>
+        <a href="{{ url_for('meeting.index', status='Scheduled') }}" class="btn btn-outline-primary {{ 'active' if status == 'Scheduled' }}">
+            Scheduled
+        </a>
+        <a href="{{ url_for('meeting.index', status='Ongoing') }}" class="btn btn-outline-primary {{ 'active' if status == 'Ongoing' }}">
+            Ongoing
+        </a>
+        <a href="{{ url_for('meeting.index', status='Completed') }}" class="btn btn-outline-primary {{ 'active' if status == 'Completed' }}">
+            Completed
+        </a>
+        <a href="{{ url_for('meeting.index', status='Cancelled') }}" class="btn btn-outline-primary {{ 'active' if status == 'Cancelled' }}">
+            Cancelled
+        </a>
+    </div>
+</div>
+
+<!-- Meetings List -->
+{% if meetings.items %}
+    <div class="row">
+        {% for meeting in meetings.items %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="meeting-card">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <div class="meeting-title">{{ meeting.title }}</div>
+                        <div class="meeting-time">
+                            <i class="fas fa-calendar me-1"></i>
+                            {{ meeting.scheduled_time.strftime('%B %d, %Y at %I:%M %p') }}
+                        </div>
+                        <div class="meeting-time">
+                            <i class="fas fa-clock me-1"></i>
+                            {{ meeting.duration_minutes }} minutes
+                        </div>
+                    </div>
+                    <div>
+                        <span class="meeting-status status-{{ meeting.status.lower() }}">
+                            {{ meeting.status }}
+                        </span>
+                        <span class="platform-badge platform-{{ meeting.platform.lower().replace(' ', '-') }}">
+                            {{ meeting.platform }}
+                        </span>
+                    </div>
+                </div>
+                
+                {% if meeting.description %}
+                <div class="mb-3">
+                    <p class="text-muted small mb-0">{{ meeting.description[:100] }}{% if meeting.description|length > 100 %}...{% endif %}</p>
+                </div>
+                {% endif %}
+                
+                <div class="meeting-participants mb-3">
+                    <i class="fas fa-users me-1"></i>
+                    {{ meeting.participants|length }} participant{{ 's' if meeting.participants|length != 1 else '' }}
+                </div>
+                
+                <div class="meeting-actions">
+                    {% if meeting.status == 'Scheduled' or meeting.status == 'Ongoing' %}
+                        <a href="{{ url_for('meeting.join', id=meeting.id) }}" class="btn-join">
+                            <i class="fas fa-video me-1"></i>Join
+                        </a>
+                    {% endif %}
+                    
+                    {% if meeting.host_id == current_user.id or current_user.is_admin() %}
+                        <a href="{{ url_for('meeting.edit', id=meeting.id) }}" class="btn-edit">
+                            <i class="fas fa-edit me-1"></i>Edit
+                        </a>
+                    {% endif %}
+                    
+                    <a href="{{ url_for('meeting.details', id=meeting.id) }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-info-circle me-1"></i>Details
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if meetings.pages > 1 %}
+    <nav aria-label="Meetings pagination">
+        <ul class="pagination justify-content-center">
+            {% if meetings.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('meeting.index', page=meetings.prev_num, status=status) }}">Previous</a>
+            </li>
+            {% endif %}
+            
+            {% for page_num in meetings.iter_pages() %}
+                {% if page_num %}
+                    {% if page_num != meetings.page %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('meeting.index', page=page_num, status=status) }}">{{ page_num }}</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ page_num }}</span>
+                    </li>
+                    {% endif %}
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if meetings.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('meeting.index', page=meetings.next_num, status=status) }}">Next</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+{% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-video fa-3x text-muted mb-3"></i>
+        <h3 class="text-muted">No meetings found</h3>
+        <p class="text-muted">
+            {% if status %}
+                No {{ status.lower() }} meetings found. 
+                <a href="{{ url_for('meeting.index') }}">View all meetings</a>
+            {% else %}
+                You haven't created any meetings yet. 
+                <a href="{{ url_for('meeting.create') }}">Create your first meeting</a>
+            {% endif %}
+        </p>
+    </div>
+{% endif %}
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-plus fa-2x text-primary mb-3"></i>
+                <h5 class="card-title">Create Meeting</h5>
+                <p class="card-text">Schedule a new video conference with participants</p>
+                <a href="{{ url_for('meeting.create') }}" class="btn btn-primary">Create Now</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-calendar-alt fa-2x text-info mb-3"></i>
+                <h5 class="card-title">View Calendar</h5>
+                <p class="card-text">See all your meetings in calendar view</p>
+                <a href="{{ url_for('meeting.calendar') }}" class="btn btn-info">View Calendar</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-file-alt fa-2x text-success mb-3"></i>
+                <h5 class="card-title">Use Template</h5>
+                <p class="card-text">Create meetings from predefined templates</p>
+                <a href="{{ url_for('meeting.templates') }}" class="btn btn-success">View Templates</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Auto-refresh for ongoing meetings
+    let refreshInterval;
+    
+    function startAutoRefresh() {
+        refreshInterval = setInterval(function() {
+            // Check for meeting status updates
+            fetch('{{ url_for("meeting.index") }}', {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.text())
+            .then(html => {
+                // Update meeting cards if status changed
+                // This is a simplified version - in production, you'd want more sophisticated diffing
+            })
+            .catch(error => console.error('Error refreshing meetings:', error));
+        }, 30000); // Refresh every 30 seconds
+    }
+    
+    function stopAutoRefresh() {
+        if (refreshInterval) {
+            clearInterval(refreshInterval);
+        }
+    }
+    
+    // Start auto-refresh when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        startAutoRefresh();
+    });
+    
+    // Stop auto-refresh when page is hidden
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            stopAutoRefresh();
+        } else {
+            startAutoRefresh();
+        }
+    });
+    
+    // Join meeting with confirmation
+    document.querySelectorAll('.btn-join').forEach(function(button) {
+        button.addEventListener('click', function(e) {
+            const meetingStatus = this.closest('.meeting-card').querySelector('.meeting-status').textContent.trim();
+            
+            if (meetingStatus === 'Ongoing') {
+                if (!confirm('This meeting is already in progress. Are you sure you want to join?')) {
+                    e.preventDefault();
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,540 @@
+{% extends "tutor/base.html" %}
+
+{% block title %}Meeting Link - TutorPro{% endblock %}
+
+{% block head %}
+<style>
+    .meeting-link-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .meeting-link-form {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .section-title {
+        color: #495057;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .booking-info {
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .booking-detail {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .booking-detail:last-child {
+        margin-bottom: 0;
+    }
+    
+    .booking-icon {
+        width: 40px;
+        height: 40px;
+        background: #667eea;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        flex-shrink: 0;
+    }
+    
+    .booking-content {
+        flex: 1;
+    }
+    
+    .booking-label {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-bottom: 0.25rem;
+    }
+    
+    .booking-value {
+        font-weight: 500;
+        color: #495057;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-label {
+        font-weight: 500;
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-control {
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        padding: 0.75rem;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    .btn-primary {
+        background: #667eea;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 0.25rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+        background: #5a67d8;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 0.25rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-secondary:hover {
+        background: #5a6268;
+    }
+    
+    .meeting-preview {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-top: 2rem;
+    }
+    
+    .preview-title {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 1rem;
+    }
+    
+    .meeting-link-display {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        font-family: monospace;
+        word-break: break-all;
+    }
+    
+    .meeting-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.75rem;
+        font-size: 0.875rem;
+    }
+    
+    .student-info {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .student-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-right: 1rem;
+    }
+    
+    .student-details {
+        flex: 1;
+    }
+    
+    .student-name {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.25rem;
+    }
+    
+    .student-contact {
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+    
+    .course-info {
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .course-title {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+    
+    .course-description {
+        color: #6c757d;
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .course-meta {
+        display: flex;
+        gap: 1rem;
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+    
+    .course-meta-item {
+        display: flex;
+        align-items: center;
+    }
+    
+    .course-meta-item i {
+        margin-right: 0.25rem;
+    }
+    
+    .expiration-info {
+        background: #fff3cd;
+        border: 1px solid #ffeeba;
+        color: #856404;
+        padding: 1rem;
+        border-radius: 0.25rem;
+        margin-top: 1rem;
+    }
+    
+    .expiration-info i {
+        margin-right: 0.5rem;
+    }
+    
+    @media (max-width: 768px) {
+        .meeting-link-form {
+            padding: 1rem;
+        }
+        
+        .booking-detail {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .booking-icon {
+            margin-bottom: 0.5rem;
+        }
+        
+        .meeting-actions {
+            flex-direction: column;
+        }
+        
+        .meeting-actions .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block tutor_content %}
+<div class="container-fluid">
+    <div class="meeting-link-container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Generate Meeting Link</h1>
+            <div>
+                <a href="{{ url_for('tutor.booking_details', booking_id=booking.id) }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Details
+                </a>
+            </div>
+        </div>
+
+        <div class="meeting-link-form">
+            <!-- Booking Information -->
+            <div class="booking-info">
+                <h3 class="section-title">Booking Information</h3>
+                
+                <!-- Student Information -->
+                <div class="student-info">
+                    {% if booking.student.user_profile.avatar_url %}
+                        <img src="{{ booking.student.user_profile.avatar_url }}" class="student-avatar" alt="Student Avatar">
+                    {% else %}
+                        <div class="student-avatar d-flex align-items-center justify-content-center bg-light">
+                            <i class="fas fa-user text-muted"></i>
+                        </div>
+                    {% endif %}
+                    <div class="student-details">
+                        <div class="student-name">
+                            {{ booking.student.user_profile.full_name if booking.student.user_profile else booking.student.email }}
+                        </div>
+                        <div class="student-contact">
+                            <i class="fas fa-envelope me-1"></i> {{ booking.student.email }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Course Information -->
+                <div class="course-info">
+                    <div class="course-title">{{ booking.course.title }}</div>
+                    <div class="course-description">{{ booking.course.description[:200] }}{% if booking.course.description|length > 200 %}...{% endif %}</div>
+                    <div class="course-meta">
+                        <div class="course-meta-item">
+                            <i class="fas fa-book"></i> {{ booking.course.subject.name }}
+                        </div>
+                        <div class="course-meta-item">
+                            <i class="fas fa-signal"></i> {{ booking.course.level }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Booking Details -->
+                <div class="booking-detail">
+                    <div class="booking-icon">
+                        <i class="fas fa-calendar"></i>
+                    </div>
+                    <div class="booking-content">
+                        <div class="booking-label">Scheduled Time</div>
+                        <div class="booking-value">{{ booking.scheduled_time.strftime('%A, %B %d, %Y at %I:%M %p') }}</div>
+                    </div>
+                </div>
+                
+                <div class="booking-detail">
+                    <div class="booking-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="booking-content">
+                        <div class="booking-label">Duration</div>
+                        <div class="booking-value">{{ booking.duration_minutes }} minutes</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Meeting Link Form -->
+            <h3 class="section-title">Meeting Link Settings</h3>
+            
+            <form method="POST" id="meetingLinkForm">
+                {{ form.hidden_tag() }}
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.platform.label(class="form-label") }}
+                            {{ form.platform(class="form-control") }}
+                            {% if form.platform.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.platform.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.meeting_id.label(class="form-label") }}
+                            {{ form.meeting_id(class="form-control", placeholder="Optional: Enter meeting ID") }}
+                            {% if form.meeting_id.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.meeting_id.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    {{ form.meeting_url.label(class="form-label") }}
+                    {{ form.meeting_url(class="form-control", placeholder="https://zoom.us/j/123456789") }}
+                    {% if form.meeting_url.errors %}
+                        <div class="text-danger">
+                            {% for error in form.meeting_url.errors %}
+                                <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.password.label(class="form-label") }}
+                            {{ form.password(class="form-control", placeholder="Optional: Enter password") }}
+                            {% if form.password.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.password.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.expires_at.label(class="form-label") }}
+                            {{ form.expires_at(class="form-control") }}
+                            <small class="form-text">The link will expire at this time. Leave empty for no expiration.</small>
+                            {% if form.expires_at.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.expires_at.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{{ url_for('tutor.booking_details', booking_id=booking.id) }}" class="btn btn-secondary">
+                        Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Save Meeting Link
+                    </button>
+                </div>
+            </form>
+            
+            <!-- Meeting Link Preview -->
+            {% if form.meeting_url.data or meeting_link %}
+            <div class="meeting-preview">
+                <h4 class="preview-title">Meeting Link Preview</h4>
+                
+                {% if form.meeting_url.data %}
+                    <div class="meeting-link-display">{{ form.meeting_url.data }}</div>
+                {% else %}
+                    <div class="meeting-link-display">{{ meeting_link.meeting_url }}</div>
+                {% endif %}
+                
+                <div class="meeting-actions">
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="copyMeetingLink()">
+                        <i class="fas fa-copy"></i> Copy Link
+                    </button>
+                    <button type="button" class="btn btn-sm btn-success" onclick="joinMeeting()">
+                        <i class="fas fa-video"></i> Join Meeting
+                    </button>
+                    <a href="mailto:{{ booking.student.email }}?subject=Your Meeting Link&body={{ form.meeting_url.data or meeting_link.meeting_url }}" class="btn btn-sm btn-outline-info">
+                        <i class="fas fa-envelope"></i> Email Link
+                    </a>
+                </div>
+                
+                {% if form.password.data or meeting_link.password %}
+                <div class="mt-3">
+                    <strong>Password:</strong> 
+                    <span id="meetingPassword">{{ form.password.data or meeting_link.password }}</span>
+                    <button type="button" class="btn btn-sm btn-outline-secondary ms-2" onclick="copyPassword()">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                </div>
+                {% endif %}
+                
+                {% if form.expires_at.data or meeting_link.expires_at %}
+                <div class="expiration-info">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    This meeting link will expire on {{ (form.expires_at.data or meeting_link.expires_at).strftime('%B %d, %Y at %I:%M %p') }}
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Copy meeting link
+    function copyMeetingLink() {
+        const meetingLink = document.querySelector('.meeting-link-display').textContent;
+        navigator.clipboard.writeText(meetingLink).then(() => {
+            alert('Meeting link copied to clipboard!');
+        }).catch(err => {
+            console.error('Error copying text: ', err);
+        });
+    }
+    
+    // Copy password
+    function copyPassword() {
+        const password = document.getElementById('meetingPassword').textContent;
+        navigator.clipboard.writeText(password).then(() => {
+            alert('Password copied to clipboard!');
+        }).catch(err => {
+            console.error('Error copying text: ', err);
+        });
+    }
+    
+    // Join meeting
+    function joinMeeting() {
+        const meetingLink = document.querySelector('.meeting-link-display').textContent;
+        window.open(meetingLink, '_blank');
+    }
+    
+    // Form validation
+    document.getElementById('meetingLinkForm').addEventListener('submit', function(e) {
+        const platform = document.getElementById('platform').value;
+        const meetingUrl = document.getElementById('meeting_url').value;
+        
+        if (!platform || !meetingUrl) {
+            e.preventDefault();
+            alert('Please select a platform and enter a meeting URL.');
+            return;
+        }
+        
+        // Validate URL format
+        try {
+            new URL(meetingUrl);
+        } catch (e) {
+            e.preventDefault();
+            alert('Please enter a valid URL.');
+            return;
+        }
+    });
+    
+    // Auto-generate meeting ID if using Zoom
+    document.getElementById('platform').addEventListener('change', function() {
+        if (this.value === 'Zoom' && !document.getElementById('meeting_id').value) {
+            const meetingId = generateMeetingId();
+            document.getElementById('meeting_id').value = meetingId;
+            
+            // Update meeting URL
+            const meetingUrl = document.getElementById('meeting_url');
+            if (!meetingUrl.value || meetingUrl.value.includes('zoom.us')) {
+                meetingUrl.value = `https://zoom.us/j/${meetingId}`;
+            }
+        }
+    });
+    
+    // Generate random meeting ID
+    function generateMeetingId() {
+        let result = '';
+        const characters = '0123456789';
+        const charactersLength = characters.length;
+        for (let i = 0; i < 11; i++) {
+            result += characters.charAt(Math.floor(Math.random() * charactersLength));
+        }
+        return result;
+    }
+</script>
+{% endblock %}

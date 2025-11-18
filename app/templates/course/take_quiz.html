@@ -1,0 +1,418 @@
+{% extends "course/base.html" %}
+
+{% block title %}Take Quiz: {{ quiz.title }}{% endblock %}
+
+{% block course_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>{{ quiz.title }}</h1>
+    <div class="d-flex align-items-center">
+        <div class="me-3">
+            <span class="badge bg-primary">
+                <i class="fas fa-clock"></i> 
+                <span id="timer">--:--</span>
+            </span>
+        </div>
+        <a href="{{ url_for('course.course_assignments', course_id=quiz.syllabus.course_id) }}" class="btn btn-outline-secondary">
+            <i class="fas fa-times"></i> Exit Quiz
+        </a>
+    </div>
+</div>
+
+<!-- Quiz Info -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-8">
+                <h5 class="card-title">Instructions</h5>
+                {% if quiz.instructions %}
+                <p class="card-text">{{ quiz.instructions }}</p>
+                {% endif %}
+                {% if quiz.description %}
+                <p class="card-text">{{ quiz.description }}</p>
+                {% endif %}
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h6 class="card-title">Quiz Details</h6>
+                        <ul class="list-unstyled mb-0">
+                            <li><strong>Time Limit:</strong> {{ quiz.time_limit_minutes }} minutes</li>
+                            <li><strong>Questions:</strong> {{ questions|length }}</li>
+                            <li><strong>Total Points:</strong> {{ quiz.max_score }}</li>
+                            <li><strong>Passing Score:</strong> {{ quiz.passing_score }}</li>
+                            <li><strong>Attempts:</strong> {{ attempt_number }} of {{ quiz.max_attempts }}</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quiz Form -->
+<form id="quizForm" method="POST" action="{{ url_for('course.submit_quiz', quiz_id=quiz.id) }}">
+    {{ form.hidden_tag() }}
+    
+    <!-- Questions Container -->
+    <div id="questionsContainer" class="accordion mb-4">
+        {% for question in questions %}
+        <div class="accordion-item mb-3">
+            <h2 class="accordion-header" id="heading{{ question.id }}">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                        data-bs-target="#collapse{{ question.id }}" aria-expanded="false" 
+                        aria-controls="collapse{{ question.id }}">
+                    <div class="d-flex justify-content-between align-items-center w-100">
+                        <span>Question {{ loop.index }}: {{ question.question_text[:50] }}{% if question.question_text|length > 50 %}...{% endif %}</span>
+                        <span class="badge bg-secondary">{{ question.points }} pts</span>
+                    </div>
+                </button>
+            </h2>
+            <div id="collapse{{ question.id }}" class="accordion-collapse collapse" 
+                 aria-labelledby="heading{{ question.id }}" data-bs-parent="#questionsContainer">
+                <div class="accordion-body">
+                    <input type="hidden" name="question_ids[]" value="{{ question.id }}">
+                    
+                    <div class="mb-3">
+                        <h5>{{ question.question_text }}</h5>
+                        {% if question.explanation %}
+                        <p class="text-muted">{{ question.explanation }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    {% if question.question_type == 'multiple_choice' %}
+                    <div class="mb-3">
+                        {% for option in question.options %}
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" 
+                                   name="answer_{{ question.id }}" 
+                                   id="option_{{ question.id }}_{{ loop.index }}" 
+                                   value="{{ option.id }}"
+                                   {% if question.is_required %}required{% endif %}>
+                            <label class="form-check-label" for="option_{{ question.id }}_{{ loop.index }}">
+                                {{ option.option_text }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    {% elif question.question_type == 'multiple_select' %}
+                    <div class="mb-3">
+                        {% for option in question.options %}
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" 
+                                   name="answer_{{ question.id }}[]" 
+                                   id="option_{{ question.id }}_{{ loop.index }}" 
+                                   value="{{ option.id }}">
+                            <label class="form-check-label" for="option_{{ question.id }}_{{ loop.index }}">
+                                {{ option.option_text }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    {% elif question.question_type == 'true_false' %}
+                    <div class="mb-3">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" 
+                                   name="answer_{{ question.id }}" 
+                                   id="true_{{ question.id }}" 
+                                   value="true"
+                                   {% if question.is_required %}required{% endif %}>
+                            <label class="form-check-label" for="true_{{ question.id }}">
+                                True
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" 
+                                   name="answer_{{ question.id }}" 
+                                   id="false_{{ question.id }}" 
+                                   value="false"
+                                   {% if question.is_required %}required{% endif %}>
+                            <label class="form-check-label" for="false_{{ question.id }}">
+                                False
+                            </label>
+                        </div>
+                    </div>
+                    
+                    {% elif question.question_type == 'short_answer' %}
+                    <div class="mb-3">
+                        <textarea class="form-control" 
+                                  name="answer_{{ question.id }}" 
+                                  rows="3"
+                                  {% if question.is_required %}required{% endif %}></textarea>
+                    </div>
+                    
+                    {% elif question.question_type == 'essay' %}
+                    <div class="mb-3">
+                        <textarea class="form-control" 
+                                  name="answer_{{ question.id }}" 
+                                  rows="6"
+                                  {% if question.is_required %}required{% endif %}></textarea>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Navigation and Submission -->
+    <div class="d-flex justify-content-between align-items-center">
+        <button type="button" class="btn btn-outline-secondary" id="saveProgressBtn">
+            <i class="fas fa-save"></i> Save Progress
+        </button>
+        
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-primary" id="reviewBtn">
+                <i class="fas fa-eye"></i> Review Answers
+            </button>
+            <button type="submit" class="btn btn-success" id="submitBtn">
+                <i class="fas fa-check"></i> Submit Quiz
+            </button>
+        </div>
+    </div>
+</form>
+
+<!-- Review Modal -->
+<div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reviewModalLabel">Review Your Answers</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="reviewContent">
+                    <!-- Review content will be populated here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Continue Editing</button>
+                <button type="button" class="btn btn-success" id="confirmSubmitBtn">Submit Quiz</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Timer functionality
+        let timeRemaining = {{ quiz.time_limit_minutes * 60 }}; // Convert to seconds
+        let timerInterval;
+        
+        function updateTimer() {
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = timeRemaining % 60;
+            const timerElement = document.getElementById('timer');
+            
+            timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            // Add warning classes
+            if (timeRemaining <= 300) { // 5 minutes
+                timerElement.parentElement.classList.remove('bg-primary');
+                timerElement.parentElement.classList.add('bg-warning');
+            }
+            
+            if (timeRemaining <= 60) { // 1 minute
+                timerElement.parentElement.classList.remove('bg-warning');
+                timerElement.parentElement.classList.add('bg-danger');
+            }
+            
+            if (timeRemaining <= 0) {
+                clearInterval(timerInterval);
+                document.getElementById('quizForm').submit();
+            }
+            
+            timeRemaining--;
+        }
+        
+        // Start timer
+        timerInterval = setInterval(updateTimer, 1000);
+        updateTimer(); // Initial update
+        
+        // Save progress functionality
+        document.getElementById('saveProgressBtn').addEventListener('click', function() {
+            const formData = new FormData(document.getElementById('quizForm'));
+            const progressData = {};
+            
+            // Collect form data
+            for (let [key, value] of formData.entries()) {
+                if (key !== 'csrf_token') {
+                    if (!progressData[key]) {
+                        progressData[key] = value;
+                    } else if (Array.isArray(progressData[key])) {
+                        progressData[key].push(value);
+                    } else {
+                        progressData[key] = [progressData[key], value];
+                    }
+                }
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('quiz_progress_{{ quiz.id }}', JSON.stringify(progressData));
+            
+            // Show success message
+            const btn = this;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check"></i> Progress Saved';
+            btn.classList.remove('btn-outline-secondary');
+            btn.classList.add('btn-success');
+            
+            setTimeout(function() {
+                btn.innerHTML = originalText;
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-outline-secondary');
+            }, 2000);
+        });
+        
+        // Load saved progress
+        function loadProgress() {
+            const savedProgress = localStorage.getItem('quiz_progress_{{ quiz.id }}');
+            if (savedProgress) {
+                const progressData = JSON.parse(savedProgress);
+                
+                // Restore form data
+                Object.keys(progressData).forEach(function(key) {
+                    const elements = document.querySelectorAll(`[name="${key}"]`);
+                    
+                    if (elements.length > 0) {
+                        if (elements[0].type === 'radio') {
+                            // Handle radio buttons
+                            elements.forEach(function(element) {
+                                if (element.value === progressData[key]) {
+                                    element.checked = true;
+                                }
+                            });
+                        } else if (elements[0].type === 'checkbox') {
+                            // Handle checkboxes
+                            const values = Array.isArray(progressData[key]) ? progressData[key] : [progressData[key]];
+                            elements.forEach(function(element) {
+                                if (values.includes(element.value)) {
+                                    element.checked = true;
+                                }
+                            });
+                        } else {
+                            // Handle text inputs and textareas
+                            elements[0].value = progressData[key];
+                        }
+                    }
+                });
+            }
+        }
+        
+        loadProgress();
+        
+        // Review functionality
+        document.getElementById('reviewBtn').addEventListener('click', function() {
+            const reviewContent = document.getElementById('reviewContent');
+            reviewContent.innerHTML = '';
+            
+            const questions = document.querySelectorAll('.accordion-item');
+            let answeredCount = 0;
+            
+            questions.forEach(function(question, index) {
+                const questionId = question.querySelector('input[name="question_ids[]"]').value;
+                const questionText = question.querySelector('h5').textContent;
+                const questionType = question.querySelector('input[type="radio"], input[type="checkbox"], textarea');
+                
+                let answer = 'Not answered';
+                
+                if (questionType) {
+                    if (questionType.type === 'radio') {
+                        const selectedRadio = question.querySelector('input[type="radio"]:checked');
+                        if (selectedRadio) {
+                            answer = selectedRadio.nextElementSibling.textContent;
+                            answeredCount++;
+                        }
+                    } else if (questionType.type === 'checkbox') {
+                        const selectedCheckboxes = question.querySelectorAll('input[type="checkbox"]:checked');
+                        if (selectedCheckboxes.length > 0) {
+                            answer = Array.from(selectedCheckboxes).map(cb => cb.nextElementSibling.textContent).join(', ');
+                            answeredCount++;
+                        }
+                    } else {
+                        answer = questionType.value || 'Not answered';
+                        if (answer !== 'Not answered') {
+                            answeredCount++;
+                        }
+                    }
+                }
+                
+                const reviewItem = document.createElement('div');
+                reviewItem.className = 'mb-3 p-3 border rounded';
+                reviewItem.innerHTML = `
+                    <h6>Question ${index + 1}: ${questionText.substring(0, 100)}...</h6>
+                    <p class="mb-1"><strong>Your Answer:</strong> ${answer}</p>
+                `;
+                reviewContent.appendChild(reviewItem);
+            });
+            
+            // Add summary
+            const summary = document.createElement('div');
+            summary.className = 'alert alert-info';
+            summary.innerHTML = `
+                <h6>Summary</h6>
+                <p class="mb-0">You have answered ${answeredCount} out of ${questions.length} questions.</p>
+            `;
+            reviewContent.insertBefore(summary, reviewContent.firstChild);
+        });
+        
+        // Confirm submit button in modal
+        document.getElementById('confirmSubmitBtn').addEventListener('click', function() {
+            // Clear saved progress
+            localStorage.removeItem('quiz_progress_{{ quiz.id }}');
+            
+            // Submit form
+            document.getElementById('quizForm').submit();
+        });
+        
+        // Form submission validation
+        document.getElementById('quizForm').addEventListener('submit', function(e) {
+            // Check if all required questions are answered
+            const requiredQuestions = document.querySelectorAll('[required]');
+            let unansweredRequired = false;
+            
+            requiredQuestions.forEach(function(question) {
+                if (question.type === 'radio') {
+                    const name = question.name;
+                    const checkedRadio = document.querySelector(`input[name="${name}"]:checked`);
+                    if (!checkedRadio) {
+                        unansweredRequired = true;
+                    }
+                } else if (question.type === 'checkbox') {
+                    const name = question.name;
+                    const checkedBoxes = document.querySelectorAll(`input[name="${name}"]:checked`);
+                    if (checkedBoxes.length === 0) {
+                        unansweredRequired = true;
+                    }
+                } else if (!question.value.trim()) {
+                    unansweredRequired = true;
+                }
+            });
+            
+            if (unansweredRequired) {
+                e.preventDefault();
+                alert('Please answer all required questions before submitting.');
+            } else {
+                // Clear saved progress
+                localStorage.removeItem('quiz_progress_{{ quiz.id }}');
+            }
+        });
+        
+        // Auto-save progress every 30 seconds
+        setInterval(function() {
+            document.getElementById('saveProgressBtn').click();
+        }, 30000);
+        
+        // Warn before leaving the page
+        window.addEventListener('beforeunload', function(e) {
+            const message = 'You have unsaved quiz progress. Are you sure you want to leave?';
+            e.returnValue = message;
+            return message;
+        });
+    });
+</script>
+{% endblock %}

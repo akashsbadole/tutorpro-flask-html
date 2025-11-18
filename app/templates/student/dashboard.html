@@ -1,0 +1,299 @@
+{% extends "student/base.html" %}
+
+{% block title %}Student Dashboard - TutorPro{% endblock %}
+
+{% block head %}
+<style>
+    .stat-card {
+        transition: transform 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    .recent-activity {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    .rating-stars {
+        color: #ffc107;
+    }
+</style>
+{% endblock %}
+
+{% block student_content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Student Dashboard</h1>
+        <div>
+            <a href="{{ url_for('student.profile') }}" class="btn btn-outline-primary me-2">
+                <i class="fas fa-user"></i> Profile
+            </a>
+            <a href="{{ url_for('student.bookings') }}" class="btn btn-outline-primary me-2">
+                <i class="fas fa-calendar-check"></i> Bookings
+            </a>
+            <a href="{{ url_for('student.tutors') }}" class="btn btn-outline-primary">
+                <i class="fas fa-chalkboard-teacher"></i> Find Tutors
+            </a>
+        </div>
+    </div>
+
+    <!-- Student Profile Summary -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-2">
+                            {% if current_user.user_profile.avatar_url %}
+                                <img src="{{ current_user.user_profile.avatar_url }}" class="img-fluid rounded-circle" alt="Profile Picture">
+                            {% else %}
+                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center text-white" style="width: 100px; height: 100px;">
+                                    <i class="fas fa-user fa-3x"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <h3>{{ current_user.user_profile.full_name }}</h3>
+                            <p class="text-muted">{{ learner_profile.experience_level }} Learner</p>
+                            <p>{{ learner_profile.learning_goals[:100] }}{% if learner_profile.learning_goals|length > 100 %}...{% endif %}</p>
+                            <div class="mt-2">
+                                <span class="badge bg-info">Preferred Subjects: {{ learner_profile.preferred_subjects }}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <h4 class="text-primary">${{ "%.2f"|format(learner_profile.budget_range_max if learner_profile.budget_range_max else 'N/A') }}/hour</h4>
+                            <p class="text-muted">Budget Range</p>
+                            <div class="mt-3">
+                                <span class="badge bg-success">{{ reviews_written }} Reviews Written</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Total Bookings</h5>
+                            <h2>{{ total_bookings }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-calendar-check fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Upcoming Bookings</h5>
+                            <h2>{{ upcoming_bookings }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-calendar-alt fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Total Spent</h5>
+                            <h2>${{ "%.2f"|format(total_spent) }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-dollar-sign fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Enrolled Courses</h5>
+                            <h2>{{ enrolled_courses|length }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-book fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upcoming Bookings and Recent Activity -->
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Upcoming Bookings</h5>
+                </div>
+                <div class="card-body recent-activity">
+                    {% if upcoming_booking_list %}
+                        {% for booking in upcoming_booking_list %}
+                            <div class="d-flex align-items-center mb-3 p-2 border rounded">
+                                <div class="bg-primary rounded d-flex align-items-center justify-content-center text-white me-3" style="width: 40px; height: 40px;">
+                                    <i class="fas fa-calendar"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-0">{{ booking.tutor.user.email }}</h6>
+                                    <small class="text-muted">{{ booking.scheduled_time.strftime('%Y-%m-%d %H:%M') }} - {{ booking.course.title }}</small>
+                                    <div class="mt-1">
+                                        <span class="badge {% if booking.status == 'Pending' %}bg-warning{% else %}bg-success{% endif %}">
+                                            {{ booking.status }}
+                                        </span>
+                                    </div>
+                                </div>
+                                {% if booking.status == 'Pending' %}
+                                    <form method="POST" action="{{ url_for('student.cancel_booking', booking_id=booking.id) }}" style="display: inline;">
+                                        <button type="submit" class="btn btn-sm btn-danger">Cancel</button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted mb-0">No upcoming bookings</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">Recent Activity</h5>
+                </div>
+                <div class="card-body recent-activity">
+                    {% if recent_bookings %}
+                        {% for booking in recent_bookings %}
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-info rounded d-flex align-items-center justify-content-center text-white me-3" style="width: 40px; height: 40px;">
+                                    <i class="fas fa-history"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">{{ booking.tutor.user.email }} - {{ booking.course.title }}</h6>
+                                    <small class="text-muted">{{ booking.scheduled_time.strftime('%Y-%m-%d %H:%M') }}</small>
+                                </div>
+                                {% if booking.status == 'Completed' and not booking.review %}
+                                    <a href="{{ url_for('student.new_review', booking_id=booking.id) }}" class="btn btn-sm btn-primary ms-auto">Review</a>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted mb-0">No recent activity</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enrolled Courses -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="card-title mb-0">Enrolled Courses</h5>
+                </div>
+                <div class="card-body">
+                    {% if enrolled_courses %}
+                        <div class="row">
+                            {% for course in enrolled_courses %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="card h-100">
+                                        {% if course.thumbnail_url %}
+                                            <img src="{{ course.thumbnail_url }}" class="card-img-top" alt="{{ course.title }}">
+                                        {% else %}
+                                            <div class="bg-light d-flex align-items-center justify-content-center" style="height: 150px;">
+                                                <i class="fas fa-book fa-3x text-muted"></i>
+                                            </div>
+                                        {% endif %}
+                                        <div class="card-body">
+                                            <h6 class="card-title">{{ course.title }}</h6>
+                                            <p class="card-text text-muted">{{ course.description[:100] }}{% if course.description|length > 100 %}...{% endif %}</p>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span class="badge bg-primary">{{ course.level }}</span>
+                                                <a href="{{ url_for('student.course_detail', course_id=course.id) }}" class="btn btn-sm btn-outline-primary">View Details</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">You haven't enrolled in any courses yet.</p>
+                        <a href="{{ url_for('student.tutors') }}" class="btn btn-primary">Find Tutors & Courses</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="card-title mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('student.profile') }}" class="btn btn-outline-primary btn-block">
+                                <i class="fas fa-user fa-2x mb-2"></i>
+                                <h6>Edit Profile</h6>
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('student.bookings') }}" class="btn btn-outline-success btn-block">
+                                <i class="fas fa-calendar-check fa-2x mb-2"></i>
+                                <h6>My Bookings</h6>
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('student.tutors') }}" class="btn btn-outline-info btn-block">
+                                <i class="fas fa-chalkboard-teacher fa-2x mb-2"></i>
+                                <h6>Find Tutors</h6>
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('student.payments') }}" class="btn btn-outline-warning btn-block">
+                                <i class="fas fa-credit-card fa-2x mb-2"></i>
+                                <h6>Payments</h6>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock student_content %}
+
+{% block scripts %}
+<script>
+    // Auto-refresh dashboard every 30 seconds
+    setInterval(function() {
+        location.reload();
+    }, 30000);
+</script>
+{% endblock %}

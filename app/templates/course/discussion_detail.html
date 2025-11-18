@@ -1,0 +1,304 @@
+{% extends "course/base.html" %}
+
+{% block title %}{{ discussion.title }}{% endblock %}
+
+{% block course_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>{{ discussion.title }}</h1>
+    {% if current_user.is_authenticated and (current_user.is_tutor() or current_user.is_admin() or current_user.id == discussion.created_by) %}
+    <div class="btn-group">
+        <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+            <i class="fas fa-cog"></i> Manage
+        </button>
+        <ul class="dropdown-menu">
+            {% if discussion.is_pinned %}
+            <li><a class="dropdown-item" href="#" onclick="togglePin({{ discussion.id }})">Unpin Discussion</a></li>
+            {% else %}
+            <li><a class="dropdown-item" href="#" onclick="togglePin({{ discussion.id }})">Pin Discussion</a></li>
+            {% endif %}
+            {% if discussion.is_locked %}
+            <li><a class="dropdown-item" href="#" onclick="toggleLock({{ discussion.id }})">Unlock Discussion</a></li>
+            {% else %}
+            <li><a class="dropdown-item" href="#" onclick="toggleLock({{ discussion.id }})">Lock Discussion</a></li>
+            {% endif %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Discussion Info -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-8">
+                <h5>Description</h5>
+                <p>{{ discussion.description }}</p>
+            </div>
+            <div class="col-md-4">
+                <div class="text-center">
+                    <div>
+                        <i class="fas fa-comments fa-2x text-primary"></i>
+                        <h4>{{ posts|length }}</h4>
+                        <p class="text-muted">Posts</p>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <div>
+                        <i class="fas fa-users fa-2x text-info"></i>
+                        <h4>{{ posts|selectattr('author_id')|map(attribute='author_id')|unique|list|length }}</h4>
+                        <p class="text-muted">Participants</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-4">
+                <small class="text-muted">
+                    <i class="fas fa-user"></i> Created by {{ discussion.creator.user_profile.full_name if discussion.creator.user_profile else discussion.creator.email }}
+                </small>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted">
+                    <i class="fas fa-calendar"></i> {{ discussion.created_at.strftime('%B %d, %Y') }}
+                </small>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted">
+                    {% if discussion.is_pinned %}
+                    <i class="fas fa-thumbtack text-warning"></i> Pinned
+                    {% endif %}
+                    {% if discussion.is_locked %}
+                    <i class="fas fa-lock text-danger"></i> Locked
+                    {% endif %}
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reply Form -->
+{% if current_user.is_authenticated and not discussion.is_locked %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Add Reply</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('course.create_post', discussion_id=discussion.id) }}">
+            {{ form.hidden_tag() }}
+            <div class="mb-3">
+                {{ form.content.label(class="form-label") }}
+                {{ form.content(class="form-control", rows="4", placeholder="Share your thoughts...") }}
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-reply"></i> Post Reply
+            </button>
+        </form>
+    </div>
+</div>
+{% elif discussion.is_locked %}
+<div class="alert alert-warning">
+    <i class="fas fa-lock"></i> This discussion is locked and no longer accepts new replies.
+</div>
+{% endif %}
+
+<!-- Posts -->
+<div class="posts-container">
+    {% for post in posts %}
+    <div class="discussion-post {% if post.parent_id %}reply{% endif %}">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+            <div class="d-flex align-items-center">
+                {% if post.author.user_profile %}
+                <img src="{{ post.author.user_profile.avatar_url or url_for('static', filename='img/default-avatar.png') }}" 
+                     class="rounded-circle me-2" width="40" height="40" alt="Avatar">
+                {% endif %}
+                <div>
+                    <strong>{{ post.author.user_profile.full_name if post.author.user_profile else post.author.email }}</strong>
+                    {% if post.author.role == 'Tutor' %}
+                    <span class="badge bg-primary ms-2">Tutor</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="text-end">
+                <small class="text-muted">{{ post.created_at.strftime('%b %d, %Y %H:%M') }}</small>
+                {% if post.is_edited %}
+                <small class="text-info ms-2">(edited)</small>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="post-content mb-3">
+            <div class="card bg-light">
+                <div class="card-body">
+                    {{ post.content|safe }}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Post Actions -->
+        {% if current_user.is_authenticated and (current_user.id == post.author_id or current_user.is_tutor() or current_user.is_admin()) %}
+        <div class="post-actions mb-2">
+            <div class="btn-group btn-group-sm">
+                {% if current_user.id == post.author_id %}
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="editPost({{ post.id }})">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+                {% endif %}
+                {% if current_user.is_tutor() or current_user.is_admin() %}
+                {% if not post.parent_id %}
+                <button type="button" class="btn btn-outline-warning btn-sm" onclick="togglePin({{ post.id }})">
+                    <i class="fas fa-thumbtack"></i> {% if post.is_pinned %}Unpin{% else %}Pin{% endif %}
+                </button>
+                {% endif %}
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="deletePost({{ post.id }})">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Reply Button -->
+        {% if current_user.is_authenticated and not post.parent_id and not discussion.is_locked %}
+        <div class="mb-3">
+            <button type="button" class="btn btn-outline-primary btn-sm" onclick="replyToPost({{ post.id }})">
+                <i class="fas fa-reply"></i> Reply
+            </button>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Replies -->
+    {% if post.replies %}
+    <div class="replies ms-4">
+        {% for reply in post.replies %}
+        <div class="discussion-post reply">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div class="d-flex align-items-center">
+                    {% if reply.author.user_profile %}
+                    <img src="{{ reply.author.user_profile.avatar_url or url_for('static', filename='img/default-avatar.png') }}" 
+                         class="rounded-circle me-2" width="30" height="30" alt="Avatar">
+                    {% endif %}
+                    <div>
+                        <strong>{{ reply.author.user_profile.full_name if reply.author.user_profile else reply.author.email }}</strong>
+                        {% if reply.author.role == 'Tutor' %}
+                        <span class="badge bg-primary ms-2">Tutor</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="text-end">
+                    <small class="text-muted">{{ reply.created_at.strftime('%b %d, %Y %H:%M') }}</small>
+                    {% if reply.is_edited %}
+                    <small class="text-info ms-2">(edited)</small>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="post-content mb-3">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        {{ reply.content|safe }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Reply Actions -->
+            {% if current_user.is_authenticated and (current_user.id == reply.author_id or current_user.is_tutor() or current_user.is_admin()) %}
+            <div class="post-actions mb-2">
+                <div class="btn-group btn-group-sm">
+                    {% if current_user.id == reply.author_id %}
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="editPost({{ reply.id }})">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                    {% endif %}
+                    {% if current_user.is_tutor() or current_user.is_admin() %}
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="deletePost({{ reply.id }})">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endfor %}
+</div>
+
+<!-- Back Button -->
+<div class="text-center mt-4">
+    <a href="{{ url_for('course.course_discussions', course_id=discussion.course_id) }}" class="btn btn-outline-primary">
+        <i class="fas fa-arrow-left"></i> Back to Discussions
+    </a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    // Reply functionality
+    function replyToPost(postId) {
+        const contentField = document.querySelector('textarea[name="content"]');
+        const parentField = document.querySelector('input[name="parent_id"]');
+        
+        if (contentField && parentField) {
+            parentField.value = postId;
+            contentField.value = '';
+            contentField.focus();
+            contentField.placeholder = `Replying to post #${postId}...`;
+            
+            // Scroll to reply form
+            document.querySelector('.card-body form').scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+    
+    // Edit post functionality (placeholder)
+    function editPost(postId) {
+        // In a real implementation, this would open an edit modal or navigate to edit page
+        console.log('Edit post:', postId);
+    }
+    
+    // Delete post functionality (placeholder)
+    function deletePost(postId) {
+        if (confirm('Are you sure you want to delete this post?')) {
+            // In a real implementation, this would send a delete request
+            console.log('Delete post:', postId);
+        }
+    }
+    
+    // Toggle pin functionality (placeholder)
+    function togglePin(postId) {
+        // In a real implementation, this would send a request to toggle pin status
+        console.log('Toggle pin for post:', postId);
+    }
+    
+    // Toggle lock functionality (placeholder)
+    function toggleLock(discussionId) {
+        // In a real implementation, this would send a request to toggle lock status
+        console.log('Toggle lock for discussion:', discussionId);
+    }
+    
+    // Auto-refresh for new posts
+    let lastPostCount = {{ posts|length }};
+    
+    function checkForNewPosts() {
+        // In a real implementation, this would use AJAX to check for new posts
+        console.log('Checking for new posts...');
+    }
+    
+    // Check for new posts every 30 seconds
+    setInterval(checkForNewPosts, 30000);
+    
+    // Highlight new posts
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add visual indicators for new posts since last visit
+        const posts = document.querySelectorAll('.discussion-post');
+        posts.forEach(function(post, index) {
+            if (index >= lastPostCount) {
+                post.classList.add('border-primary');
+                post.style.borderWidth = '2px';
+            }
+        });
+    });
+</script>
+{% endblock %}

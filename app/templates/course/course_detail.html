@@ -1,0 +1,215 @@
+{% extends "course/base.html" %}
+
+{% block title %}{{ course.title }}{% endblock %}
+
+{% block course_content %}
+<div class="row">
+    <div class="col-md-8">
+        <!-- Course Header -->
+        <div class="card mb-4">
+            {% if course.thumbnail_url %}
+            <img src="{{ course.thumbnail_url }}" class="card-img-top" alt="{{ course.title }}" style="height: 300px; object-fit: cover;">
+            {% else %}
+            <div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="height: 300px;">
+                <i class="fas fa-book fa-4x text-muted"></i>
+            </div>
+            {% endif %}
+            <div class="card-body">
+                <h1 class="card-title">{{ course.title }}</h1>
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <span class="badge bg-primary">{{ course.subject.name }}</span>
+                    <span class="badge bg-secondary">{{ course.level }}</span>
+                    <span class="badge bg-info"><i class="fas fa-clock"></i> {{ course.duration_hours }} hours</span>
+                </div>
+                <p class="card-text">{{ course.description }}</p>
+                
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="text-primary mb-0">${{ "%.2f"|format(course.price) }}</h3>
+                    </div>
+                    {% if current_user.is_authenticated %}
+                        {% if is_enrolled %}
+                        <span class="badge bg-success">Enrolled</span>
+                        {% else %}
+                        <form method="POST" action="{{ url_for('course.enroll_course', course_id=course.id) }}">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-user-plus"></i> Enroll Now
+                            </button>
+                        </form>
+                        {% endif %}
+                    {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-sign-in-alt"></i> Login to Enroll
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Course Content Tabs -->
+        <ul class="nav nav-tabs" id="courseTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">Overview</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="syllabus-tab" data-bs-toggle="tab" data-bs-target="#syllabus" type="button" role="tab">Syllabus</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="instructor-tab" data-bs-toggle="tab" data-bs-target="#instructor" type="button" role="tab">Instructor</button>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="courseTabContent">
+            <!-- Overview Tab -->
+            <div class="tab-pane fade show active" id="overview" role="tabpanel">
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h4>About This Course</h4>
+                        <p>{{ course.description }}</p>
+                        
+                        <h5 class="mt-4">What You'll Learn</h5>
+                        <ul>
+                            <li>Comprehensive understanding of {{ course.subject.name }}</li>
+                            <li>Practical skills and real-world applications</li>
+                            <li>Best practices and industry standards</li>
+                            <li>Hands-on experience through assignments</li>
+                        </ul>
+                        
+                        <h5 class="mt-4">Course Requirements</h5>
+                        <ul>
+                            <li>Basic computer skills</li>
+                            <li>Interest in {{ course.subject.name }}</li>
+                            <li>Commitment to complete the course</li>
+                        </ul>
+                        
+                        <h5 class="mt-4">Target Audience</h5>
+                        <ul>
+                            <li>Beginners interested in {{ course.subject.name }}</li>
+                            <li>Students looking to enhance their skills</li>
+                            <li>Professionals seeking to upgrade their knowledge</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Syllabus Tab -->
+            <div class="tab-pane fade" id="syllabus" role="tabpanel">
+                <div class="card mt-3">
+                    <div class="card-body">
+                        {% if course.syllabus %}
+                        <h4>Course Syllabus</h4>
+                        {% for syllabus_item in course.syllabus|sort(attribute='order_index') %}
+                        <div class="syllabus-item {% if syllabus_item.is_milestone %}milestone{% endif %}">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h5>{{ syllabus_item.title }}</h5>
+                                    {% if syllabus_item.description %}
+                                    <p>{{ syllabus_item.description }}</p>
+                                    {% endif %}
+                                    {% if syllabus_item.estimated_hours %}
+                                    <small class="text-muted"><i class="fas fa-clock"></i> {{ syllabus_item.estimated_hours }} hours</small>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    {% if syllabus_item.is_milestone %}
+                                    <span class="badge bg-warning">Milestone</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <p class="text-muted">Syllabus will be available soon.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Instructor Tab -->
+            <div class="tab-pane fade" id="instructor" role="tabpanel">
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h4>Course Instructor</h4>
+                        <p class="text-muted">Instructor information will be available once you enroll in the course.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Course Info Card -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Course Information</h5>
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="fas fa-tag text-primary"></i>
+                        <strong>Subject:</strong> {{ course.subject.name }}
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-signal text-primary"></i>
+                        <strong>Level:</strong> {{ course.level }}
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-clock text-primary"></i>
+                        <strong>Duration:</strong> {{ course.duration_hours }} hours
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-dollar-sign text-primary"></i>
+                        <strong>Price:</strong> ${{ "%.2f"|format(course.price) }}
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-calendar text-primary"></i>
+                        <strong>Created:</strong> {{ course.created_at.strftime('%B %d, %Y') }}
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        {% if is_enrolled %}
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Quick Actions</h5>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('course.course_syllabus', course_id=course.id) }}" class="btn btn-outline-primary">
+                        <i class="fas fa-book"></i> View Syllabus
+                    </a>
+                    <a href="{{ url_for('course.course_assignments', course_id=course.id) }}" class="btn btn-outline-primary">
+                        <i class="fas fa-tasks"></i> Assignments
+                    </a>
+                    <a href="{{ url_for('course.course_discussions', course_id=course.id) }}" class="btn btn-outline-primary">
+                        <i class="fas fa-comments"></i> Discussions
+                    </a>
+                    <a href="{{ url_for('course.course_progress', course_id=course.id) }}" class="btn btn-outline-primary">
+                        <i class="fas fa-chart-line"></i> My Progress
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Related Courses -->
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Related Courses</h5>
+                <p class="text-muted">Related courses will be shown here.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>
+{% endblock %}

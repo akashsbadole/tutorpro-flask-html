@@ -1,0 +1,616 @@
+{% extends "tutor/base.html" %}
+
+{% block title %}Collect Feedback - TutorPro{% endblock %}
+
+{% block head %}
+<style>
+    .feedback-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .feedback-form {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .section-title {
+        color: #495057;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .booking-info {
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .booking-detail {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .booking-detail:last-child {
+        margin-bottom: 0;
+    }
+    
+    .booking-icon {
+        width: 40px;
+        height: 40px;
+        background: #667eea;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        flex-shrink: 0;
+    }
+    
+    .booking-content {
+        flex: 1;
+    }
+    
+    .booking-label {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-bottom: 0.25rem;
+    }
+    
+    .booking-value {
+        font-weight: 500;
+        color: #495057;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-label {
+        font-weight: 500;
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-control {
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        padding: 0.75rem;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    .form-check {
+        display: flex;
+        align-items: center;
+    }
+    
+    .form-check-input {
+        margin-right: 0.5rem;
+    }
+    
+    .rating-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .rating-item {
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1rem;
+    }
+    
+    .rating-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+    
+    .rating-label {
+        font-weight: 500;
+        color: #495057;
+    }
+    
+    .rating-value {
+        font-weight: 600;
+        color: #667eea;
+    }
+    
+    .rating-stars {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .rating-star {
+        font-size: 1.5rem;
+        color: #dee2e6;
+        cursor: pointer;
+        transition: color 0.2s ease;
+    }
+    
+    .rating-star:hover,
+    .rating-star.selected {
+        color: #ffc107;
+    }
+    
+    .progress-container {
+        margin-top: 0.5rem;
+    }
+    
+    .progress {
+        height: 0.5rem;
+        background: #e9ecef;
+        border-radius: 0.25rem;
+        overflow: hidden;
+    }
+    
+    .progress-bar {
+        height: 100%;
+        background: #667eea;
+        transition: width 0.3s ease;
+    }
+    
+    .btn-primary {
+        background: #667eea;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 0.25rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+        background: #5a67d8;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 0.25rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-secondary:hover {
+        background: #5a6268;
+    }
+    
+    .student-info {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .student-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-right: 1rem;
+    }
+    
+    .student-details {
+        flex: 1;
+    }
+    
+    .student-name {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.25rem;
+    }
+    
+    .student-contact {
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+    
+    .course-info {
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .course-title {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+    
+    .course-description {
+        color: #6c757d;
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .course-meta {
+        display: flex;
+        gap: 1rem;
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+    
+    .course-meta-item {
+        display: flex;
+        align-items: center;
+    }
+    
+    .course-meta-item i {
+        margin-right: 0.25rem;
+    }
+    
+    @media (max-width: 768px) {
+        .feedback-form {
+            padding: 1rem;
+        }
+        
+        .booking-detail {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .booking-icon {
+            margin-bottom: 0.5rem;
+        }
+        
+        .rating-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block tutor_content %}
+<div class="container-fluid">
+    <div class="feedback-container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Collect Student Feedback</h1>
+            <div>
+                <a href="{{ url_for('tutor.booking_details', booking_id=booking.id) }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Details
+                </a>
+            </div>
+        </div>
+
+        <div class="feedback-form">
+            <!-- Booking Information -->
+            <div class="booking-info">
+                <h3 class="section-title">Booking Information</h3>
+                
+                <!-- Student Information -->
+                <div class="student-info">
+                    {% if booking.student.user_profile.avatar_url %}
+                        <img src="{{ booking.student.user_profile.avatar_url }}" class="student-avatar" alt="Student Avatar">
+                    {% else %}
+                        <div class="student-avatar d-flex align-items-center justify-content-center bg-light">
+                            <i class="fas fa-user text-muted"></i>
+                        </div>
+                    {% endif %}
+                    <div class="student-details">
+                        <div class="student-name">
+                            {{ booking.student.user_profile.full_name if booking.student.user_profile else booking.student.email }}
+                        </div>
+                        <div class="student-contact">
+                            <i class="fas fa-envelope me-1"></i> {{ booking.student.email }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Course Information -->
+                <div class="course-info">
+                    <div class="course-title">{{ booking.course.title }}</div>
+                    <div class="course-description">{{ booking.course.description[:200] }}{% if booking.course.description|length > 200 %}...{% endif %}</div>
+                    <div class="course-meta">
+                        <div class="course-meta-item">
+                            <i class="fas fa-book"></i> {{ booking.course.subject.name }}
+                        </div>
+                        <div class="course-meta-item">
+                            <i class="fas fa-signal"></i> {{ booking.course.level }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Booking Details -->
+                <div class="booking-detail">
+                    <div class="booking-icon">
+                        <i class="fas fa-calendar"></i>
+                    </div>
+                    <div class="booking-content">
+                        <div class="booking-label">Scheduled Time</div>
+                        <div class="booking-value">{{ booking.scheduled_time.strftime('%A, %B %d, %Y at %I:%M %p') }}</div>
+                    </div>
+                </div>
+                
+                <div class="booking-detail">
+                    <div class="booking-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="booking-content">
+                        <div class="booking-label">Duration</div>
+                        <div class="booking-value">{{ booking.duration_minutes }} minutes</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feedback Form -->
+            <h3 class="section-title">Student Feedback</h3>
+            
+            <form method="POST" id="feedbackForm">
+                {{ form.hidden_tag() }}
+                
+                <!-- Overall Rating -->
+                <div class="form-group">
+                    <label class="form-label">Overall Rating</label>
+                    <div class="rating-container">
+                        <div class="rating-item">
+                            <div class="rating-header">
+                                <div class="rating-label">How would you rate this session overall?</div>
+                                <div class="rating-value" id="overallRatingValue">0/5</div>
+                            </div>
+                            <div class="rating-stars" id="overallRating">
+                                {% for i in range(1, 6) %}
+                                    <span class="rating-star" data-rating="{{ i }}">
+                                        <i class="far fa-star"></i>
+                                    </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {{ form.rating(class="form-control", type="hidden") }}
+                </div>
+                
+                <!-- Detailed Ratings -->
+                <div class="form-group">
+                    <label class="form-label">Detailed Ratings</label>
+                    <div class="rating-container">
+                        <!-- Teaching Quality -->
+                        <div class="rating-item">
+                            <div class="rating-header">
+                                <div class="rating-label">Teaching Quality</div>
+                                <div class="rating-value" id="teachingQualityValue">0/5</div>
+                            </div>
+                            <div class="rating-stars" id="teachingQuality">
+                                {% for i in range(1, 6) %}
+                                    <span class="rating-star" data-rating="{{ i }}">
+                                        <i class="far fa-star"></i>
+                                    </span>
+                                {% endfor %}
+                            </div>
+                            <div class="progress-container">
+                                <div class="progress">
+                                    <div class="progress-bar" id="teachingQualityBar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            {{ form.teaching_quality(class="form-control", type="hidden") }}
+                        </div>
+                        
+                        <!-- Communication -->
+                        <div class="rating-item">
+                            <div class="rating-header">
+                                <div class="rating-label">Communication</div>
+                                <div class="rating-value" id="communicationValue">0/5</div>
+                            </div>
+                            <div class="rating-stars" id="communication">
+                                {% for i in range(1, 6) %}
+                                    <span class="rating-star" data-rating="{{ i }}">
+                                        <i class="far fa-star"></i>
+                                    </span>
+                                {% endfor %}
+                            </div>
+                            <div class="progress-container">
+                                <div class="progress">
+                                    <div class="progress-bar" id="communicationBar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            {{ form.communication(class="form-control", type="hidden") }}
+                        </div>
+                        
+                        <!-- Preparation -->
+                        <div class="rating-item">
+                            <div class="rating-header">
+                                <div class="rating-label">Preparation</div>
+                                <div class="rating-value" id="preparationValue">0/5</div>
+                            </div>
+                            <div class="rating-stars" id="preparation">
+                                {% for i in range(1, 6) %}
+                                    <span class="rating-star" data-rating="{{ i }}">
+                                        <i class="far fa-star"></i>
+                                    </span>
+                                {% endfor %}
+                            </div>
+                            <div class="progress-container">
+                                <div class="progress">
+                                    <div class="progress-bar" id="preparationBar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            {{ form.preparation(class="form-control", type="hidden") }}
+                        </div>
+                        
+                        <!-- Value for Money -->
+                        <div class="rating-item">
+                            <div class="rating-header">
+                                <div class="rating-label">Value for Money</div>
+                                <div class="rating-value" id="valueForMoneyValue">0/5</div>
+                            </div>
+                            <div class="rating-stars" id="valueForMoney">
+                                {% for i in range(1, 6) %}
+                                    <span class="rating-star" data-rating="{{ i }}">
+                                        <i class="far fa-star"></i>
+                                    </span>
+                                {% endfor %}
+                            </div>
+                            <div class="progress-container">
+                                <div class="progress">
+                                    <div class="progress-bar" id="valueForMoneyBar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            {{ form.value_for_money(class="form-control", type="hidden") }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Comments -->
+                <div class="form-group">
+                    <label class="form-label" for="comments">Comments</label>
+                    {{ form.comments(class="form-control", rows="4", placeholder="Optional: Add any additional comments or feedback...") }}
+                    {% if form.comments.errors %}
+                        <div class="text-danger">
+                            {% for error in form.comments.errors %}
+                                <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Would Recommend -->
+                <div class="form-group">
+                    <div class="form-check">
+                        {{ form.would_recommend(class="form-check-input") }}
+                        {{ form.would_recommend.label(class="form-check-label") }}
+                    </div>
+                </div>
+                
+                <!-- Form Actions -->
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{{ url_for('tutor.booking_details', booking_id=booking.id) }}" class="btn btn-secondary">
+                        Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Submit Feedback
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Rating functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        // Overall rating
+        const overallRatingStars = document.querySelectorAll('#overallRating .rating-star');
+        const overallRatingInput = document.getElementById('rating');
+        const overallRatingValue = document.getElementById('overallRatingValue');
+        
+        overallRatingStars.forEach(star => {
+            star.addEventListener('click', function() {
+                const rating = parseInt(this.getAttribute('data-rating'));
+                overallRatingInput.value = rating;
+                overallRatingValue.textContent = `${rating}/5`;
+                
+                // Update stars
+                overallRatingStars.forEach((s, index) => {
+                    if (index < rating) {
+                        s.classList.add('selected');
+                        s.innerHTML = '<i class="fas fa-star"></i>';
+                    } else {
+                        s.classList.remove('selected');
+                        s.innerHTML = '<i class="far fa-star"></i>';
+                    }
+                });
+            });
+            
+            star.addEventListener('mouseenter', function() {
+                const rating = parseInt(this.getAttribute('data-rating'));
+                overallRatingStars.forEach((s, index) => {
+                    if (index < rating) {
+                        s.style.color = '#ffc107';
+                    } else {
+                        s.style.color = '#dee2e6';
+                    }
+                });
+            });
+        });
+        
+        // Detailed ratings
+        const ratingCategories = ['teaching_quality', 'communication', 'preparation', 'value_for_money'];
+        
+        ratingCategories.forEach(category => {
+            const stars = document.querySelectorAll(`#${category} .rating-star`);
+            const input = document.getElementById(category);
+            const value = document.getElementById(`${category}Value`);
+            const progressBar = document.getElementById(`${category}Bar`);
+            
+            stars.forEach(star => {
+                star.addEventListener('click', function() {
+                    const rating = parseInt(this.getAttribute('data-rating'));
+                    input.value = rating;
+                    value.textContent = `${rating}/5`;
+                    progressBar.style.width = `${(rating / 5) * 100}%`;
+                    
+                    // Update stars
+                    stars.forEach((s, index) => {
+                        if (index < rating) {
+                            s.classList.add('selected');
+                            s.innerHTML = '<i class="fas fa-star"></i>';
+                        } else {
+                            s.classList.remove('selected');
+                            s.innerHTML = '<i class="far fa-star"></i>';
+                        }
+                    });
+                });
+                
+                star.addEventListener('mouseenter', function() {
+                    const rating = parseInt(this.getAttribute('data-rating'));
+                    stars.forEach((s, index) => {
+                        if (index < rating) {
+                            s.style.color = '#ffc107';
+                        } else {
+                            s.style.color = '#dee2e6';
+                        }
+                    });
+                });
+            });
+        });
+        
+        // Reset hover state when mouse leaves rating area
+        document.querySelectorAll('.rating-container').forEach(container => {
+            container.addEventListener('mouseleave', function() {
+                const stars = this.querySelectorAll('.rating-star');
+                const rating = parseInt(this.querySelector('input[type="hidden"]').value);
+                
+                stars.forEach((star, index) => {
+                    if (index < rating) {
+                        star.style.color = '#ffc107';
+                    } else {
+                        star.style.color = '#dee2e6';
+                    }
+                });
+            });
+        });
+    });
+    
+    // Form validation
+    document.getElementById('feedbackForm').addEventListener('submit', function(e) {
+        const overallRating = document.getElementById('rating').value;
+        
+        if (!overallRating || overallRating === '0') {
+            e.preventDefault();
+            alert('Please provide an overall rating.');
+            return;
+        }
+        
+        // Additional validation can be added here
+    });
+</script>
+{% endblock %}

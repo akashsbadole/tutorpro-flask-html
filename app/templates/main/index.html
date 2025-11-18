@@ -1,0 +1,188 @@
+{% extends "base.html" %} {% block title %}Home{% endblock %} {% block content
+%}
+<!-- Hero Section -->
+<section class="bg-primary text-white py-5 mb-5">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-md-6">
+        <h1 class="display-4 fw-bold mb-4">Find Your Perfect Tutor</h1>
+        <p class="lead mb-4">
+          Connect with expert tutors for personalized learning experiences.
+          Whether you're looking to master a new skill or excel in your studies,
+          we have the right tutor for you.
+        </p>
+        <div class="d-flex gap-3">
+          {% if not current_user.is_authenticated %}
+          <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg">
+            <i class="fas fa-user-plus me-2"></i>Get Started
+          </a>
+          <a
+            href="{{ url_for('auth.login') }}"
+            class="btn btn-outline-light btn-lg"
+          >
+            <i class="fas fa-sign-in-alt me-2"></i>Login
+          </a>
+          {% else %}
+          <a
+            href="{{ url_for('main.dashboard') }}"
+            class="btn btn-light btn-lg"
+          >
+            <i class="fas fa-tachometer-alt me-2"></i>Go to Dashboard
+          </a>
+          {% endif %}
+        </div>
+      </div>
+      <div class="col-md-6">
+        <img
+          src="https://placehold.co/600x400/6c757d/ffffff?text=Learning+Platform"
+          class="img-fluid rounded shadow"
+          alt="Learning Platform"
+        />
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features Section -->
+<section class="mb-5">
+  <div class="container">
+    <div class="row text-center mb-5">
+      <div class="col">
+        <h2 class="fw-bold">Why Choose TutorPro?</h2>
+        <p class="lead text-muted">
+          We make learning personalized, flexible, and effective
+        </p>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body text-center">
+            <div class="text-primary mb-3">
+              <i class="fas fa-chalkboard-teacher fa-3x"></i>
+            </div>
+            <h4>Expert Tutors</h4>
+            <p class="text-muted">
+              Learn from qualified professionals with proven track records in
+              their fields.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body text-center">
+            <div class="text-success mb-3">
+              <i class="fas fa-calendar-check fa-3x"></i>
+            </div>
+            <h4>Flexible Scheduling</h4>
+            <p class="text-muted">
+              Book sessions at your convenience with 24/7 availability options.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body text-center">
+            <div class="text-info mb-3">
+              <i class="fas fa-laptop fa-3x"></i>
+            </div>
+            <h4>Online Learning</h4>
+            <p class="text-muted">
+              Study from anywhere with our interactive online platform and
+              tools.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Subject Categories -->
+<section class="bg-light py-5 mb-5">
+  <div class="container">
+    <div class="row text-center mb-4">
+      <div class="col">
+        <h2 class="fw-bold">Popular Subjects</h2>
+        <p class="lead text-muted">
+          Find tutors in various subjects and disciplines
+        </p>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-3 col-sm-6 mb-4">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <i class="fas fa-language fa-2x text-primary mb-2"></i>
+            <h5>Language Learning</h5>
+            <p class="text-muted">English, Spanish, French, German</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-3 col-sm-6 mb-4">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <i class="fas fa-calculator fa-2x text-primary mb-2"></i>
+            <h5>Mathematics</h5>
+            <p class="text-muted">Algebra, Calculus, Statistics</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-3 col-sm-6 mb-4">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <i class="fas fa-laptop-code fa-2x text-primary mb-2"></i>
+            <h5>Programming</h5>
+            <p class="text-muted">Python, JavaScript, Java</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-3 col-sm-6 mb-4">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <i class="fas fa-music fa-2x text-primary mb-2"></i>
+            <h5>Music</h5>
+            <p class="text-muted">Guitar, Piano, Singing</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Call to Action -->
+<section class="mb-5">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-8 mx-auto text-center">
+        <h2 class="fw-bold mb-4">Ready to Start Learning?</h2>
+        <p class="lead mb-4">
+          Join thousands of students who are already achieving their learning
+          goals with our expert tutors.
+        </p>
+        {% if not current_user.is_authenticated %}
+        <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">
+          <i class="fas fa-user-plus me-2"></i>Create Free Account
+        </a>
+        {% else %}
+        <a
+          href="{{ url_for('main.dashboard') }}"
+          class="btn btn-primary btn-lg"
+        >
+          <i class="fas fa-tachometer-alt me-2"></i>Go to Dashboard
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

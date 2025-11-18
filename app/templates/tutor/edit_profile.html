@@ -1,0 +1,683 @@
+{% extends "tutor/base.html" %}
+
+{% block title %}Edit Profile - TutorPro{% endblock %}
+
+{% block head %}
+<style>
+    .form-section {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .section-title {
+        color: #495057;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .profile-picture-container {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .profile-picture {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid #e9ecef;
+        margin-bottom: 1rem;
+    }
+    
+    .upload-btn {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .upload-btn:hover {
+        background: #5a67d8;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-label {
+        font-weight: 500;
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-control {
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        padding: 0.75rem;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    .form-text {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
+    }
+    
+    .btn-primary {
+        background: #667eea;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 0.25rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+        background: #5a67d8;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 0.25rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-secondary:hover {
+        background: #5a6268;
+    }
+    
+    .btn-outline-danger {
+        border: 1px solid #dc3545;
+        color: #dc3545;
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-outline-danger:hover {
+        background: #dc3545;
+        color: white;
+    }
+    
+    .subject-badge {
+        display: inline-block;
+        background: #667eea;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 1rem;
+        font-size: 0.875rem;
+        margin: 0.25rem;
+        position: relative;
+    }
+    
+    .subject-badge .remove-subject {
+        margin-left: 0.5rem;
+        cursor: pointer;
+        font-weight: bold;
+    }
+    
+    .subject-badge .remove-subject:hover {
+        color: #dc3545;
+    }
+    
+    .availability-time {
+        display: inline-block;
+        background: #e9ecef;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.875rem;
+        margin: 0.25rem;
+    }
+    
+    .availability-available {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .availability-unavailable {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .preview-section {
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-top: 2rem;
+    }
+    
+    .preview-title {
+        color: #495057;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+    
+    @media (max-width: 768px) {
+        .form-section {
+            padding: 1rem;
+        }
+        
+        .profile-picture {
+            width: 100px;
+            height: 100px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block tutor_content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Edit Profile</h1>
+        <a href="{{ url_for('tutor.profile') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Profile
+        </a>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" id="profileForm">
+        {{ form.hidden_tag() }}
+        
+        <!-- Profile Picture Section -->
+        <div class="form-section">
+            <h3 class="section-title">Profile Picture</h3>
+            <div class="profile-picture-container">
+                {% if user_profile.avatar_url %}
+                    <img src="{{ user_profile.avatar_url }}" class="profile-picture" alt="Profile Picture">
+                {% else %}
+                    <div class="profile-picture d-flex align-items-center justify-content-center bg-light">
+                        <i class="fas fa-user fa-3x text-muted"></i>
+                    </div>
+                {% endif %}
+                <input type="file" name="profile_picture" id="profile_picture" class="d-none" accept="image/*">
+                <button type="button" class="upload-btn" onclick="document.getElementById('profile_picture').click()">
+                    <i class="fas fa-camera me-2"></i>Change Picture
+                </button>
+                <div class="form-text">
+                    Recommended size: 300x300 pixels. Max file size: 5MB.
+                </div>
+            </div>
+        </div>
+
+        <!-- Basic Information Section -->
+        <div class="form-section">
+            <h3 class="section-title">Basic Information</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        {{ form.first_name.label(class="form-label") }}
+                        {{ form.first_name(class="form-control") }}
+                        {% if form.first_name.errors %}
+                            <div class="text-danger">
+                                {% for error in form.first_name.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        {{ form.last_name.label(class="form-label") }}
+                        {{ form.last_name(class="form-control") }}
+                        {% if form.last_name.errors %}
+                            <div class="text-danger">
+                                {% for error in form.last_name.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        {{ form.phone.label(class="form-label") }}
+                        {{ form.phone(class="form-control") }}
+                        {% if form.phone.errors %}
+                            <div class="text-danger">
+                                {% for error in form.phone.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        {{ form.timezone.label(class="form-label") }}
+                        {{ form.timezone(class="form-control") }}
+                        {% if form.timezone.errors %}
+                            <div class="text-danger">
+                                {% for error in form.timezone.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Professional Information Section -->
+        <div class="form-section">
+            <h3 class="section-title">Professional Information</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        {{ form.title.label(class="form-label") }}
+                        {{ form.title(class="form-control") }}
+                        {% if form.title.errors %}
+                            <div class="text-danger">
+                                {% for error in form.title.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        {{ form.video_intro_url.label(class="form-label") }}
+                        {{ form.video_intro_url(class="form-control", placeholder="https://youtube.com/watch?v=...") }}
+                        {% if form.video_intro_url.errors %}
+                            <div class="text-danger">
+                                {% for error in form.video_intro_url.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                {{ form.bio.label(class="form-label") }}
+                {{ form.bio(class="form-control", rows="4") }}
+                {% if form.bio.errors %}
+                    <div class="text-danger">
+                        {% for error in form.bio.errors %}
+                            <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                {{ form.expertise.label(class="form-label") }}
+                {{ form.expertise(class="form-control", rows="3") }}
+                {% if form.expertise.errors %}
+                    <div class="text-danger">
+                        {% for error in form.expertise.errors %}
+                            <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        {{ form.education.label(class="form-label") }}
+                        {{ form.education(class="form-control", rows="3") }}
+                        {% if form.education.errors %}
+                            <div class="text-danger">
+                                {% for error in form.education.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        {{ form.experience.label(class="form-label") }}
+                        {{ form.experience(class="form-control", rows="3") }}
+                        {% if form.experience.errors %}
+                            <div class="text-danger">
+                                {% for error in form.experience.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subjects Section -->
+        <div class="form-section">
+            <h3 class="section-title">Subjects You Teach</h3>
+            <div class="form-group">
+                {{ form.subjects.label(class="form-label") }}
+                {{ form.subjects(class="form-control") }}
+                {% if form.subjects.errors %}
+                    <div class="text-danger">
+                        {% for error in form.subjects.errors %}
+                            <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                {{ form.proficiency_level.label(class="form-label") }}
+                {{ form.proficiency_level(class="form-control") }}
+                {% if form.proficiency_level.errors %}
+                    <div class="text-danger">
+                        {% for error in form.proficiency_level.errors %}
+                            <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="mt-3">
+                <h6>Selected Subjects:</h6>
+                {% for ts in tutor_profile.subjects %}
+                    <span class="subject-badge">
+                        {{ ts.subject.name }} ({{ ts.proficiency_level }})
+                        <span class="remove-subject" onclick="removeSubject({{ ts.subject.id }})">
+                            <i class="fas fa-times"></i>
+                        </span>
+                    </span>
+                {% else %}
+                    <p class="text-muted">No subjects selected yet</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Pricing Information Section -->
+        <div class="form-section">
+            <h3 class="section-title">Pricing Information</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        {{ form.hourly_rate.label(class="form-label") }}
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            {{ form.hourly_rate(class="form-control") }}
+                        </div>
+                        {% if form.hourly_rate.errors %}
+                            <div class="text-danger">
+                                {% for error in form.hourly_rate.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        {{ form.currency.label(class="form-label") }}
+                        {{ form.currency(class="form-control") }}
+                        {% if form.currency.errors %}
+                            <div class="text-danger">
+                                {% for error in form.currency.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Information Section -->
+        <div class="form-section">
+            <h3 class="section-title">Payment Information</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        {{ form.upi_id.label(class="form-label") }}
+                        {{ form.upi_id(class="form-control", placeholder="yourname@upi") }}
+                        {% if form.upi_id.errors %}
+                            <div class="text-danger">
+                                {% for error in form.upi_id.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        {{ form.preferred_payment_method.label(class="form-label") }}
+                        {{ form.preferred_payment_method(class="form-control") }}
+                        {% if form.preferred_payment_method.errors %}
+                            <div class="text-danger">
+                                {% for error in form.preferred_payment_method.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div id="bankDetails" style="display: none;">
+                <h6 class="mt-3">Bank Details</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.bank_account_name.label(class="form-label") }}
+                            {{ form.bank_account_name(class="form-control") }}
+                            {% if form.bank_account_name.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.bank_account_name.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.bank_account_number.label(class="form-label") }}
+                            {{ form.bank_account_number(class="form-control") }}
+                            {% if form.bank_account_number.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.bank_account_number.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    {{ form.bank_ifsc_code.label(class="form-label") }}
+                    {{ form.bank_ifsc_code(class="form-control") }}
+                    {% if form.bank_ifsc_code.errors %}
+                        <div class="text-danger">
+                            {% for error in form.bank_ifsc_code.errors %}
+                                <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Information Section -->
+        <div class="form-section">
+            <h3 class="section-title">Additional Information</h3>
+            <div class="form-group">
+                {{ form.languages.label(class="form-label") }}
+                {{ form.languages(class="form-control", placeholder="English, Hindi, Spanish, ...") }}
+                {% if form.languages.errors %}
+                    <div class="text-danger">
+                        {% for error in form.languages.errors %}
+                            <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                {{ form.teaching_style.label(class="form-label") }}
+                {{ form.teaching_style(class="form-control", rows="3") }}
+                {% if form.teaching_style.errors %}
+                    <div class="text-danger">
+                        {% for error in form.teaching_style.errors %}
+                            <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="d-flex justify-content-between">
+            <a href="{{ url_for('tutor.profile') }}" class="btn btn-secondary">
+                Cancel
+            </a>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save me-2"></i>Save Changes
+            </button>
+        </div>
+    </form>
+
+    <!-- Preview Section -->
+    <div class="preview-section">
+        <h4 class="preview-title">
+            <i class="fas fa-eye me-2"></i>Profile Preview
+        </h4>
+        <p>Your profile will appear to students as shown below:</p>
+        <a href="{{ url_for('tutor.profile_preview') }}" class="btn btn-outline-primary">
+            <i class="fas fa-external-link-alt me-2"></i>View Full Preview
+        </a>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Handle profile picture upload
+    document.getElementById('profile_picture').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.querySelector('.profile-picture');
+                if (img.tagName === 'IMG') {
+                    img.src = e.target.result;
+                } else {
+                    img.innerHTML = `<img src="${e.target.result}" class="profile-picture" alt="Profile Picture">`;
+                }
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Handle payment method change
+    document.getElementById('preferred_payment_method').addEventListener('change', function(e) {
+        const bankDetails = document.getElementById('bankDetails');
+        if (e.target.value === 'bank_transfer') {
+            bankDetails.style.display = 'block';
+        } else {
+            bankDetails.style.display = 'none';
+        }
+    });
+
+    // Handle subject selection
+    document.getElementById('subjects').addEventListener('change', function(e) {
+        const selectedValue = e.target.value;
+        if (selectedValue) {
+            // Add subject to selected list
+            const subjectName = e.target.options[e.target.selectedIndex].text;
+            const proficiencyLevel = document.getElementById('proficiency_level').value;
+            
+            const subjectBadge = document.createElement('span');
+            subjectBadge.className = 'subject-badge';
+            subjectBadge.innerHTML = `
+                ${subjectName} (${proficiencyLevel})
+                <span class="remove-subject" onclick="removeSubject(${selectedValue})">
+                    <i class="fas fa-times"></i>
+                </span>
+            `;
+            
+            const selectedSubjects = document.querySelector('.mt-3');
+            selectedSubjects.appendChild(subjectBadge);
+            
+            // Reset form
+            e.target.value = '';
+        }
+    });
+
+    // Remove subject function
+    function removeSubject(subjectId) {
+        // Find and remove the subject badge
+        const badges = document.querySelectorAll('.subject-badge');
+        badges.forEach(badge => {
+            if (badge.innerHTML.includes(`onclick="removeSubject(${subjectId})"`)) {
+                badge.remove();
+            }
+        });
+        
+        // Optional: Remove from database via AJAX
+        fetch(`/tutor/subjects/${subjectId}/remove`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('Subject removed successfully');
+            } else {
+                console.error('Error removing subject:', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+
+    // Form validation
+    document.getElementById('profileForm').addEventListener('submit', function(e) {
+        // Basic validation
+        const firstName = document.getElementById('first_name').value.trim();
+        const lastName = document.getElementById('last_name').value.trim();
+        const title = document.getElementById('title').value.trim();
+        const bio = document.getElementById('bio').value.trim();
+        
+        if (!firstName || !lastName || !title || !bio) {
+            e.preventDefault();
+            alert('Please fill in all required fields.');
+            return;
+        }
+        
+        // Validate hourly rate
+        const hourlyRate = document.getElementById('hourly_rate').value;
+        if (hourlyRate <= 0) {
+            e.preventDefault();
+            alert('Hourly rate must be greater than 0.');
+            return;
+        }
+        
+        // Validate phone number if provided
+        const phone = document.getElementById('phone').value.trim();
+        if (phone && !/^[\d\s\-\+\(\)]+$/.test(phone)) {
+            e.preventDefault();
+            alert('Phone number contains invalid characters.');
+            return;
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,325 @@
+{% extends "payment/base.html" %}
+
+{% block title %}Payment History - TutorPro{% endblock %}
+
+{% block payment_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Payment History</h2>
+    <div>
+        <button type="button" class="btn btn-outline-primary me-2" data-bs-toggle="collapse" data-bs-target="#searchForm">
+            <i class="fas fa-search me-2"></i>Search
+        </button>
+        <div class="dropdown d-inline-block">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="fas fa-download me-2"></i>Export
+            </button>
+            <ul class="dropdown-menu">
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('payment.export_data', format='csv') }}">
+                        <i class="fas fa-file-csv me-2"></i>Export as CSV
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('payment.export_data', format='json') }}">
+                        <i class="fas fa-file-code me-2"></i>Export as JSON
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Search Form -->
+<div class="collapse mb-4" id="searchForm">
+    <div class="card">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('payment.payment_history') }}">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        {{ form.search_query.label(class="form-label") }}
+                        {{ form.search_query(class="form-control", placeholder="Search by transaction ID...") }}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.status.label(class="form-label") }}
+                        {{ form.status(class="form-select") }}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.payment_method.label(class="form-label") }}
+                        {{ form.payment_method(class="form-select") }}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search me-2"></i>Search
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        {{ form.date_from.label(class="form-label") }}
+                        {{ form.date_from(class="form-control", type="date") }}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.date_to.label(class="form-label") }}
+                        {{ form.date_to(class="form-control", type="date") }}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.amount_min.label(class="form-label") }}
+                        {{ form.amount_min(class="form-control", type="number", step="0.01", placeholder="Min amount") }}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.amount_max.label(class="form-label") }}
+                        {{ form.amount_max(class="form-control", type="number", step="0.01", placeholder="Max amount") }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <button type="button" class="btn btn-outline-secondary" onclick="clearFilters()">
+                            <i class="fas fa-times me-2"></i>Clear Filters
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card payment-card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="payment-method-icon card-icon">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div>
+                        <h6 class="card-subtitle mb-2">Total Spent</h6>
+                        <h3 class="card-title mb-0">${{ "%.2f"|format(payments|selectattr('status', 'equalto', 'Completed')|map(attribute='amount')|sum) }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card payment-card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="payment-method-icon paypal-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div>
+                        <h6 class="card-subtitle mb-2">Completed</h6>
+                        <h3 class="card-title mb-0">{{ payments|selectattr('status', 'equalto', 'Completed')|list|length }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card payment-card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="payment-method-icon" style="background-color: #FF9800; color: white;">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div>
+                        <h6 class="card-subtitle mb-2">Pending</h6>
+                        <h3 class="card-title mb-0">{{ payments|selectattr('status', 'equalto', 'Pending')|list|length }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card payment-card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="payment-method-icon" style="background-color: #9C27B0; color: white;">
+                        <i class="fas fa-undo"></i>
+                    </div>
+                    <div>
+                        <h6 class="card-subtitle mb-2">Refunded</h6>
+                        <h3 class="card-title mb-0">{{ payments|selectattr('status', 'equalto', 'Refunded')|list|length }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payments Table -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Payment History</h5>
+        <span class="badge bg-secondary">{{ payments|length }} payments</span>
+    </div>
+    <div class="card-body">
+        {% if payments %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Transaction ID</th>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Method</th>
+                        <th>Status</th>
+                        <th>Gateway</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in payments %}
+                    <tr>
+                        <td>
+                            <span class="font-monospace">{{ payment.transaction_id }}</span>
+                        </td>
+                        <td>{{ payment.created_at.strftime('%d %b %Y') }}</td>
+                        <td>
+                            <span class="fw-bold">{{ payment.currency }} {{ "%.2f"|format(payment.amount) }}</span>
+                        </td>
+                        <td>
+                            {% if payment.payment_method %}
+                                <span class="badge bg-secondary">{{ payment.payment_method.payment_type }}</span>
+                            {% else %}
+                                <span class="badge bg-light text-dark">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="payment-status status-{{ payment.status.lower() }}">
+                                {{ payment.status }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ payment.payment_gateway }}</span>
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="{{ url_for('payment.receipt', payment_id=payment.gateway_transaction_id) }}" 
+                                   class="btn btn-sm btn-outline-info" title="View Receipt">
+                                    <i class="fas fa-receipt"></i>
+                                </a>
+                                {% if payment.status == 'Completed' %}
+                                <a href="{{ url_for('payment.refund_payment', payment_id=payment.id) }}" 
+                                   class="btn btn-sm btn-outline-warning" title="Request Refund">
+                                    <i class="fas fa-undo"></i>
+                                </a>
+                                {% endif %}
+                                {% if payment.status == 'Pending' %}
+                                <button type="button" class="btn btn-sm btn-outline-primary" 
+                                        onclick="checkPaymentStatus('{{ payment.transaction_id }}')" title="Check Status">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if payments|length > 0 %}
+        <nav aria-label="Payment history pagination">
+            <ul class="pagination justify-content-center">
+                <li class="page-item {{ 'disabled' if not payments.prev_num }}">
+                    <a class="page-link" href="{{ url_for('payment.payment_history', page=payments.prev_num) }}" tabindex="-1">Previous</a>
+                </li>
+                
+                {% for page_num in payments.iter_pages() %}
+                    {% if page_num %}
+                        <li class="page-item {{ 'active' if page_num == payments.page }}">
+                            <a class="page-link" href="{{ url_for('payment.payment_history', page=page_num) }}">{{ page_num }}</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                <li class="page-item {{ 'disabled' if not payments.next_num }}">
+                    <a class="page-link" href="{{ url_for('payment.payment_history', page=payments.next_num) }}">Next</a>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
+        
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
+            <h4 class="text-muted">No payments found</h4>
+            <p class="text-muted">Your payment history will appear here once you make your first payment.</p>
+            <a href="{{ url_for('payment.payment_methods') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Add Payment Method
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+function clearFilters() {
+    // Clear all form fields
+    document.querySelector('input[name="search_query"]').value = '';
+    document.querySelector('select[name="status"]').value = '';
+    document.querySelector('select[name="payment_method"]').value = '';
+    document.querySelector('input[name="date_from"]').value = '';
+    document.querySelector('input[name="date_to"]').value = '';
+    document.querySelector('input[name="amount_min"]').value = '';
+    document.querySelector('input[name="amount_max"]').value = '';
+    
+    // Submit form with cleared filters
+    document.querySelector('form').submit();
+}
+
+function checkPaymentStatus(transactionId) {
+    // Show loading state
+    const btn = event.target.closest('button');
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    btn.disabled = true;
+    
+    // Make API call to check payment status
+    fetch(`/api/payment/status/${transactionId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Refresh page to show updated status
+                window.location.reload();
+            } else {
+                alert('Unable to check payment status. Please try again later.');
+            }
+        })
+        .catch(error => {
+            console.error('Error checking payment status:', error);
+            alert('Error checking payment status. Please try again later.');
+        })
+        .finally(() => {
+            // Restore button state
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        });
+}
+
+// Auto-submit form on filter change
+document.addEventListener('DOMContentLoaded', function() {
+    const filterFields = document.querySelectorAll('select[name="status"], select[name="payment_method"]');
+    filterFields.forEach(field => {
+        field.addEventListener('change', function() {
+            // Add a small delay to prevent immediate submission
+            setTimeout(() => {
+                document.querySelector('form').submit();
+            }, 500);
+        });
+    });
+});
+</script>
+{% endblock %}

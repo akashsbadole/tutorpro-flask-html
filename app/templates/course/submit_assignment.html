@@ -1,0 +1,300 @@
+{% extends "course/base.html" %}
+
+{% block title %}Submit Assignment{% endblock %}
+
+{% block course_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Submit Assignment</h1>
+    <div>
+        <span class="badge bg-secondary">{{ assignment.assignment_type }}</span>
+        {% if assignment.due_date %}
+        <span class="badge {% if assignment.due_date < moment() %}bg-danger{% else %}bg-warning{% endif %}">
+            <i class="fas fa-clock"></i> Due: {{ assignment.due_date.strftime('%b %d, %Y %H:%M') }}
+        </span>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Assignment Details -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">{{ assignment.title }}</h5>
+        
+        {% if assignment.description %}
+        <div class="mb-3">
+            <h6>Description</h6>
+            <p>{{ assignment.description }}</p>
+        </div>
+        {% endif %}
+        
+        {% if assignment.instructions %}
+        <div class="mb-3">
+            <h6>Instructions</h6>
+            <div class="card bg-light">
+                <div class="card-body">
+                    {{ assignment.instructions|safe }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="row">
+            <div class="col-md-6">
+                <strong>Max Score:</strong> {{ assignment.max_score }} points
+            </div>
+            <div class="col-md-6">
+                <strong>Passing Score:</strong> {{ assignment.passing_score }} points
+            </div>
+            {% if assignment.time_limit_minutes %}
+            <div class="col-md-6">
+                <strong>Time Limit:</strong> {{ assignment.time_limit_minutes }} minutes
+            </div>
+            {% endif %}
+            <div class="col-md-6">
+                <strong>Attempts Allowed:</strong> {{ assignment.max_attempts }}
+            </div>
+            {% if existing_submissions %}
+            <div class="col-md-6">
+                <strong>Previous Attempts:</strong> {{ existing_submissions }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Submission Form -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Submit Your Work</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
+            
+            {% if assignment.due_date and assignment.due_date < moment() %}
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>Warning:</strong> This assignment is overdue by {{ (moment() - assignment.due_date).days }} days!
+            </div>
+            {% endif %}
+            
+            {% if existing_submissions >= assignment.max_attempts %}
+            <div class="alert alert-danger">
+                <i class="fas fa-times-circle"></i>
+                <strong>Error:</strong> You have reached the maximum number of attempts ({{ assignment.max_attempts }}).
+            </div>
+            {% endif %}
+            
+            <div class="mb-3">
+                {{ form.submission_text.label(class="form-label") }}
+                {{ form.submission_text(class="form-control", rows="8", placeholder="Enter your assignment text here...", data-auto-save=`assignment_${assignment.id}`) }}
+                {% if form.submission_text.errors %}
+                <div class="invalid-feedback">
+                    {% for error in form.submission_text.errors %}
+                    <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="mb-3">
+                {{ form.file_path.label(class="form-label") }}
+                <div class="file-upload-area">
+                    <input type="file" name="file_path" class="form-control" id="file-input" accept=".pdf,.doc,.docx,.txt,.zip,.rar,.jpg,.jpeg,.png,.gif">
+                    <label for="file-input" class="form-label">
+                        <i class="fas fa-cloud-upload-alt fa-2x text-muted"></i>
+                        <div>
+                            <strong>Choose a file</strong> or drag and drop
+                        </div>
+                        <small class="text-muted">
+                            PDF, DOC, DOCX, TXT, ZIP, RAR, JPG, PNG, GIF (Max {{ assignment.max_file_size_mb }}MB)
+                        </small>
+                    </label>
+                </div>
+                {% if form.file_path.errors %}
+                <div class="invalid-feedback">
+                    {% for error in form.file_path.errors %}
+                    <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="mb-3">
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="confirm-submit">
+                    <label class="form-check-label" for="confirm-submit">
+                        I confirm that this is my own work and understand the consequences of academic dishonesty
+                    </label>
+                </div>
+            </div>
+            
+            <div class="d-grid gap-2 d-flex justify-content-end">
+                <a href="{{ url_for('course.assignment_detail', assignment_id=assignment.id) }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+                <button type="submit" class="btn btn-primary" id="submit-btn" disabled>
+                    <i class="fas fa-upload"></i> Submit Assignment
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Submission Guidelines -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">Submission Guidelines</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6><i class="fas fa-file-alt text-primary"></i> File Requirements</h6>
+                <ul>
+                    <li>Accepted formats: PDF, DOC, DOCX, TXT, ZIP, RAR</li>
+                    <li>Maximum file size: {{ assignment.max_file_size_mb }}MB</li>
+                    <li>Ensure files are virus-free</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6><i class="fas fa-check-circle text-success"></i> Academic Integrity</h6>
+                <ul>
+                    <li>Submit only your own work</li>
+                    <li>Cite all sources properly</li>
+                    <li>No plagiarism allowed</li>
+                    <li>Late submissions may incur penalties</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.getElementById('file-input');
+        const submitBtn = document.getElementById('submit-btn');
+        const confirmCheckbox = document.getElementById('confirm-submit');
+        
+        // File upload handling
+        if (fileInput) {
+            fileInput.addEventListener('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    const fileSizeMB = file.size / (1024 * 1024);
+                    const maxSizeMB = {{ assignment.max_file_size_mb or 20 }};
+                    
+                    if (fileSizeMB > maxSizeMB) {
+                        alert(`File size (${fileSizeMB.toFixed(2)}MB) exceeds the maximum allowed size (${maxSizeMB}MB).`);
+                        this.value = '';
+                        return;
+                    }
+                    
+                    // Update label with file name
+                    const label = this.nextElementSibling;
+                    if (label) {
+                        const fileName = file.name;
+                        label.querySelector('strong').textContent = `Selected: ${fileName}`;
+                    }
+                }
+            });
+            
+            // Drag and drop handling
+            const uploadArea = document.querySelector('.file-upload-area');
+            
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    if (eventName === 'dragenter' || eventName === 'dragover') {
+                        this.classList.add('border-primary');
+                        this.style.backgroundColor = '#e9ecef';
+                    } else {
+                        this.classList.remove('border-primary');
+                        this.style.backgroundColor = '#f8f9fa';
+                    }
+                });
+            });
+            
+            uploadArea.addEventListener('drop', function(e) {
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    fileInput.files = files;
+                    const event = new Event('change', { bubbles: true });
+                    fileInput.dispatchEvent(event);
+                }
+            });
+        }
+        
+        // Form validation
+        const form = document.querySelector('form');
+        const textArea = form.querySelector('textarea');
+        
+        function validateForm() {
+            const hasText = textArea.value.trim().length > 0;
+            const hasFile = fileInput.files.length > 0;
+            const isConfirmed = confirmCheckbox.checked;
+            
+            submitBtn.disabled = !(hasText || hasFile) || !isConfirmed;
+        }
+        
+        // Add event listeners
+        if (textArea) textArea.addEventListener('input', validateForm);
+        if (fileInput) fileInput.addEventListener('change', validateForm);
+        if (confirmCheckbox) confirmCheckbox.addEventListener('change', validateForm);
+        
+        // Initial validation
+        validateForm();
+        
+        // Countdown timer for due date
+        {% if assignment.due_date %}
+        const dueDate = new Date('{{ assignment.due_date.isoformat() }}');
+        const countdownElement = document.createElement('div');
+        countdownElement.className = 'alert alert-info mt-3';
+        countdownElement.style.display = 'none';
+        
+        function updateCountdown() {
+            const now = new Date();
+            const timeLeft = dueDate - now;
+            
+            if (timeLeft > 0) {
+                const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                
+                let text = '';
+                if (days > 0) {
+                    text = `${days}d ${hours}h ${minutes}m remaining`;
+                } else if (hours > 0) {
+                    text = `${hours}h ${minutes}m remaining`;
+                } else {
+                    text = `${minutes}m remaining`;
+                }
+                
+                countdownElement.innerHTML = `<i class="fas fa-clock"></i> <strong>${text}</strong>`;
+                countdownElement.style.display = 'block';
+                
+                if (timeLeft < 60 * 60 * 1000) { // Less than 1 hour
+                    countdownElement.className = 'alert alert-danger mt-3';
+                } else if (timeLeft < 24 * 60 * 60 * 1000) { // Less than 24 hours
+                    countdownElement.className = 'alert alert-warning mt-3';
+                }
+            } else {
+                countdownElement.innerHTML = '<i class="fas fa-exclamation-circle"></i> <strong>Assignment overdue</strong>';
+                countdownElement.className = 'alert alert-danger mt-3';
+            }
+        }
+        
+        // Insert countdown after the form
+        form.parentNode.insertBefore(countdownElement, form.nextSibling);
+        
+        // Update countdown every minute
+        updateCountdown();
+        setInterval(updateCountdown, 60000);
+        {% endif %}
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,694 @@
+{% extends "tutor/base.html" %}
+
+{% block title %}Availability - TutorPro{% endblock %}
+
+{% block head %}
+<style>
+    .availability-container {
+        display: flex;
+        gap: 2rem;
+    }
+    
+    .availability-sidebar {
+        flex: 0 0 300px;
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        height: fit-content;
+    }
+    
+    .availability-main {
+        flex: 1;
+    }
+    
+    .section-title {
+        color: #495057;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .availability-form {
+        margin-bottom: 2rem;
+    }
+    
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    
+    .form-label {
+        font-weight: 500;
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-control {
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        padding: 0.75rem;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    .btn-primary {
+        background: #667eea;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.25rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+        background: #5a67d8;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.25rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-secondary:hover {
+        background: #5a6268;
+    }
+    
+    .btn-outline-danger {
+        border: 1px solid #dc3545;
+        color: #dc3545;
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-outline-danger:hover {
+        background: #dc3545;
+        color: white;
+    }
+    
+    .btn-outline-success {
+        border: 1px solid #28a745;
+        color: #28a745;
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-outline-success:hover {
+        background: #28a745;
+        color: white;
+    }
+    
+    .btn-outline-info {
+        border: 1px solid #17a2b8;
+        color: #17a2b8;
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-outline-info:hover {
+        background: #17a2b8;
+        color: white;
+    }
+    
+    .availability-item {
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-left: 4px solid #667eea;
+    }
+    
+    .availability-day {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+    
+    .availability-time {
+        display: inline-block;
+        background: #e9ecef;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.875rem;
+        margin: 0.25rem;
+    }
+    
+    .availability-available {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .availability-unavailable {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .booking-item {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border: 1px solid #dee2e6;
+        transition: all 0.3s ease;
+    }
+    
+    .booking-item:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .booking-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+    
+    .booking-title {
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    .booking-status {
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    
+    .status-pending {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .status-confirmed {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .status-cancelled {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .calendar-container {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 0.5rem;
+    }
+    
+    .calendar-day-header {
+        text-align: center;
+        font-weight: 600;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        color: #495057;
+    }
+    
+    .calendar-day {
+        text-align: center;
+        padding: 1rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        background: white;
+        min-height: 120px;
+        position: relative;
+        transition: all 0.3s ease;
+    }
+    
+    .calendar-day:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .calendar-day.other-month {
+        background: #f8f9fa;
+        color: #6c757d;
+    }
+    
+    .calendar-day.today {
+        border: 2px solid #667eea;
+        background: #f0f4ff;
+    }
+    
+    .calendar-day-number {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    
+    .calendar-day-availability {
+        font-size: 0.75rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .calendar-day-booking {
+        font-size: 0.75rem;
+        background: #667eea;
+        color: white;
+        padding: 0.125rem 0.25rem;
+        border-radius: 0.25rem;
+        display: inline-block;
+        margin: 0.125rem;
+    }
+    
+    .bulk-actions {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-top: 2rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .timezone-selector {
+        margin-bottom: 1rem;
+    }
+    
+    @media (max-width: 768px) {
+        .availability-container {
+            flex-direction: column;
+        }
+        
+        .availability-sidebar {
+            flex: 1;
+        }
+        
+        .calendar-grid {
+            grid-template-columns: repeat(1, 1fr);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block tutor_content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Availability Management</h1>
+        <div>
+            <a href="{{ url_for('tutor.profile') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Profile
+            </a>
+        </div>
+    </div>
+
+    <div class="availability-container">
+        <!-- Sidebar -->
+        <div class="availability-sidebar">
+            <h3 class="section-title">Quick Actions</h3>
+            
+            <!-- Add Availability Form -->
+            <div class="availability-form">
+                <h5 class="mb-3">Set Availability</h5>
+                <form method="POST" action="{{ url_for('tutor.update_availability') }}" id="availabilityForm">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="form-group">
+                        {{ form.day_of_week.label(class="form-label") }}
+                        {{ form.day_of_week(class="form-control") }}
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.start_time.label(class="form-label") }}
+                        {{ form.start_time(class="form-control") }}
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.end_time.label(class="form-label") }}
+                        {{ form.end_time(class="form-control") }}
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="form-check">
+                            {{ form.is_available(class="form-check-input") }}
+                            {{ form.is_available.label(class="form-check-label") }}
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-save me-2"></i>Save Availability
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Bulk Actions -->
+            <div class="bulk-actions">
+                <h5 class="mb-3">Bulk Actions</h5>
+                
+                <div class="timezone-selector">
+                    <label class="form-label">Time Zone</label>
+                    <select class="form-control" id="timezoneSelect">
+                        <option value="UTC">UTC</option>
+                        <option value="US/Eastern">US Eastern</option>
+                        <option value="US/Central">US Central</option>
+                        <option value="US/Mountain">US Mountain</option>
+                        <option value="US/Pacific">US Pacific</option>
+                        <option value="Europe/London">Europe London</option>
+                        <option value="Europe/Paris">Europe Paris</option>
+                        <option value="Asia/Calcutta">Asia Calcutta</option>
+                        <option value="Asia/Shanghai">Asia Shanghai</option>
+                        <option value="Asia/Tokyo">Asia Tokyo</option>
+                        <option value="Australia/Sydney">Australia Sydney</option>
+                    </select>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-info" onclick="exportAvailability()">
+                        <i class="fas fa-download me-2"></i>Export to CSV
+                    </button>
+                    <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#importModal">
+                        <i class="fas fa-upload me-2"></i>Import from CSV
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="availability-main">
+            <!-- Calendar View -->
+            <div class="calendar-container">
+                <div class="calendar-header">
+                    <h3 class="section-title">Availability Calendar</h3>
+                    <div>
+                        <button type="button" class="btn btn-outline-secondary" onclick="previousMonth()">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <span class="mx-3" id="currentMonth"></span>
+                        <button type="button" class="btn btn-outline-secondary" onclick="nextMonth()">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="calendar-grid" id="calendarGrid">
+                    <!-- Calendar will be populated by JavaScript -->
+                </div>
+            </div>
+            
+            <!-- Current Availability -->
+            <div class="mt-4">
+                <h3 class="section-title">Current Availability</h3>
+                {% if availabilities %}
+                    {% for avail in availabilities %}
+                        <div class="availability-item">
+                            <div class="availability-day">
+                                {{ ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][avail.day_of_week] }}
+                                <button type="button" class="btn btn-sm btn-outline-danger float-end" onclick="deleteAvailability({{ avail.id }})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            {% if avail.is_available %}
+                                <span class="availability-time availability-available">
+                                    {{ avail.start_time.strftime('%H:%M') }} - {{ avail.end_time.strftime('%H:%M') }}
+                                </span>
+                            {% else %}
+                                <span class="availability-time availability-unavailable">Not Available</span>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>No availability set yet. Use the form to set your weekly availability.
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Upcoming Bookings -->
+            <div class="mt-4">
+                <h3 class="section-title">Upcoming Bookings</h3>
+                {% if bookings %}
+                    {% for booking in bookings %}
+                        <div class="booking-item">
+                            <div class="booking-header">
+                                <div class="booking-title">
+                                    {{ booking.student.email }} - {{ booking.course.title }}
+                                </div>
+                                <span class="booking-status status-{{ booking.status.lower() }}">
+                                    {{ booking.status }}
+                                </span>
+                            </div>
+                            <div>
+                                <i class="fas fa-calendar me-2"></i>
+                                {{ booking.scheduled_time.strftime('%Y-%m-%d %H:%M') }} 
+                                ({{ booking.duration_minutes }} minutes)
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>No upcoming bookings for the next 7 days.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Import Availability</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="importForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="csvFile" class="form-label">CSV File</label>
+                        <input type="file" class="form-control" id="csvFile" accept=".csv" required>
+                        <div class="form-text">
+                            CSV format: day_of_week,start_time,end_time,is_available<br>
+                            Example: 0,09:00,17:00,true
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="importAvailability()">Import</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Calendar functionality
+    let currentDate = new Date();
+    let currentYear = currentDate.getFullYear();
+    let currentMonth = currentDate.getMonth();
+    
+    // Initialize calendar
+    function initCalendar() {
+        renderCalendar(currentYear, currentMonth);
+        updateMonthDisplay();
+    }
+    
+    // Render calendar
+    function renderCalendar(year, month) {
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const startDate = new Date(firstDay);
+        startDate.setDate(startDate.getDate() - firstDay.getDay());
+        
+        const calendarGrid = document.getElementById('calendarGrid');
+        calendarGrid.innerHTML = '';
+        
+        // Add day headers
+        const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        dayHeaders.forEach(day => {
+            const dayHeader = document.createElement('div');
+            dayHeader.className = 'calendar-day-header';
+            dayHeader.textContent = day;
+            calendarGrid.appendChild(dayHeader);
+        });
+        
+        // Add calendar days
+        const today = new Date();
+        for (let i = 0; i < 42; i++) {
+            const date = new Date(startDate);
+            date.setDate(startDate.getDate() + i);
+            
+            const dayElement = document.createElement('div');
+            dayElement.className = 'calendar-day';
+            
+            if (date.getMonth() !== month) {
+                dayElement.classList.add('other-month');
+            }
+            
+            if (date.toDateString() === today.toDateString()) {
+                dayElement.classList.add('today');
+            }
+            
+            const dayNumber = document.createElement('div');
+            dayNumber.className = 'calendar-day-number';
+            dayNumber.textContent = date.getDate();
+            dayElement.appendChild(dayNumber);
+            
+            // Add availability info
+            const dayOfWeek = date.getDay();
+            const availability = getAvailabilityForDay(dayOfWeek);
+            if (availability) {
+                const availabilityInfo = document.createElement('div');
+                availabilityInfo.className = 'calendar-day-availability';
+                if (availability.is_available) {
+                    availabilityInfo.textContent = `${availability.start_time} - ${availability.end_time}`;
+                    availabilityInfo.classList.add('availability-available');
+                } else {
+                    availabilityInfo.textContent = 'Not Available';
+                    availabilityInfo.classList.add('availability-unavailable');
+                }
+                dayElement.appendChild(availabilityInfo);
+            }
+            
+            // Add booking info
+            const bookings = getBookingsForDate(date);
+            if (bookings.length > 0) {
+                bookings.forEach(booking => {
+                    const bookingInfo = document.createElement('div');
+                    bookingInfo.className = 'calendar-day-booking';
+                    bookingInfo.textContent = booking.student_email;
+                    dayElement.appendChild(bookingInfo);
+                });
+            }
+            
+            calendarGrid.appendChild(dayElement);
+        }
+    }
+    
+    // Get availability for a specific day of week
+    function getAvailabilityForDay(dayOfWeek) {
+        // This would normally fetch from server, but for now we'll use placeholder data
+        return null;
+    }
+    
+    // Get bookings for a specific date
+    function getBookingsForDate(date) {
+        // This would normally fetch from server, but for now we'll use placeholder data
+        return [];
+    }
+    
+    // Update month display
+    function updateMonthDisplay() {
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'];
+        document.getElementById('currentMonth').textContent = 
+            `${monthNames[currentMonth]} ${currentYear}`;
+    }
+    
+    // Navigate to previous month
+    function previousMonth() {
+        currentMonth--;
+        if (currentMonth < 0) {
+            currentMonth = 11;
+            currentYear--;
+        }
+        renderCalendar(currentYear, currentMonth);
+        updateMonthDisplay();
+    }
+    
+    // Navigate to next month
+    function nextMonth() {
+        currentMonth++;
+        if (currentMonth > 11) {
+            currentMonth = 0;
+            currentYear++;
+        }
+        renderCalendar(currentYear, currentMonth);
+        updateMonthDisplay();
+    }
+    
+    // Delete availability
+    function deleteAvailability(availabilityId) {
+        if (confirm('Are you sure you want to delete this availability?')) {
+            fetch(`/tutor/availability/delete/${availabilityId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error deleting availability: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error deleting availability');
+            });
+        }
+    }
+    
+    // Export availability
+    function exportAvailability() {
+        window.location.href = '{{ url_for("tutor.bulk_export_availability") }}';
+    }
+    
+    // Import availability
+    function importAvailability() {
+        const csvFile = document.getElementById('csvFile').files[0];
+        if (!csvFile) {
+            alert('Please select a CSV file');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('csv_file', csvFile);
+        formData.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+        
+        fetch('{{ url_for("tutor.bulk_import_availability") }}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Availability imported successfully');
+                location.reload();
+            } else {
+                alert('Error importing availability: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error importing availability');
+        });
+    }
+    
+    // Initialize calendar on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        initCalendar();
+    });
+</script>
+{% endblock %}

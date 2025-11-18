@@ -1,0 +1,418 @@
+{% extends "meeting/base.html" %}
+
+{% block title %}Create Meeting - TutorPro{% endblock %}
+
+{% block meeting_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Create Meeting</h1>
+    <div>
+        <a href="{{ url_for('meeting.index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Meetings
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Meeting Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="meetingForm">
+                    {{ form.hidden_tag() }}
+                    
+                    <!-- Basic Information -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.title.label(class="form-label") }}
+                                {{ form.title(class="form-control") }}
+                                {% if form.title.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.title.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.meeting_type.label(class="form-label") }}
+                                {{ form.meeting_type(class="form-control") }}
+                                {% if form.meeting_type.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.meeting_type.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.description.label(class="form-label") }}
+                        {{ form.description(class="form-control", rows="4") }}
+                        {% if form.description.errors %}
+                            <div class="text-danger">
+                                {% for error in form.description.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Scheduling -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.scheduled_time.label(class="form-label") }}
+                                {{ form.scheduled_time(class="form-control", placeholder="YYYY-MM-DD HH:MM") }}
+                                {% if form.scheduled_time.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.scheduled_time.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                {{ form.duration_minutes.label(class="form-label") }}
+                                {{ form.duration_minutes(class="form-control") }}
+                                {% if form.duration_minutes.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.duration_minutes.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                {{ form.timezone.label(class="form-label") }}
+                                {{ form.timezone(class="form-control") }}
+                                {% if form.timezone.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.timezone.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Platform Settings -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.platform.label(class="form-label") }}
+                                {{ form.platform(class="form-control", id="platformSelect") }}
+                                {% if form.platform.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.platform.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.max_participants.label(class="form-label") }}
+                                {{ form.max_participants(class="form-control") }}
+                                {% if form.max_participants.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.max_participants.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.meeting_url.label(class="form-label") }}
+                                {{ form.meeting_url(class="form-control", placeholder="https://zoom.us/j/123456789") }}
+                                {% if form.meeting_url.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.meeting_url.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.meeting_id.label(class="form-label") }}
+                                {{ form.meeting_id(class="form-control", placeholder="Optional: Enter meeting ID") }}
+                                {% if form.meeting_id.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.meeting_id.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.password.label(class="form-label") }}
+                                {{ form.password(class="form-control", placeholder="Optional: Enter password") }}
+                                {% if form.password.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.password.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.link_expires_at.label(class="form-label") }}
+                                {{ form.link_expires_at(class="form-control", placeholder="YYYY-MM-DD HH:MM") }}
+                                <small class="form-text">Leave empty for no expiration</small>
+                                {% if form.link_expires_at.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.link_expires_at.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Meeting Settings -->
+                    <h6 class="mt-4 mb-3">Meeting Settings</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check mb-2">
+                                {{ form.enable_recording(class="form-check-input") }}
+                                {{ form.enable_recording.label(class="form-check-label") }}
+                            </div>
+                            <div class="form-check mb-2">
+                                {{ form.enable_waiting_room(class="form-check-input") }}
+                                {{ form.enable_waiting_room.label(class="form-check-label") }}
+                            </div>
+                            <div class="form-check mb-2">
+                                {{ form.enable_participant_video(class="form-check-input") }}
+                                {{ form.enable_participant_video.label(class="form-check-label") }}
+                            </div>
+                            <div class="form-check mb-2">
+                                {{ form.enable_participant_audio(class="form-check-input") }}
+                                {{ form.enable_participant_audio.label(class="form-check-label") }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mb-2">
+                                {{ form.enable_chat(class="form-check-input") }}
+                                {{ form.enable_chat.label(class="form-check-label") }}
+                            </div>
+                            <div class="form-check mb-2">
+                                {{ form.enable_screen_share(class="form-check-input") }}
+                                {{ form.enable_screen_share.label(class="form-check-label") }}
+                            </div>
+                            <div class="form-check mb-2">
+                                {{ form.require_password(class="form-check-input") }}
+                                {{ form.require_password.label(class="form-check-label") }}
+                            </div>
+                            <div class="form-check mb-2">
+                                {{ form.enable_authentication(class="form-check-input") }}
+                                {{ form.enable_authentication.label(class="form-check-label") }}
+                            </div>
+                            <div class="form-check mb-2">
+                                {{ form.one_time_link(class="form-check-input") }}
+                                {{ form.one_time_link.label(class="form-check-label") }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{{ url_for('meeting.index') }}" class="btn btn-secondary">
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Create Meeting
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Meeting Templates -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">Quick Templates</h6>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <a href="#" class="list-group-item list-group-item-action" onclick="applyTemplate('regular')">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Regular Meeting</h6>
+                            <small>60 min</small>
+                        </div>
+                        <p class="mb-1">Standard one-on-one meeting</p>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action" onclick="applyTemplate('demo')">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Demo Class</h6>
+                            <small>30 min</small>
+                        </div>
+                        <p class="mb-1">Trial session for new students</p>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action" onclick="applyTemplate('consultation')">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Consultation</h6>
+                            <small>45 min</small>
+                        </div>
+                        <p class="mb-1">Initial consultation meeting</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Platform Integration -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Platform Integration</h6>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Select your preferred video conferencing platform. The system will automatically configure settings based on your choice.
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-primary" onclick="generateZoomLink()">
+                        <i class="fab fa-zoom me-2"></i>Generate Zoom Link
+                    </button>
+                    <button type="button" class="btn btn-outline-success" onclick="generateGoogleMeetLink()">
+                        <i class="fab fa-google me-2"></i>Generate Google Meet
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Apply template
+    function applyTemplate(type) {
+        const form = document.getElementById('meetingForm');
+        
+        switch(type) {
+            case 'regular':
+                form.meeting_type.value = 'Regular';
+                form.duration_minutes.value = '60';
+                form.enable_waiting_room.checked = true;
+                form.enable_participant_video.checked = true;
+                form.enable_participant_audio.checked = true;
+                break;
+            case 'demo':
+                form.meeting_type.value = 'Demo';
+                form.duration_minutes.value = '30';
+                form.enable_recording.checked = true;
+                form.enable_waiting_room.checked = true;
+                break;
+            case 'consultation':
+                form.meeting_type.value = 'Consultation';
+                form.duration_minutes.value = '45';
+                form.enable_waiting_room.checked = true;
+                form.enable_screen_share.checked = true;
+                break;
+        }
+    }
+    
+    // Generate Zoom link
+    function generateZoomLink() {
+        const meetingId = generateMeetingId();
+        const meetingUrl = `https://zoom.us/j/${meetingId}`;
+        
+        document.getElementById('meeting_id').value = meetingId;
+        document.getElementById('meeting_url').value = meetingUrl;
+        document.getElementById('platformSelect').value = 'Zoom';
+        
+        // Auto-generate password if required
+        if (document.getElementById('require_password').checked && !document.getElementById('password').value) {
+            document.getElementById('password').value = generatePassword();
+        }
+    }
+    
+    // Generate Google Meet link
+    function generateGoogleMeetLink() {
+        // In production, this would integrate with Google Calendar API
+        const meetingUrl = 'https://meet.google.com/' + generateRandomString(10);
+        
+        document.getElementById('meeting_url').value = meetingUrl;
+        document.getElementById('platformSelect').value = 'Google Meet';
+    }
+    
+    // Generate random meeting ID
+    function generateMeetingId() {
+        let result = '';
+        const characters = '0123456789';
+        const charactersLength = characters.length;
+        for (let i = 0; i < 11; i++) {
+            result += characters.charAt(Math.floor(Math.random() * charactersLength));
+        }
+        return result;
+    }
+    
+    // Generate random password
+    function generatePassword() {
+        let result = '';
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        const charactersLength = characters.length;
+        for (let i = 0; i < 8; i++) {
+            result += characters.charAt(Math.floor(Math.random() * charactersLength));
+        }
+        return result;
+    }
+    
+    // Generate random string for Google Meet
+    function generateRandomString(length) {
+        let result = '';
+        const characters = 'abcdefghijklmnopqrstuvwxyz-';
+        const charactersLength = characters.length;
+        for (let i = 0; i < length; i++) {
+            result += characters.charAt(Math.floor(Math.random() * charactersLength));
+        }
+        return result;
+    }
+    
+    // Auto-generate meeting ID when platform changes to Zoom
+    document.getElementById('platformSelect').addEventListener('change', function() {
+        if (this.value === 'Zoom' && !document.getElementById('meeting_id').value) {
+            generateZoomLink();
+        }
+    });
+    
+    // Set minimum date to current datetime
+    document.addEventListener('DOMContentLoaded', function() {
+        const scheduledTimeInput = document.getElementById('scheduled_time');
+        const now = new Date();
+        const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+            .toISOString()
+            .slice(0, 16);
+        scheduledTimeInput.min = localDateTime;
+    });
+</script>
+{% endblock %}
