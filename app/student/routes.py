@@ -1,448 +1,659 @@
-from flask import render_template, request, redirect, url_for, flash, jsonify
+"""
+Student Routes for TutorPro Marketplace
+Student dashboard and profile management routes
+"""
+
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, current_app
 from flask_login import login_required, current_user
-from app.student import bp
-from app.utils.decorators import learner_required
-from app.models.user import User, UserProfile, LearnerProfile
-from app.models.tutor import TutorProfile
-from app.models.course import Course, Subject
-from app.models.booking import Booking, DemoRequest
-from app.models.payment import Payment, PaymentMethod
-from app.models.review import Review
+from datetime import datetime, timezone, timedelta
+from sqlalchemy import and_, or_, func, desc
+from sqlalchemy.orm import joinedload
+
 from app import db
-from sqlalchemy import func, desc
-from datetime import datetime, timedelta
-import json
+from app.models.user import User
+from app.models.student import (
+    LearnerProfile, StudentLearningGoal, StudentSubjectPreference, 
+    StudentWishlist, LearningProgress, ProgressEntry, LearningMilestone,
+    StudentComparison
+)
+from app.models.tutor import TutorProfile
+from app.models.category import Subject
+from app.models.booking import Booking
+from app.models.demo import DemoSession, DemoSessionStatus
+from app.models.verification import TutorRating, Review
+from app.services.student_matching import StudentMatchingService
+from app.services.demo_booking import DemoBookingService
 
+student_bp = Blueprint('student', __name__, url_prefix='/student')
 
-@bp.route('/dashboard')
+@student_bp.route('/dashboard')
 @login_required
-@learner_required
 def dashboard():
-    """Learner dashboard with key metrics and statistics"""
-    # Get learner profile
-    learner_profile = current_user.learner_profile
-    if not learner_profile:
-        # Create learner profile if it doesn't exist
-        learner_profile = LearnerProfile(user_id=current_user.id)
-        db.session.add(learner_profile)
-        db.session.commit()
+    """Student dashboard with learning progress and recommendations"""
+    if not current_user.is_learner():
+        flash('Access denied. This page is for students only.', 'danger')
+        return redirect(url_for('main.index'))
     
-    # Get booking statistics
-    total_bookings = Booking.query.filter_by(student_id=current_user.id).count()
-    upcoming_bookings = Booking.query.filter(
-        Booking.student_id == current_user.id,
-        Booking.scheduled_time > datetime.utcnow(),
-        Booking.status.in_(['Pending', 'Confirmed'])
-    ).count()
+    try:
+        # Get student profile
+        learner_profile = LearnerProfile.query.filter_by(user_id=current_user.id).first()
+        
+        # Get dashboard statistics
+        stats = get_dashboard_stats(current_user.id)
+        
+        # Get learning progress
+        learning_progress = get_learning_progress(current_user.id, limit=5)
+        
+        # Get upcoming sessions (both bookings and demos)
+        upcoming_sessions = get_upcoming_sessions(current_user.id, limit=5)
+        
+        # Get recommended tutors
+        recommended_tutors = get_recommended_tutors(current_user.id, limit=3)
+        
+        # Get active learning goals
+        learning_goals = get_active_learning_goals(current_user.id, limit=3)
+        
+        # Get recent achievements
+        achievements = get_recent_achievements(current_user.id, limit=6)
+        
+        return render_template('student/dashboard.html',
+                            stats=stats,
+                            learning_progress=learning_progress,
+                            upcoming_sessions=upcoming_sessions,
+                            recommended_tutors=recommended_tutors,
+                            learning_goals=learning_goals,
+                            achievements=achievements)
     
-    # Get payment statistics
-    total_spent = db.session.query(func.sum(Payment.amount)).join(
-        Booking, Booking.id == Payment.booking_id
-    ).filter(
-        Booking.student_id == current_user.id,
-        Payment.status == 'Completed'
-    ).scalar() or 0
-    
-    # Get review statistics
-    reviews_written = Review.query.filter_by(reviewer_id=current_user.id).count()
-    
-    # Get upcoming bookings
-    upcoming_booking_list = Booking.query.filter(
-        Booking.student_id == current_user.id,
-        Booking.scheduled_time > datetime.utcnow(),
-        Booking.status.in_(['Pending', 'Confirmed'])
-    ).order_by(Booking.scheduled_time.asc()).limit(5).all()
-    
-    # Get recent bookings
-    recent_bookings = Booking.query.filter(
-        Booking.student_id == current_user.id,
-        Booking.scheduled_time <= datetime.utcnow()
-    ).order_by(Booking.scheduled_time.desc()).limit(5).all()
-    
-    # Get enrolled courses
-    enrolled_courses = db.session.query(Course).join(
-        Booking, Booking.course_id == Course.id
-    ).filter(
-        Booking.student_id == current_user.id
-    ).distinct().all()
-    
-    return render_template('student/dashboard.html', 
-                           learner_profile=learner_profile,
-                           total_bookings=total_bookings,
-                           upcoming_bookings=upcoming_bookings,
-                           total_spent=total_spent,
-                           reviews_written=reviews_written,
-                           upcoming_booking_list=upcoming_booking_list,
-                           recent_bookings=recent_bookings,
-                           enrolled_courses=enrolled_courses)
+    except Exception as e:
+        current_app.logger.error(f"Error loading student dashboard: {str(e)}")
+        flash('Error loading dashboard. Please try again.', 'danger')
+        return redirect(url_for('main.index'))
 
-
-@bp.route('/profile')
+@student_bp.route('/profile')
 @login_required
-@learner_required
 def profile():
-    """View and edit learner profile"""
-    learner_profile = current_user.learner_profile
-    if not learner_profile:
-        # Create learner profile if it doesn't exist
-        learner_profile = LearnerProfile(user_id=current_user.id)
-        db.session.add(learner_profile)
-        db.session.commit()
+    """Student profile page"""
+    if not current_user.is_learner():
+        flash('Access denied. This page is for students only.', 'danger')
+        return redirect(url_for('main.index'))
     
-    return render_template('student/profile.html', learner_profile=learner_profile)
+    try:
+        learner_profile = LearnerProfile.query.filter_by(user_id=current_user.id).first()
+        
+        if not learner_profile:
+            # Create default profile
+            learner_profile = LearnerProfile(user_id=current_user.id)
+            db.session.add(learner_profile)
+            db.session.commit()
+        
+        # Get subject preferences
+        subject_preferences = StudentSubjectPreference.query.filter_by(
+            learner_profile_id=learner_profile.id, is_active=True
+        ).options(joinedload(StudentSubjectPreference.subject)).all()
+        
+        # Get learning goals
+        learning_goals = StudentLearningGoal.query.filter_by(
+            learner_profile_id=learner_profile.id, is_active=True
+        ).options(joinedload(StudentLearningGoal.subject)).all()
+        
+        return render_template('student/profile.html',
+                            learner_profile=learner_profile,
+                            subject_preferences=subject_preferences,
+                            learning_goals=learning_goals)
+    
+    except Exception as e:
+        current_app.logger.error(f"Error loading student profile: {str(e)}")
+        flash('Error loading profile. Please try again.', 'danger')
+        return redirect(url_for('student.dashboard'))
 
-
-@bp.route('/profile/edit', methods=['GET', 'POST'])
+@student_bp.route('/profile/edit', methods=['GET', 'POST'])
 @login_required
-@learner_required
 def edit_profile():
-    """Edit learner profile"""
-    learner_profile = current_user.learner_profile
-    if not learner_profile:
-        # Create learner profile if it doesn't exist
-        learner_profile = LearnerProfile(user_id=current_user.id)
-        db.session.add(learner_profile)
-        db.session.commit()
+    """Edit student profile"""
+    if not current_user.is_learner():
+        flash('Access denied. This page is for students only.', 'danger')
+        return redirect(url_for('main.index'))
     
-    if request.method == 'POST':
-        # Update learner profile
-        learner_profile.learning_goals = request.form.get('learning_goals', learner_profile.learning_goals)
-        learner_profile.preferred_subjects = request.form.get('preferred_subjects', learner_profile.preferred_subjects)
-        learner_profile.budget_range_min = float(request.form.get('budget_range_min', learner_profile.budget_range_min or 0))
-        learner_profile.budget_range_max = float(request.form.get('budget_range_max', learner_profile.budget_range_max or 0))
-        learner_profile.preferred_tutor_gender = request.form.get('preferred_tutor_gender', learner_profile.preferred_tutor_gender)
-        learner_profile.experience_level = request.form.get('experience_level', learner_profile.experience_level)
-        learner_profile.language_preference = request.form.get('language_preference', learner_profile.language_preference)
+    try:
+        learner_profile = LearnerProfile.query.filter_by(user_id=current_user.id).first()
         
-        # Update user profile
-        if current_user.user_profile:
-            current_user.user_profile.first_name = request.form.get('first_name', current_user.user_profile.first_name)
-            current_user.user_profile.last_name = request.form.get('last_name', current_user.user_profile.last_name)
-            current_user.user_profile.phone = request.form.get('phone', current_user.user_profile.phone)
-            current_user.user_profile.bio = request.form.get('bio', current_user.user_profile.bio)
+        if not learner_profile:
+            learner_profile = LearnerProfile(user_id=current_user.id)
+            db.session.add(learner_profile)
         
-        db.session.commit()
-        flash('Profile updated successfully', 'success')
+        if request.method == 'POST':
+            # Update profile fields
+            learner_profile.bio = request.form.get('bio')
+            learner_profile.timezone = request.form.get('timezone', 'UTC')
+            learner_profile.learning_style = request.form.get('learning_style')
+            learner_profile.experience_level = request.form.get('experience_level')
+            learner_profile.preferred_tutor_gender = request.form.get('preferred_tutor_gender', 'Any')
+            learner_profile.preferred_session_duration = int(request.form.get('preferred_session_duration', 60))
+            learner_profile.preferred_session_frequency = request.form.get('preferred_session_frequency', 'Weekly')
+            learner_profile.flexible_scheduling = 'flexible_scheduling' in request.form
+            learner_profile.budget_range_min = float(request.form.get('budget_range_min')) if request.form.get('budget_range_min') else None
+            learner_profile.budget_range_max = float(request.form.get('budget_range_max')) if request.form.get('budget_range_max') else None
+            learner_profile.city = request.form.get('city')
+            learner_profile.state = request.form.get('state')
+            learner_profile.country = request.form.get('country')
+            learner_profile.preferred_contact_method = request.form.get('preferred_contact_method', 'email')
+            learner_profile.communication_frequency = request.form.get('communication_frequency', 'moderate')
+            learner_profile.profile_visibility = request.form.get('profile_visibility', 'public')
+            learner_profile.show_real_name = 'show_real_name' in request.form
+            learner_profile.allow_contact_requests = 'allow_contact_requests' in request.form
+            
+            # Handle JSON fields
+            preferred_languages = request.form.getlist('preferred_languages')
+            learner_profile.preferred_languages = preferred_languages if preferred_languages else []
+            
+            preferred_teaching_modes = request.form.getlist('preferred_teaching_modes')
+            learner_profile.preferred_teaching_modes = preferred_teaching_modes if preferred_teaching_modes else ['online']
+            
+            availability_days = request.form.getlist('availability_days')
+            availability_times = {}
+            for day in availability_days:
+                time_field = f'availability_time_{day}'
+                if request.form.get(time_field):
+                    availability_times[day] = request.form.get(time_field)
+            learner_profile.availability = availability_times if availability_times else {}
+            
+            # Update completion percentage
+            learner_profile.update_profile_completion()
+            
+            db.session.commit()
+            
+            flash('Profile updated successfully!', 'success')
+            return redirect(url_for('student.profile'))
+        
+        # Get available subjects for preferences
+        subjects = Subject.query.filter_by(is_active=True).order_by('name').all()
+        
+        return render_template('student/edit_profile.html',
+                            learner_profile=learner_profile,
+                            subjects=subjects)
+    
+    except Exception as e:
+        current_app.logger.error(f"Error editing student profile: {str(e)}")
+        flash('Error updating profile. Please try again.', 'danger')
         return redirect(url_for('student.profile'))
-    
-    return render_template('student/edit_profile.html', learner_profile=learner_profile)
 
-
-@bp.route('/bookings')
+@student_bp.route('/progress')
 @login_required
-@learner_required
-def bookings():
-    """View all bookings"""
-    page = request.args.get('page', 1, type=int)
-    per_page = 20
-    status = request.args.get('status', '')
+def progress():
+    """Detailed learning progress page"""
+    if not current_user.is_learner():
+        flash('Access denied. This page is for students only.', 'danger')
+        return redirect(url_for('main.index'))
     
-    query = Booking.query.filter_by(student_id=current_user.id)
+    try:
+        # Get all learning progress
+        learning_progress = get_learning_progress(current_user.id)
+        
+        # Get progress entries for detailed view
+        progress_entries = ProgressEntry.query.join(LearningProgress).filter(
+            LearningProgress.learner_profile_id == current_user.id
+        ).order_by(desc(ProgressEntry.entry_date)).limit(20).all()
+        
+        return render_template('student/progress.html',
+                            learning_progress=learning_progress,
+                            progress_entries=progress_entries)
     
-    if status:
-        query = query.filter_by(status=status)
-    
-    bookings = query.order_by(Booking.scheduled_time.desc()).paginate(
-        page=page, per_page=per_page, error_out=False
-    )
-    
-    return render_template('student/bookings.html', bookings=bookings, status=status)
+    except Exception as e:
+        current_app.logger.error(f"Error loading progress page: {str(e)}")
+        flash('Error loading progress. Please try again.', 'danger')
+        return redirect(url_for('student.dashboard'))
 
-
-@bp.route('/bookings/<int:booking_id>/cancel', methods=['POST'])
+@student_bp.route('/learning-goals')
 @login_required
-@learner_required
-def cancel_booking(booking_id):
-    """Cancel a booking"""
-    booking = Booking.query.get_or_404(booking_id)
+def learning_goals():
+    """Learning goals management page"""
+    if not current_user.is_learner():
+        flash('Access denied. This page is for students only.', 'danger')
+        return redirect(url_for('main.index'))
     
-    if booking.student_id != current_user.id:
-        flash('You do not have permission to modify this booking', 'danger')
-        return redirect(url_for('student.bookings'))
+    try:
+        learner_profile = LearnerProfile.query.filter_by(user_id=current_user.id).first()
+        
+        if not learner_profile:
+            flash('Please complete your profile first.', 'info')
+            return redirect(url_for('student.edit_profile'))
+        
+        # Get learning goals
+        goals = StudentLearningGoal.query.filter_by(
+            learner_profile_id=learner_profile.id
+        ).options(joinedload(StudentLearningGoal.subject),
+                 joinedload(StudentLearningGoal.milestones)).all()
+        
+        # Get available subjects
+        subjects = Subject.query.filter_by(is_active=True).order_by('name').all()
+        
+        return render_template('student/learning_goals.html',
+                            goals=goals,
+                            subjects=subjects)
     
-    booking.status = 'Cancelled'
-    db.session.commit()
-    
-    flash('Booking cancelled successfully', 'success')
-    return redirect(url_for('student.bookings'))
+    except Exception as e:
+        current_app.logger.error(f"Error loading learning goals: {str(e)}")
+        flash('Error loading learning goals. Please try again.', 'danger')
+        return redirect(url_for('student.dashboard'))
 
-
-@bp.route('/courses')
+@student_bp.route('/learning-goals/add', methods=['POST'])
 @login_required
-@learner_required
-def courses():
-    """View enrolled courses"""
-    enrolled_courses = db.session.query(Course).join(
-        Booking, Booking.course_id == Course.id
-    ).filter(
-        Booking.student_id == current_user.id
-    ).distinct().all()
+def add_learning_goal():
+    """Add new learning goal"""
+    if not current_user.is_learner():
+        return jsonify({'success': False, 'message': 'Access denied'}), 403
     
-    return render_template('student/courses.html', enrolled_courses=enrolled_courses)
+    try:
+        learner_profile = LearnerProfile.query.filter_by(user_id=current_user.id).first()
+        if not learner_profile:
+            return jsonify({'success': False, 'message': 'Profile not found'}), 404
+        
+        goal = StudentLearningGoal(
+            learner_profile_id=learner_profile.id,
+            goal_type=request.form.get('goal_type'),
+            subject_id=int(request.form.get('subject_id')) if request.form.get('subject_id') else None,
+            title=request.form.get('title'),
+            description=request.form.get('description'),
+            target_date=datetime.fromisoformat(request.form.get('target_date')) if request.form.get('target_date') else None,
+            priority=request.form.get('priority', 'medium')
+        )
+        
+        db.session.add(goal)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'goal': goal.to_dict()})
+    
+    except Exception as e:
+        current_app.logger.error(f"Error adding learning goal: {str(e)}")
+        return jsonify({'success': False, 'message': 'Error adding goal'}), 500
 
-
-@bp.route('/courses/<int:course_id>')
+@student_bp.route('/wishlist')
 @login_required
-@learner_required
-def course_detail(course_id):
-    """View course details"""
-    course = Course.query.get_or_404(course_id)
+def wishlist():
+    """Student wishlist page"""
+    if not current_user.is_learner():
+        flash('Access denied. This page is for students only.', 'danger')
+        return redirect(url_for('main.index'))
     
-    # Check if user is enrolled in this course
-    is_enrolled = Booking.query.filter_by(
-        student_id=current_user.id,
-        course_id=course_id
-    ).first() is not None
+    try:
+        learner_profile = LearnerProfile.query.filter_by(user_id=current_user.id).first()
+        
+        if not learner_profile:
+            flash('Please complete your profile first.', 'info')
+            return redirect(url_for('student.edit_profile'))
+        
+        # Get wishlist items
+        wishlist_items = StudentWishlist.query.filter_by(
+            learner_profile_id=learner_profile.id, is_active=True
+        ).options(joinedload(StudentWishlist.tutor)).all()
+        
+        return render_template('student/wishlist.html', wishlist_items=wishlist_items)
     
-    return render_template('student/course_detail.html', course=course, is_enrolled=is_enrolled)
+    except Exception as e:
+        current_app.logger.error(f"Error loading wishlist: {str(e)}")
+        flash('Error loading wishlist. Please try again.', 'danger')
+        return redirect(url_for('student.dashboard'))
 
-
-@bp.route('/tutors')
+@student_bp.route('/wishlist/add/<int:tutor_id>', methods=['POST'])
 @login_required
-@learner_required
-def tutors():
-    """Browse and search tutors"""
-    page = request.args.get('page', 1, type=int)
-    per_page = 12
-    subject = request.args.get('subject', '')
-    rating = request.args.get('rating', '')
-    price_min = request.args.get('price_min', '')
-    price_max = request.args.get('price_max', '')
+def add_to_wishlist(tutor_id):
+    """Add tutor to wishlist"""
+    if not current_user.is_learner():
+        return jsonify({'success': False, 'message': 'Access denied'}), 403
     
-    query = TutorProfile.query.filter_by(is_verified=True)
-    
-    if subject:
-        query = query.join(TutorSubject).filter(TutorSubject.subject_id == subject)
-    
-    if rating:
-        query = query.filter(TutorProfile.rating >= float(rating))
-    
-    if price_min:
-        query = query.filter(TutorProfile.hourly_rate >= float(price_min))
-    
-    if price_max:
-        query = query.filter(TutorProfile.hourly_rate <= float(price_max))
-    
-    tutors = query.order_by(desc(TutorProfile.rating)).paginate(
-        page=page, per_page=per_page, error_out=False
-    )
-    
-    # Get all subjects for filter
-    subjects = Subject.query.all()
-    
-    return render_template('student/tutors.html', 
-                           tutors=tutors,
-                           subjects=subjects,
-                           subject=subject,
-                           rating=rating,
-                           price_min=price_min,
-                           price_max=price_max)
-
-
-@bp.route('/tutors/<int:tutor_id>')
-@login_required
-@learner_required
-def tutor_detail(tutor_id):
-    """View tutor details"""
-    tutor_profile = TutorProfile.query.get_or_404(tutor_id)
-    
-    # Get tutor's subjects
-    subjects = tutor_profile.subjects
-    
-    # Get upcoming availability
-    now = datetime.utcnow()
-    upcoming_availabilities = []
-    
-    # Get bookings for the next 7 days
-    start_date = now
-    end_date = now + timedelta(days=7)
-    
-    bookings = Booking.query.filter(
-        Booking.tutor_id == tutor_profile.id,
-        Booking.scheduled_time >= start_date,
-        Booking.scheduled_time <= end_date
-    ).order_by(Booking.scheduled_time.asc()).all()
-    
-    # Get reviews
-    reviews = Review.query.filter_by(tutor_id=tutor_profile.id).order_by(
-        Review.created_at.desc()
-    ).limit(5).all()
-    
-    return render_template('student/tutor_detail.html',
-                           tutor_profile=tutor_profile,
-                           subjects=subjects,
-                           bookings=bookings,
-                           reviews=reviews)
-
-
-@bp.route('/demo-request', methods=['GET', 'POST'])
-@login_required
-@learner_required
-def demo_request():
-    """Request a demo class"""
-    tutor_id = request.args.get('tutor_id', type=int)
-    tutor = TutorProfile.query.get_or_404(tutor_id)
-    
-    if request.method == 'POST':
-        demo_request = DemoRequest(
-            student_id=current_user.id,
+    try:
+        learner_profile = LearnerProfile.query.filter_by(user_id=current_user.id).first()
+        if not learner_profile:
+            return jsonify({'success': False, 'message': 'Profile not found'}), 404
+        
+        # Check if already in wishlist
+        existing = StudentWishlist.query.filter_by(
+            learner_profile_id=learner_profile.id,
             tutor_id=tutor_id,
-            preferred_date=request.form.get('preferred_date'),
-            preferred_time=request.form.get('preferred_time'),
-            duration_minutes=int(request.form.get('duration_minutes', 30)),
-            notes=request.form.get('notes')
+            is_active=True
+        ).first()
+        
+        if existing:
+            return jsonify({'success': False, 'message': 'Already in wishlist'}), 400
+        
+        # Add to wishlist
+        wishlist_item = StudentWishlist(
+            learner_profile_id=learner_profile.id,
+            tutor_id=tutor_id,
+            notes=request.form.get('notes', ''),
+            priority=request.form.get('priority', 'medium')
         )
-        db.session.add(demo_request)
+        
+        db.session.add(wishlist_item)
         db.session.commit()
         
-        flash('Demo request submitted successfully', 'success')
-        return redirect(url_for('student.tutor_detail', tutor_id=tutor_id))
+        return jsonify({'success': True, 'wishlist_item': wishlist_item.to_dict()})
     
-    return render_template('student/demo_request.html', tutor=tutor)
+    except Exception as e:
+        current_app.logger.error(f"Error adding to wishlist: {str(e)}")
+        return jsonify({'success': False, 'message': 'Error adding to wishlist'}), 500
 
-
-@bp.route('/payments')
+@student_bp.route('/compare')
 @login_required
-@learner_required
-def payments():
-    """View payment history"""
-    page = request.args.get('page', 1, type=int)
-    per_page = 20
-    status = request.args.get('status', '')
+def compare():
+    """Tutor comparison page"""
+    if not current_user.is_learner():
+        flash('Access denied. This page is for students only.', 'danger')
+        return redirect(url_for('main.index'))
     
-    query = Payment.query.join(
-        Booking, Booking.id == Payment.booking_id
-    ).filter(
-        Booking.student_id == current_user.id
-    )
+    try:
+        learner_profile = LearnerProfile.query.filter_by(user_id=current_user.id).first()
+        
+        if not learner_profile:
+            flash('Please complete your profile first.', 'info')
+            return redirect(url_for('student.edit_profile'))
+        
+        # Get tutor IDs from request
+        tutor_ids = request.args.get('tutors', '').split(',')
+        tutor_ids = [int(tid) for tid in tutor_ids if tid.isdigit()]
+        
+        if len(tutor_ids) < 2:
+            flash('Please select at least 2 tutors to compare.', 'info')
+            return redirect(url_for('search.tutor_discovery'))
+        
+        # Get tutor profiles
+        tutors = TutorProfile.query.filter(
+            TutorProfile.user_id.in_(tutor_ids)
+        ).options(joinedload(TutorProfile.user),
+                 joinedload(TutorProfile.subjects),
+                 joinedload(TutorProfile.rating_summary)).all()
+        
+        if len(tutors) < 2:
+            flash('One or more tutors not found.', 'warning')
+            return redirect(url_for('search.tutor_discovery'))
+        
+        return render_template('student/compare.html', tutors=tutors)
     
-    if status:
-        query = query.filter_by(status=status)
-    
-    payments = query.order_by(Payment.created_at.desc()).paginate(
-        page=page, per_page=per_page, error_out=False
-    )
-    
-    return render_template('student/payments.html', payments=payments, status=status)
+    except Exception as e:
+        current_app.logger.error(f"Error loading comparison page: {str(e)}")
+        flash('Error loading comparison. Please try again.', 'danger')
+        return redirect(url_for('student.dashboard'))
 
-
-@bp.route('/payment-methods')
+@student_bp.route('/bookings')
 @login_required
-@learner_required
-def payment_methods():
-    """Manage payment methods"""
-    payment_methods = current_user.payment_methods
+def bookings():
+    """Student bookings page"""
+    if not current_user.is_learner():
+        flash('Access denied. This page is for students only.', 'danger')
+        return redirect(url_for('main.index'))
     
-    return render_template('student/payment_methods.html', payment_methods=payment_methods)
-
-
-@bp.route('/payment-methods/new', methods=['GET', 'POST'])
-@login_required
-@learner_required
-def new_payment_method():
-    """Add a new payment method"""
-    if request.method == 'POST':
-        payment_method = PaymentMethod(
-            user_id=current_user.id,
-            payment_type=request.form.get('payment_type'),
-            method_details=request.form.get('method_details')
+    try:
+        # Get filter parameters
+        status_filter = request.args.get('status', '')
+        page = request.args.get('page', 1, type=int)
+        per_page = 10
+        
+        # Build query
+        query = Booking.query.filter_by(student_id=current_user.id)
+        
+        if status_filter:
+            query = query.filter_by(status=status_filter)
+        
+        # Add pagination
+        bookings = query.options(
+            joinedload(Booking.tutor),
+            joinedload(Booking.subject)
+        ).order_by(desc(Booking.created_at)).paginate(
+            page=page, per_page=per_page, error_out=False
         )
-        db.session.add(payment_method)
-        db.session.commit()
         
-        # Set as default if requested
-        if 'set_as_default' in request.form:
-            payment_method.set_as_default()
-        
-        flash('Payment method added successfully', 'success')
-        return redirect(url_for('student.payment_methods'))
+        return render_template('student/bookings.html', bookings=bookings)
     
-    return render_template('student/new_payment_method.html')
+    except Exception as e:
+        current_app.logger.error(f"Error loading bookings: {str(e)}")
+        flash('Error loading bookings. Please try again.', 'danger')
+        return redirect(url_for('student.dashboard'))
 
-
-@bp.route('/payment-methods/<int:payment_id>/delete', methods=['POST'])
+@student_bp.route('/achievements')
 @login_required
-@learner_required
-def delete_payment_method(payment_id):
-    """Delete a payment method"""
-    payment_method = PaymentMethod.query.get_or_404(payment_id)
+def achievements():
+    """Student achievements page"""
+    if not current_user.is_learner():
+        flash('Access denied. This page is for students only.', 'danger')
+        return redirect(url_for('main.index'))
     
-    if payment_method.user_id != current_user.id:
-        flash('You do not have permission to modify this payment method', 'danger')
-        return redirect(url_for('student.payment_methods'))
-    
-    db.session.delete(payment_method)
-    db.session.commit()
-    
-    flash('Payment method deleted successfully', 'success')
-    return redirect(url_for('student.payment_methods'))
-
-
-@bp.route('/reviews')
-@login_required
-@learner_required
-def reviews():
-    """View reviews written by the learner"""
-    reviews = Review.query.filter_by(reviewer_id=current_user.id).order_by(
-        Review.created_at.desc()
-    ).all()
-    
-    return render_template('student/reviews.html', reviews=reviews)
-
-
-@bp.route('/reviews/<int:booking_id>/new', methods=['GET', 'POST'])
-@login_required
-@learner_required
-def new_review(booking_id):
-    """Write a review for a booking"""
-    booking = Booking.query.get_or_404(booking_id)
-    
-    # Check if user is the student and booking is completed
-    if booking.student_id != current_user.id or booking.status != 'Completed':
-        flash('You cannot review this booking', 'danger')
-        return redirect(url_for('student.bookings'))
-    
-    # Check if review already exists
-    existing_review = Review.query.filter_by(
-        reviewer_id=current_user.id,
-        booking_id=booking_id
-    ).first()
-    
-    if existing_review:
-        flash('You have already reviewed this booking', 'warning')
-        return redirect(url_for('student.bookings'))
-    
-    if request.method == 'POST':
-        review = Review(
-            reviewer_id=current_user.id,
-            tutor_id=booking.tutor_id,
-            booking_id=booking_id,
-            rating=int(request.form.get('rating')),
-            comment=request.form.get('comment'),
-            is_verified=True,
-            is_public=True
-        )
-        db.session.add(review)
-        db.session.commit()
+    try:
+        learner_profile = LearnerProfile.query.filter_by(user_id=current_user.id).first()
         
-        # Update tutor rating summary
-        tutor_rating_summary = booking.tutor.rating_summary
-        if not tutor_rating_summary:
-            tutor_rating_summary = TutorRatingSummary(tutor_id=booking.tutor_id)
-            db.session.add(tutor_rating_summary)
+        if not learner_profile:
+            flash('Please complete your profile first.', 'info')
+            return redirect(url_for('student.edit_profile'))
         
-        tutor_rating_summary.update_ratings()
-        db.session.commit()
+        # Get achievements from learning progress
+        achievements = get_student_achievements(current_user.id)
         
-        flash('Review submitted successfully', 'success')
-        return redirect(url_for('student.bookings'))
+        return render_template('student/achievements.html', achievements=achievements)
     
-    return render_template('student/new_review.html', booking=booking)
+    except Exception as e:
+        current_app.logger.error(f"Error loading achievements: {str(e)}")
+        flash('Error loading achievements. Please try again.', 'danger')
+        return redirect(url_for('student.dashboard'))
 
+# Helper functions
 
-@bp.route('/settings')
-@login_required
-@learner_required
-def settings():
-    """Learner settings"""
-    return render_template('student/settings.html')
+def get_dashboard_stats(student_id):
+    """Get dashboard statistics for student"""
+    try:
+        # Total sessions completed
+        total_sessions = Booking.query.filter_by(
+            student_id=student_id, status='completed'
+        ).count()
+        
+        # Active subjects
+        active_subjects = db.session.query(func.count(func.distinct(Booking.subject_id))).filter_by(
+            student_id=student_id, status='completed'
+        ).scalar() or 0
+        
+        # Learning hours
+        learning_hours = db.session.query(func.sum(Booking.duration_minutes)).filter_by(
+            student_id=student_id, status='completed'
+        ).scalar() or 0
+        learning_hours = learning_hours / 60  # Convert to hours
+        
+        # Achievements (simplified count)
+        achievements = get_student_achievements(student_id)
+        achievement_count = len(achievements)
+        
+        return {
+            'total_sessions': total_sessions,
+            'active_subjects': active_subjects,
+            'learning_hours': round(learning_hours, 1),
+            'achievements': achievement_count
+        }
+    
+    except Exception as e:
+        current_app.logger.error(f"Error getting dashboard stats: {str(e)}")
+        return {
+            'total_sessions': 0,
+            'active_subjects': 0,
+            'learning_hours': 0,
+            'achievements': 0
+        }
+
+def get_learning_progress(student_id, limit=None):
+    """Get student's learning progress"""
+    try:
+        learner_profile = LearnerProfile.query.filter_by(user_id=student_id).first()
+        if not learner_profile:
+            return []
+        
+        query = LearningProgress.query.filter_by(
+            learner_profile_id=learner_profile.id, is_active=True
+        ).options(joinedload(LearningProgress.subject))
+        
+        if limit:
+            query = query.limit(limit)
+        
+        return query.order_by(desc(LearningProgress.last_updated)).all()
+    
+    except Exception as e:
+        current_app.logger.error(f"Error getting learning progress: {str(e)}")
+        return []
+
+def get_upcoming_sessions(student_id, limit=None):
+    """Get upcoming sessions for student"""
+    try:
+        now = datetime.now(timezone.utc)
+        
+        # Get upcoming bookings
+        booking_query = Booking.query.filter(
+            and_(
+                Booking.student_id == student_id,
+                Booking.scheduled_start_time > now,
+                Booking.status.in_(['confirmed', 'upcoming'])
+            )
+        ).options(joinedload(Booking.tutor), joinedload(Booking.subject))
+        
+        # Get upcoming demo sessions
+        demo_query = DemoSession.query.filter(
+            and_(
+                DemoSession.student_id == student_id,
+                DemoSession.scheduled_date_time > now,
+                DemoSession.status.in_([DemoSessionStatus.ACCEPTED, DemoSessionStatus.SCHEDULED])
+            )
+        ).options(joinedload(DemoSession.tutor), joinedload(DemoSession.subject))
+        
+        # Combine and sort
+        sessions = []
+        
+        # Add bookings
+        bookings = booking_query.all()
+        for booking in bookings:
+            sessions.append({
+                'type': 'booking',
+                'id': booking.id,
+                'tutor': booking.tutor,
+                'subject': booking.subject,
+                'scheduled_start_time': booking.scheduled_start_time,
+                'meeting_link': booking.meeting_link
+            })
+        
+        # Add demos
+        demos = demo_query.all()
+        for demo in demos:
+            sessions.append({
+                'type': 'demo',
+                'id': demo.id,
+                'tutor': demo.tutor,
+                'subject': demo.subject,
+                'scheduled_start_time': demo.scheduled_date_time,
+                'meeting_link': demo.meeting_link
+            })
+        
+        # Sort by start time
+        sessions.sort(key=lambda x: x['scheduled_start_time'])
+        
+        if limit:
+            sessions = sessions[:limit]
+        
+        return sessions
+    
+    except Exception as e:
+        current_app.logger.error(f"Error getting upcoming sessions: {str(e)}")
+        return []
+
+def get_recommended_tutors(student_id, limit=3):
+    """Get recommended tutors for student"""
+    try:
+        matching_service = StudentMatchingService()
+        matches = matching_service.find_best_matches(student_id, limit=limit)
+        
+        return [match['tutor'] for match in matches]
+    
+    except Exception as e:
+        current_app.logger.error(f"Error getting recommended tutors: {str(e)}")
+        return []
+
+def get_active_learning_goals(student_id, limit=None):
+    """Get active learning goals for student"""
+    try:
+        learner_profile = LearnerProfile.query.filter_by(user_id=student_id).first()
+        if not learner_profile:
+            return []
+        
+        query = StudentLearningGoal.query.filter_by(
+            learner_profile_id=learner_profile.id, is_active=True
+        ).options(joinedload(StudentLearningGoal.subject))
+        
+        if limit:
+            query = query.limit(limit)
+        
+        return query.order_by(StudentLearningGoal.priority.desc(), StudentLearningGoal.created_at.desc()).all()
+    
+    except Exception as e:
+        current_app.logger.error(f"Error getting learning goals: {str(e)}")
+        return []
+
+def get_recent_achievements(student_id, limit=6):
+    """Get recent achievements for student"""
+    try:
+        # This is a simplified version - in production would have a proper achievements system
+        achievements = []
+        
+        # Check for various achievement types based on student activity
+        learner_profile = LearnerProfile.query.filter_by(user_id=student_id).first()
+        if not learner_profile:
+            return achievements
+        
+        # Session milestones
+        total_sessions = Booking.query.filter_by(
+            student_id=student_id, status='completed'
+        ).count()
+        
+        if total_sessions >= 1:
+            achievements.append({
+                'id': 'first_session',
+                'title': 'First Session',
+                'icon_class': 'fas fa-graduation-cap',
+                'description': 'Completed your first learning session'
+            })
+        
+        if total_sessions >= 10:
+            achievements.append({
+                'id': 'ten_sessions',
+                'title': 'Dedicated Learner',
+                'icon_class': 'fas fa-star',
+                'description': 'Completed 10 learning sessions'
+            })
+        
+        # Learning hours milestones
+        total_hours = db.session.query(func.sum(Booking.duration_minutes)).filter_by(
+            student_id=student_id, status='completed'
+        ).scalar() or 0
+        total_hours = total_hours / 60
+        
+        if total_hours >= 10:
+            achievements.append({
+                'id': 'ten_hours',
+                'title': '10 Hours Learned',
+                'icon_class': 'fas fa-clock',
+                'description': 'Accumulated 10 hours of learning'
+            })
+        
+        # Subject diversity
+        subject_count = db.session.query(func.count(func.distinct(Booking.subject_id))).filter_by(
+            student_id=student_id, status='completed'
+        ).scalar() or 0
+        
+        if subject_count >= 3:
+            achievements.append({
+                'id': 'multi_subject',
+                'title': 'Multi-Subject Learner',
+                'icon_class': 'fas fa-book',
+                'description': 'Studied 3 or more subjects'
+            })
+        
+        return achievements[:limit]
+    
+    except Exception as e:
+        current_app.logger.error(f"Error getting achievements: {str(e)}")
+        return []
+
+def get_student_achievements(student_id):
+    """Get all achievements for student"""
+    return get_recent_achievements(student_id, limit=50)

@@ -1,0 +1,808 @@
+{% extends "student/base.html" %}
+
+{% block title %}Compare Tutors{% endblock %}
+
+{% block student_content %}
+<div class="page-header">
+    <h1 class="page-title">Compare Tutors</h1>
+    <p class="page-subtitle">Compare tutors side by side to make the best choice</p>
+</div>
+
+<!-- Comparison Overview -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <div class="comparison-info">
+                    <h6>Comparing <span class="badge bg-primary">{{ tutors|length }}</span> Tutors</h6>
+                    <p class="text-muted mb-0">Use the filters below to customize your comparison</p>
+                </div>
+            </div>
+            <div class="col-md-6 text-end">
+                <div class="comparison-actions">
+                    <button class="btn btn-outline-secondary me-2" onclick="resetFilters()">
+                        <i class="fas fa-redo me-2"></i>Reset Filters
+                    </button>
+                    <button class="btn btn-outline-primary" onclick="addMoreTutors()">
+                        <i class="fas fa-plus me-2"></i>Add More Tutors
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Comparison Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3">
+                <label class="form-label">Filter by Subject</label>
+                <select id="subjectFilter" class="form-select">
+                    <option value="">All Subjects</option>
+                    {% for subject in subjects %}
+                    <option value="{{ subject.id }}">{{ subject.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Filter by Rating</label>
+                <select id="ratingFilter" class="form-select">
+                    <option value="">All Ratings</option>
+                    <option value="4.5">4.5+ Stars</option>
+                    <option value="4.0">4.0+ Stars</option>
+                    <option value="3.5">3.5+ Stars</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Filter by Price</label>
+                <select id="priceFilter" class="form-select">
+                    <option value="">All Prices</option>
+                    <option value="0-25">$0 - $25/hour</option>
+                    <option value="25-50">$25 - $50/hour</option>
+                    <option value="50-100">$50 - $100/hour</option>
+                    <option value="100+">$100+/hour</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Filter by Location</label>
+                <select id="locationFilter" class="form-select">
+                    <option value="">All Locations</option>
+                    <option value="online">Online Only</option>
+                    <option value="offline">Offline Only</option>
+                    <option value="hybrid">Hybrid Available</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Comparison Table -->
+<div class="comparison-container">
+    {% if tutors %}
+    <div class="comparison-table">
+        <!-- Header Row -->
+        <div class="comparison-row comparison-header">
+            <div class="comparison-feature">
+                <h6>Features</h6>
+            </div>
+            {% for tutor in tutors %}
+            <div class="tutor-column">
+                <div class="tutor-header">
+                    <img src="{{ tutor.profile_image_url or url_for('static', filename='images/default-avatar.png') }}" 
+                         alt="{{ tutor.first_name }}" class="tutor-avatar">
+                    <h6>{{ tutor.first_name }} {{ tutor.last_name }}</h6>
+                    {% if tutor.rating %}
+                    <div class="rating">
+                        <i class="fas fa-star text-warning"></i>
+                        <span>{{ "%.1f"|format(tutor.rating) }}</span>
+                        <small>({{ tutor.total_reviews or 0 }} reviews)</small>
+                    </div>
+                    {% endif %}
+                    <button class="btn btn-sm btn-outline-danger" onclick="removeTutor({{ loop.index0 }})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Basic Info Row -->
+        <div class="comparison-row">
+            <div class="comparison-feature">
+                <div class="feature-label">
+                    <i class="fas fa-user me-2"></i>Basic Info
+                </div>
+            </div>
+            {% for tutor in tutors %}
+            <div class="tutor-column">
+                <div class="feature-value">
+                    <div class="info-item">
+                        <span class="info-label">Experience:</span>
+                        <span>{{ tutor.years_of_experience or 'Not specified' }} years</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Location:</span>
+                        <span>{{ tutor.city or 'Online' }}, {{ tutor.state or '' }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Languages:</span>
+                        <span>{{ tutor.languages_spoken|join(', ') if tutor.languages_spoken else 'English' }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Verified:</span>
+                        <span class="badge bg-{{ 'success' if tutor.is_verified else 'secondary' }}">
+                            {{ 'Yes' if tutor.is_verified else 'No' }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Subjects Row -->
+        <div class="comparison-row">
+            <div class="comparison-feature">
+                <div class="feature-label">
+                    <i class="fas fa-book me-2"></i>Subjects
+                </div>
+            </div>
+            {% for tutor in tutors %}
+            <div class="tutor-column">
+                <div class="feature-value">
+                    {% if tutor.subjects %}
+                    <div class="subjects-list">
+                        {% for tutor_subject in tutor.subjects[:3] %}
+                        <span class="subject-badge">{{ tutor_subject.subject.name }}</span>
+                        {% endfor %}
+                        {% if tutor.subjects|length > 3 %}
+                        <div class="more-subjects">+{{ tutor.subjects|length - 3 }} more</div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <span class="text-muted">No subjects listed</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Pricing Row -->
+        <div class="comparison-row highlight-row">
+            <div class="comparison-feature">
+                <div class="feature-label">
+                    <i class="fas fa-dollar-sign me-2"></i>Pricing
+                </div>
+            </div>
+            {% for tutor in tutors %}
+            <div class="tutor-column">
+                <div class="feature-value pricing-value">
+                    <div class="price-main">
+                        ${{ "%.2f"|format(tutor.hourly_rate or 0) }}
+                        <span class="price-unit">/hour</span>
+                    </div>
+                    {% if tutor.hourly_rate_offline %}
+                    <div class="price-secondary">
+                        Offline: ${{ "%.2f"|format(tutor.hourly_rate_offline) }}/hour
+                    </div>
+                    {% endif %}
+                    {% if tutor.price_per_group_session %}
+                    <div class="price-secondary">
+                        Group: ${{ "%.2f"|format(tutor.price_per_group_session) }}/session
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Availability Row -->
+        <div class="comparison-row">
+            <div class="comparison-feature">
+                <div class="feature-label">
+                    <i class="fas fa-calendar me-2"></i>Availability
+                </div>
+            </div>
+            {% for tutor in tutors %}
+            <div class="tutor-column">
+                <div class="feature-value">
+                    <div class="availability-info">
+                        {% if tutor.available_days %}
+                        <div class="days-grid">
+                            {% for day in tutor.get_available_days() %}
+                            <div class="day-item available">{{ day[:3] }}</div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <span class="text-muted">Not specified</span>
+                        {% endif %}
+                    </div>
+                    {% if tutor.response_time_hours %}
+                    <div class="response-time">
+                        <i class="far fa-clock me-1"></i>
+                        Responds in ~{{ tutor.response_time_hours }} hours
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Teaching Style Row -->
+        <div class="comparison-row">
+            <div class="comparison-feature">
+                <div class="feature-label">
+                    <i class="fas fa-chalkboard-teacher me-2"></i>Teaching Style
+                </div>
+            </div>
+            {% for tutor in tutors %}
+            <div class="tutor-column">
+                <div class="feature-value">
+                    <div class="teaching-modes">
+                        {% if tutor.teaching_modes %}
+                        {% for mode in tutor.get_teaching_modes_list() %}
+                        <span class="mode-badge">{{ mode.title() }}</span>
+                        {% endfor %}
+                        {% else %}
+                        <span class="text-muted">Not specified</span>
+                        {% endif %}
+                    </div>
+                    {% if tutor.description %}
+                    <div class="teaching-description">
+                        <p class="text-muted small">{{ tutor.description[:100] }}{% if tutor.description|length > 100 %}...{% endif %}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Reviews Row -->
+        <div class="comparison-row">
+            <div class="comparison-feature">
+                <div class="feature-label">
+                    <i class="fas fa-star me-2"></i>Reviews
+                </div>
+            </div>
+            {% for tutor in tutors %}
+            <div class="tutor-column">
+                <div class="feature-value">
+                    {% if tutor.rating_summary %}
+                    <div class="review-summary">
+                        <div class="rating-breakdown">
+                            {% for aspect in ['communication', 'expertise', 'helpfulness', 'punctuality'] %}
+                            <div class="rating-item">
+                                <span class="aspect-name">{{ aspect.title() }}:</span>
+                                <div class="rating-stars">
+                                    {% set aspect_rating = tutor.rating_summary.get(aspect, 0) %}
+                                    {% for i in range(5) %}
+                                    <i class="fas fa-star {{ 'text-warning' if i < aspect_rating else 'text-muted' }}"></i>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% if tutor.total_reviews %}
+                        <div class="review-link">
+                            <a href="{{ url_for('tutor.profile', user_id=tutor.id) }}#reviews" class="btn btn-sm btn-outline-primary">
+                                View All Reviews ({{ tutor.total_reviews }})
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <span class="text-muted">No reviews yet</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Actions Row -->
+        <div class="comparison-row actions-row">
+            <div class="comparison-feature">
+                <div class="feature-label">
+                    <i class="fas fa-play-circle me-2"></i>Actions
+                </div>
+            </div>
+            {% for tutor in tutors %}
+            <div class="tutor-column">
+                <div class="feature-value">
+                    <div class="action-buttons">
+                        <a href="{{ url_for('tutor.profile', user_id=tutor.id) }}" 
+                           class="btn btn-outline-primary btn-sm me-2">
+                            <i class="fas fa-user me-1"></i>View Profile
+                        </a>
+                        <a href="{{ url_for('demo.book_demo') }}?tutor_id={{ tutor.id }}" 
+                           class="btn btn-primary btn-sm">
+                            <i class="fas fa-play-circle me-1"></i>Book Demo
+                        </a>
+                    </div>
+                    <div class="wishlist-action">
+                        <button class="btn btn-outline-danger btn-sm" onclick="addToWishlist({{ tutor.id }})">
+                            <i class="fas fa-heart me-1"></i>Add to Wishlist
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <div class="empty-comparison">
+        <div class="empty-icon">
+            <i class="fas fa-balance-scale"></i>
+        </div>
+        <h5>No Tutors to Compare</h5>
+        <p>Add tutors to compare their features side by side.</p>
+        <a href="{{ url_for('search.tutor_discovery') }}" class="btn btn-primary">
+            <i class="fas fa-search me-2"></i>Find Tutors
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Comparison Summary -->
+{% if tutors %}
+<div class="card mt-4">
+    <div class="card-header">
+        <h6 class="card-title mb-0">Comparison Summary</h6>
+    </div>
+    <div class="card-body">
+        <div class="summary-grid">
+            <div class="summary-item">
+                <h6>Best Value</h6>
+                {% set best_value_tutor = tutors|selectattr('hourly_rate')|min(attribute='hourly_rate') %}
+                {% if best_value_tutor %}
+                <div class="winner">
+                    <strong>{{ best_value_tutor.first_name }} {{ best_value_tutor.last_name }}</strong>
+                    <div class="winner-detail">${{ "%.2f"|format(best_value_tutor.hourly_rate or 0) }}/hour</div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="summary-item">
+                <h6>Most Experienced</h6>
+                {% set most_experienced = tutors|selectattr('years_of_experience')|max(attribute='years_of_experience') %}
+                {% if most_experienced %}
+                <div class="winner">
+                    <strong>{{ most_experienced.first_name }} {{ most_experienced.last_name }}</strong>
+                    <div class="winner-detail">{{ most_experienced.years_of_experience or 0 }} years</div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="summary-item">
+                <h6>Highest Rated</h6>
+                {% set highest_rated = tutors|selectattr('rating')|max(attribute='rating') %}
+                {% if highest_rated %}
+                <div class="winner">
+                    <strong>{{ highest_rated.first_name }} {{ highest_rated.last_name }}</strong>
+                    <div class="winner-detail">
+                        <i class="fas fa-star text-warning"></i>
+                        {{ "%.1f"|format(highest_rated.rating or 0) }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="summary-item">
+                <h6>Most Verified</h6>
+                {% set verified_tutors = tutors|selectattr('is_verified')|list %}
+                {% if verified_tutors|length == 1 %}
+                <div class="winner">
+                    <strong>{{ verified_tutors[0].first_name }} {{ verified_tutors[0].last_name }}</strong>
+                    <div class="winner-detail">
+                        <i class="fas fa-check-circle text-success"></i>
+                        Verified
+                    </div>
+                </div>
+                {% elif verified_tutors|length > 1 %}
+                <div class="multiple-winners">
+                    <strong>{{ verified_tutors|length }} tutors</strong>
+                    <div class="winner-detail">
+                        <i class="fas fa-check-circle text-success"></i>
+                        All Verified
+                    </div>
+                </div>
+                {% else %}
+                <div class="no-winner">
+                    <span class="text-muted">No verified tutors</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.comparison-container {
+    overflow-x: auto;
+}
+
+.comparison-table {
+    min-width: 800px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.comparison-row {
+    display: flex;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.comparison-row:last-child {
+    border-bottom: none;
+}
+
+.comparison-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+}
+
+.comparison-row.highlight-row {
+    background: #f8f9fa;
+}
+
+.comparison-row.actions-row {
+    background: #e9ecef;
+}
+
+.comparison-feature {
+    width: 200px;
+    padding: 20px;
+    border-right: 1px solid #e9ecef;
+    background: #f8f9fa;
+}
+
+.feature-label {
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+    color: #495057;
+}
+
+.tutor-column {
+    flex: 1;
+    min-width: 250px;
+    border-right: 1px solid #e9ecef;
+}
+
+.tutor-column:last-child {
+    border-right: none;
+}
+
+.tutor-header {
+    text-align: center;
+    padding: 15px;
+    position: relative;
+}
+
+.tutor-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    margin-bottom: 10px;
+}
+
+.tutor-header h6 {
+    margin-bottom: 5px;
+    color: #2c3e50;
+}
+
+.rating {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.feature-value {
+    padding: 20px;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+
+.info-label {
+    font-weight: 500;
+    color: #6c757d;
+}
+
+.subjects-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.subject-badge {
+    background: #e9ecef;
+    color: #495057;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+}
+
+.more-subjects {
+    background: #6c757d;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+}
+
+.pricing-value {
+    text-align: center;
+}
+
+.price-main {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #667eea;
+    margin-bottom: 5px;
+}
+
+.price-unit {
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: #6c757d;
+}
+
+.price-secondary {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.days-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+    margin-bottom: 10px;
+}
+
+.day-item {
+    text-align: center;
+    padding: 5px;
+    background: #e9ecef;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.day-item.available {
+    background: #d4edda;
+    color: #155724;
+}
+
+.response-time {
+    font-size: 0.85rem;
+    color: #667eea;
+    font-style: italic;
+}
+
+.teaching-modes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 10px;
+}
+
+.mode-badge {
+    background: #667eea;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+}
+
+.teaching-description {
+    margin-top: 10px;
+}
+
+.rating-breakdown {
+    margin-bottom: 15px;
+}
+
+.rating-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+}
+
+.aspect-name {
+    font-weight: 500;
+    color: #495057;
+}
+
+.rating-stars {
+    display: flex;
+    gap: 2px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.wishlist-action {
+    text-align: center;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.summary-item h6 {
+    color: #495057;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.winner {
+    text-align: center;
+    padding: 15px;
+    background: #e8f5e8;
+    border-radius: 8px;
+    border: 2px solid #28a745;
+}
+
+.winner-detail {
+    margin-top: 5px;
+    font-size: 0.9rem;
+}
+
+.multiple-winners {
+    text-align: center;
+    padding: 15px;
+    background: #e8f5e8;
+    border-radius: 8px;
+    border: 2px solid #28a745;
+}
+
+.no-winner {
+    text-align: center;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.empty-comparison {
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: #dee2e6;
+    margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+    .comparison-table {
+        min-width: auto;
+    }
+    
+    .comparison-row {
+        flex-direction: column;
+    }
+    
+    .comparison-feature {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .tutor-column {
+        border-right: none;
+        border-left: 1px solid #e9ecef;
+    }
+    
+    .summary-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Filter functionality
+    const subjectFilter = document.getElementById('subjectFilter');
+    const ratingFilter = document.getElementById('ratingFilter');
+    const priceFilter = document.getElementById('priceFilter');
+    const locationFilter = document.getElementById('locationFilter');
+    
+    function applyFilters() {
+        // This would filter tutors based on selected criteria
+        // For now, just reload with filter parameters
+        const params = new URLSearchParams();
+        
+        if (subjectFilter.value) params.set('subject', subjectFilter.value);
+        if (ratingFilter.value) params.set('rating', ratingFilter.value);
+        if (priceFilter.value) params.set('price', priceFilter.value);
+        if (locationFilter.value) params.set('location', locationFilter.value);
+        
+        window.location.href = `{{ url_for('student.compare') }}?${params.toString()}`;
+    }
+    
+    if (subjectFilter) subjectFilter.addEventListener('change', applyFilters);
+    if (ratingFilter) ratingFilter.addEventListener('change', applyFilters);
+    if (priceFilter) priceFilter.addEventListener('change', applyFilters);
+    if (locationFilter) locationFilter.addEventListener('change', applyFilters);
+});
+
+// Placeholder functions
+function resetFilters() {
+    window.location.href = '{{ url_for("student.compare") }}';
+}
+
+function addMoreTutors() {
+    window.location.href = '{{ url_for("search.tutor_discovery") }}';
+}
+
+function removeTutor(index) {
+    if (confirm('Remove this tutor from comparison?')) {
+        // This would remove tutor from comparison and reload
+        location.reload();
+    }
+}
+
+function addToWishlist(tutorId) {
+    fetch(`/student/wishlist/add/${tutorId}`, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Tutor added to wishlist!', 'success');
+        } else {
+            showAlert(data.message || 'Error adding to wishlist', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Error adding to wishlist', 'error');
+    });
+}
+
+function showAlert(message, type) {
+    // Simple alert implementation
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 5000);
+}
+</script>
+{% endblock %}

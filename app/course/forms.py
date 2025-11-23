@@ -3,7 +3,8 @@ from wtforms import StringField, TextAreaField, SelectField, FloatField, Integer
 from wtforms.validators import DataRequired, Length, NumberRange, Optional, URL, ValidationError
 from wtforms.widgets import TextArea
 from flask_wtf.file import FileAllowed, FileRequired
-from app.models.course import Subject, Course
+from app.models.course import Course
+from app.models import Subject
 from datetime import datetime
 
 

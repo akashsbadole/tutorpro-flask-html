@@ -2,9 +2,14 @@
 
 A comprehensive Flask-based online tutoring platform inspired by Preply.com, featuring advanced course management, payment processing, video conferencing, and more.
 
+## Screenshots
+
+![Homepage](TutorPro-Home.png "Homepage")
+
 ## Features
 
 ### Core Platform Features
+
 - **User Management**: Three-role system (Learner, Tutor, Admin) with comprehensive profiles
 - **Authentication**: Secure login, registration, password hashing, and session management
 - **Course Management**: Full-featured course creation, syllabus tracking, and enrollment
@@ -17,6 +22,7 @@ A comprehensive Flask-based online tutoring platform inspired by Preply.com, fea
 - **Reviews & Ratings**: Multi-dimensional rating and review system
 
 ### Advanced Features
+
 - **Assignment System**: Assignment creation, submission handling, and grading
 - **Quiz System**: Interactive quizzes with multiple question types
 - **Progress Tracking**: Student progress analytics and achievement system
@@ -29,6 +35,7 @@ A comprehensive Flask-based online tutoring platform inspired by Preply.com, fea
 ## Technology Stack
 
 ### Backend
+
 - **Framework**: Flask with modular blueprint architecture
 - **Database**: SQLite for development (PostgreSQL migration ready)
 - **ORM**: SQLAlchemy with comprehensive model relationships
@@ -39,6 +46,7 @@ A comprehensive Flask-based online tutoring platform inspired by Preply.com, fea
 - **Caching**: Flask-Caching for performance optimization
 
 ### Frontend
+
 - **Templates**: Jinja2 with responsive Bootstrap 5 design
 - **JavaScript**: jQuery for dynamic interactions and AJAX
 - **UI Components**: Bootstrap 5 with custom enhancements
@@ -46,12 +54,14 @@ A comprehensive Flask-based online tutoring platform inspired by Preply.com, fea
 - **Date/Time**: Flatpickr for scheduling interfaces
 
 ### Payment & Integration
+
 - **UPI**: Razorpay SDK for Indian market
 - **PayPal**: PayPal Checkout SDK for international payments
 - **Video**: Zoom SDK and Google Meet API
 - **File Storage**: Local storage with cloud migration path
 
 ### Security
+
 - **Authentication**: Werkzeug password hashing
 - **CSRF**: Flask-WTF CSRF protection
 - **Validation**: Input validation and sanitization
@@ -300,6 +310,7 @@ SQLALCHEMY_DATABASE_URI=postgresql://username:password@localhost/tutorpro
 ## Key Features Overview
 
 ### 🎓 Course Management
+
 - Create and manage structured courses
 - Syllabus tracking with topic progression
 - Assignment and quiz system
@@ -307,6 +318,7 @@ SQLALCHEMY_DATABASE_URI=postgresql://username:password@localhost/tutorpro
 - Achievement and certification system
 
 ### 💳 Payment System
+
 - Multi-gateway support (UPI, PayPal, Cards)
 - Secure transaction processing
 - Tutor payout management
@@ -314,6 +326,7 @@ SQLALCHEMY_DATABASE_URI=postgresql://username:password@localhost/tutorpro
 - Refund processing
 
 ### 📅 Booking & Scheduling
+
 - Tutor availability management
 - Real-time booking system
 - Calendar integration
@@ -321,6 +334,7 @@ SQLALCHEMY_DATABASE_URI=postgresql://username:password@localhost/tutorpro
 - Automated reminders
 
 ### 🎥 Video Conferencing
+
 - Zoom integration for meetings
 - Google Meet support
 - Meeting recording management
@@ -328,6 +342,7 @@ SQLALCHEMY_DATABASE_URI=postgresql://username:password@localhost/tutorpro
 - Virtual whiteboard tools
 
 ### 💼 Job Board
+
 - Tutoring opportunity postings
 - Application tracking system
 - Job search and filtering
@@ -335,6 +350,7 @@ SQLALCHEMY_DATABASE_URI=postgresql://username:password@localhost/tutorpro
 - Application management
 
 ### 📊 Analytics & Reporting
+
 - Learning progress analytics
 - Business intelligence dashboards
 - Revenue tracking
@@ -344,6 +360,7 @@ SQLALCHEMY_DATABASE_URI=postgresql://username:password@localhost/tutorpro
 ## API Documentation
 
 The platform provides RESTful API endpoints for:
+
 - User authentication and management
 - Course operations
 - Booking and scheduling
@@ -405,6 +422,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Support
 
 For support and documentation:
+
 - **Architecture Documentation**: [`architecture_plan.md`](architecture_plan.md)
 - **Implementation Analysis**: [`ARCHITECTURE_ANALYSIS.md`](ARCHITECTURE_ANALYSIS.md)
 - **Future Roadmap**: [`IMPLEMENTATION_ROADMAP.md`](IMPLEMENTATION_ROADMAP.md)

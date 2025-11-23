@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from flask_login import current_user
-from app.models import Booking, DemoRequest, Tutor, Student, User
+from app.models import Booking, TutorProfile, LearnerProfile, User
+from app.models.demo import DemoSession
 from app.utils.decorators import tutor_required
 from datetime import datetime, timedelta
 from sqlalchemy import and_, or_
@@ -175,23 +176,23 @@ def get_demo_requests():
         end_date = request.args.get('end_date')
         
         # Build query
-        query = DemoRequest.query.filter_by(tutor_id=current_user.tutor_profile.id)
+        query = DemoSession.query.filter_by(tutor_id=current_user.id)
         
         # Filter by status
         if status:
-            query = query.filter(DemoRequest.status == status)
+            query = query.filter(DemoSession.status == status)
         
         # Filter by date range
         if start_date:
             start_date_obj = datetime.strptime(start_date, '%Y-%m-%d')
-            query = query.filter(DemoRequest.preferred_date >= start_date_obj)
+            query = query.filter(DemoSession.scheduled_date_time >= start_date_obj)
         
         if end_date:
             end_date_obj = datetime.strptime(end_date, '%Y-%m-%d')
-            query = query.filter(DemoRequest.preferred_date <= end_date_obj)
+            query = query.filter(DemoSession.scheduled_date_time <= end_date_obj)
         
         # Paginate results
-        demos = query.order_by(DemoRequest.created_at.desc()).paginate(
+        demos = query.order_by(DemoSession.created_at.desc()).paginate(
             page=page, per_page=per_page, error_out=False
         )
         
@@ -220,10 +221,10 @@ def get_demo_requests():
 def get_demo_request(demo_id):
     """Get specific demo request details"""
     try:
-        demo = DemoRequest.query.get_or_404(demo_id)
+        demo = DemoSession.query.get_or_404(demo_id)
         
         # Check if demo belongs to current tutor
-        if demo.tutor_id != current_user.tutor_profile.id:
+        if demo.tutor_id != current_user.id:
             return jsonify({
                 'success': False,
                 'error': 'Demo request not found'
@@ -245,10 +246,10 @@ def get_demo_request(demo_id):
 def approve_demo_request(demo_id):
     """Approve a demo request"""
     try:
-        demo = DemoRequest.query.get_or_404(demo_id)
+        demo = DemoSession.query.get_or_404(demo_id)
         
         # Check if demo belongs to current tutor
-        if demo.tutor_id != current_user.tutor_profile.id:
+        if demo.tutor_id != current_user.id:
             return jsonify({
                 'success': False,
                 'error': 'Demo request not found'
@@ -290,10 +291,10 @@ def approve_demo_request(demo_id):
 def reject_demo_request(demo_id):
     """Reject a demo request"""
     try:
-        demo = DemoRequest.query.get_or_404(demo_id)
+        demo = DemoSession.query.get_or_404(demo_id)
         
         # Check if demo belongs to current tutor
-        if demo.tutor_id != current_user.tutor_profile.id:
+        if demo.tutor_id != current_user.id:
             return jsonify({
                 'success': False,
                 'error': 'Demo request not found'
@@ -456,11 +457,11 @@ def get_calendar_data():
         ).all()
         
         # Get demo requests for the month
-        demos = DemoRequest.query.filter(
+        demos = DemoSession.query.filter(
             and_(
-                DemoRequest.tutor_id == current_user.tutor_profile.id,
-                DemoRequest.scheduled_date >= start_date.date(),
-                DemoRequest.scheduled_date < end_date.date()
+                DemoSession.tutor_id == current_user.id,
+                DemoSession.scheduled_date_time >= start_date.date(),
+                DemoSession.scheduled_date_time < end_date.date()
             )
         ).all()
         

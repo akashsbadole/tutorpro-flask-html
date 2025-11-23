@@ -1,0 +1,1060 @@
+{% extends "base.html" %}
+
+{% block title %}Find Tutors - TutorPro Marketplace{% endblock %}
+
+{% block head %}
+<style>
+.tutor-discovery {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.search-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 40px 20px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+}
+
+.search-form {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.search-input {
+    padding: 15px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    width: 100%;
+}
+
+.search-button {
+    padding: 15px 30px;
+    background: #ff6b6b;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.search-button:hover {
+    background: #ff5252;
+}
+
+.discovery-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 30px;
+}
+
+.filters-sidebar {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    height: fit-content;
+    position: sticky;
+    top: 20px;
+}
+
+.filter-section {
+    margin-bottom: 25px;
+}
+
+.filter-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.filter-toggle {
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.filter-content {
+    display: block;
+}
+
+.filter-content.collapsed {
+    display: none;
+}
+
+.price-range {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.filter-checkbox {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.filter-checkbox input {
+    margin-right: 8px;
+}
+
+.filter-checkbox label {
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.rating-filter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.star-rating {
+    color: #ffc107;
+    font-size: 14px;
+}
+
+.tutors-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 25px;
+}
+
+.tutor-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+}
+
+.tutor-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+}
+
+.tutor-header {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+.tutor-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    margin-right: 15px;
+    object-fit: cover;
+}
+
+.tutor-info h3 {
+    margin: 0 0 5px 0;
+    font-size: 18px;
+    color: #333;
+}
+
+.tutor-title {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.tutor-rating {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.tutor-body {
+    padding: 20px;
+}
+
+.tutor-subjects {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 15px;
+}
+
+.subject-tag {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.tutor-description {
+    color: #666;
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 15px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.tutor-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+}
+
+.tutor-price {
+    font-size: 18px;
+    font-weight: 600;
+    color: #28a745;
+}
+
+.tutor-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-view-profile {
+    padding: 8px 16px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.btn-view-profile:hover {
+    background: #0056b3;
+    text-decoration: none;
+    color: white;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 40px;
+}
+
+.pagination button {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    background: white;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.pagination button:hover {
+    background: #f8f9fa;
+}
+
+.pagination button.active {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.pagination button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.loading-spinner {
+    display: none;
+    text-align: center;
+    padding: 40px;
+}
+
+.loading-spinner.active {
+    display: block;
+}
+
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #007bff;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.no-results {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+}
+
+.no-results h3 {
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.search-suggestions {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.suggestion-item {
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.3s;
+}
+
+.suggestion-item:hover {
+    background: #f8f9fa;
+}
+
+.active-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.active-filter {
+    background: #007bff;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.remove-filter {
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.clear-filters {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+@media (max-width: 1024px) {
+    .discovery-layout {
+        grid-template-columns: 1fr;
+    }
+    
+    .filters-sidebar {
+        position: static;
+        margin-bottom: 30px;
+    }
+    
+    .tutors-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .search-form {
+        grid-template-columns: 1fr;
+    }
+    
+    .tutors-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .tutor-footer {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tutor-discovery">
+    <!-- Search Header -->
+    <div class="search-header">
+        <h1>Find Your Perfect Tutor</h1>
+        <p>Discover expert tutors across 1,000+ subjects and categories</p>
+        
+        <form class="search-form" id="searchForm">
+            <input 
+                type="text" 
+                class="search-input" 
+                id="searchInput"
+                placeholder="Search by subject, tutor name, or keyword..."
+                value="{{ request.args.get('query', '') }}"
+            >
+            <button type="submit" class="search-button">Search</button>
+        </form>
+        
+        <!-- Popular Searches -->
+        <div class="search-suggestions" id="popularSearches" style="display: none;">
+            <h4>Popular Searches</h4>
+            <div id="popularSearchesList"></div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="discovery-layout">
+        <!-- Filters Sidebar -->
+        <div class="filters-sidebar">
+            <!-- Active Filters -->
+            <div class="filter-section" id="activeFiltersSection" style="display: none;">
+                <div class="filter-title">
+                    Active Filters
+                    <button class="clear-filters" onclick="clearAllFilters()">Clear All</button>
+                </div>
+                <div class="active-filters" id="activeFilters"></div>
+            </div>
+
+            <!-- Categories -->
+            <div class="filter-section">
+                <div class="filter-title">
+                    Categories
+                    <button class="filter-toggle" onclick="toggleFilter('categories')">−</button>
+                </div>
+                <div class="filter-content" id="categoriesFilter">
+                    <div id="categoriesList"></div>
+                </div>
+            </div>
+
+            <!-- Price Range -->
+            <div class="filter-section">
+                <div class="filter-title">
+                    Price Range
+                    <button class="filter-toggle" onclick="toggleFilter('price')">−</button>
+                </div>
+                <div class="filter-content" id="priceFilter">
+                    <div class="price-range">
+                        <input type="number" id="priceMin" placeholder="Min" min="0">
+                        <input type="number" id="priceMax" placeholder="Max" min="0">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rating -->
+            <div class="filter-section">
+                <div class="filter-title">
+                    Minimum Rating
+                    <button class="filter-toggle" onclick="toggleFilter('rating')">−</button>
+                </div>
+                <div class="filter-content" id="ratingFilter">
+                    <div class="rating-filter">
+                        <input type="range" id="ratingRange" min="0" max="5" step="0.5" value="0">
+                        <span id="ratingValue">Any</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Teaching Mode -->
+            <div class="filter-section">
+                <div class="filter-title">
+                    Teaching Mode
+                    <button class="filter-toggle" onclick="toggleFilter('teachingMode')">−</button>
+                </div>
+                <div class="filter-content" id="teachingModeFilter">
+                    <div class="filter-checkbox">
+                        <input type="checkbox" id="modeOnline" value="Online">
+                        <label for="modeOnline">Online</label>
+                    </div>
+                    <div class="filter-checkbox">
+                        <input type="checkbox" id="modeOffline" value="Offline">
+                        <label for="modeOffline">In-Person</label>
+                    </div>
+                    <div class="filter-checkbox">
+                        <input type="checkbox" id="modeHybrid" value="Hybrid">
+                        <label for="modeHybrid">Hybrid</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Availability -->
+            <div class="filter-section">
+                <div class="filter-title">
+                    Availability
+                    <button class="filter-toggle" onclick="toggleFilter('availability')">−</button>
+                </div>
+                <div class="filter-content" id="availabilityFilter">
+                    <div class="filter-checkbox">
+                        <input type="checkbox" id="availableNow">
+                        <label for="availableNow">Available Now</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Verification -->
+            <div class="filter-section">
+                <div class="filter-title">
+                    Verification
+                    <button class="filter-toggle" onclick="toggleFilter('verification')">−</button>
+                </div>
+                <div class="filter-content" id="verificationFilter">
+                    <div class="filter-checkbox">
+                        <input type="checkbox" id="verifiedOnly">
+                        <label for="verifiedOnly">Verified Tutors Only</label>
+                    </div>
+                    <div class="filter-checkbox">
+                        <input type="checkbox" id="backgroundChecked">
+                        <label for="backgroundChecked">Background Checked</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tutors Grid -->
+        <div class="tutors-container">
+            <!-- Loading Spinner -->
+            <div class="loading-spinner" id="loadingSpinner">
+                <div class="spinner"></div>
+                <p>Searching for tutors...</p>
+            </div>
+
+            <!-- Tutors Grid -->
+            <div class="tutors-grid" id="tutorsGrid"></div>
+
+            <!-- Pagination -->
+            <div class="pagination" id="pagination"></div>
+
+            <!-- No Results -->
+            <div class="no-results" id="noResults" style="display: none;">
+                <h3>No tutors found</h3>
+                <p>Try adjusting your search criteria or browse our popular categories</p>
+                <button class="search-button" onclick="clearAllFilters()">Clear Filters</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Global variables
+let currentPage = 1;
+let totalPages = 1;
+let searchTimeout;
+let currentFilters = {};
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    loadCategories();
+    loadPopularSearches();
+    initializeSearch();
+    
+    // Load initial search from URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.toString()) {
+        applyUrlFilters(urlParams);
+        performSearch();
+    } else {
+        loadInitialTutors();
+    }
+});
+
+// Initialize search functionality
+function initializeSearch() {
+    const searchInput = document.getElementById('searchInput');
+    const searchForm = document.getElementById('searchForm');
+    
+    // Search input autocomplete
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            if (this.value.length >= 2) {
+                loadSuggestions(this.value);
+            }
+        }, 300);
+    });
+    
+    // Search form submission
+    searchForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        currentFilters.query = searchInput.value;
+        currentPage = 1;
+        performSearch();
+    });
+    
+    // Filter event listeners
+    document.getElementById('priceMin').addEventListener('change', applyFilters);
+    document.getElementById('priceMax').addEventListener('change', applyFilters);
+    document.getElementById('ratingRange').addEventListener('input', updateRatingDisplay);
+    document.getElementById('ratingRange').addEventListener('change', applyFilters);
+    document.getElementById('availableNow').addEventListener('change', applyFilters);
+    document.getElementById('verifiedOnly').addEventListener('change', applyFilters);
+    document.getElementById('backgroundChecked').addEventListener('change', applyFilters);
+    
+    // Teaching mode checkboxes
+    ['modeOnline', 'modeOffline', 'modeHybrid'].forEach(id => {
+        document.getElementById(id).addEventListener('change', applyFilters);
+    });
+}
+
+// Load categories
+async function loadCategories() {
+    try {
+        const response = await fetch('/api/search/categories');
+        const data = await response.json();
+        
+        if (data.success) {
+            renderCategories(data.data);
+        }
+    } catch (error) {
+        console.error('Error loading categories:', error);
+    }
+}
+
+// Render categories
+function renderCategories(categories) {
+    const categoriesList = document.getElementById('categoriesList');
+    categoriesList.innerHTML = '';
+    
+    categories.forEach(category => {
+        const categoryDiv = document.createElement('div');
+        categoryDiv.className = 'filter-checkbox';
+        categoryDiv.innerHTML = `
+            <input type="checkbox" id="cat_${category.id}" value="${category.id}">
+            <label for="cat_${category.id}">${category.name}</label>
+        `;
+        
+        categoryDiv.querySelector('input').addEventListener('change', applyFilters);
+        categoriesList.appendChild(categoryDiv);
+    });
+}
+
+// Load popular searches
+async function loadPopularSearches() {
+    try {
+        const response = await fetch('/api/search/popular');
+        const data = await response.json();
+        
+        if (data.success && data.data.length > 0) {
+            renderPopularSearches(data.data);
+        }
+    } catch (error) {
+        console.error('Error loading popular searches:', error);
+    }
+}
+
+// Render popular searches
+function renderPopularSearches(searches) {
+    const popularSearchesDiv = document.getElementById('popularSearches');
+    const searchesList = document.getElementById('popularSearchesList');
+    
+    searchesList.innerHTML = '';
+    searches.slice(0, 5).forEach(search => {
+        const searchItem = document.createElement('div');
+        searchItem.className = 'suggestion-item';
+        searchItem.textContent = `${search.term} (${search.count} searches)`;
+        searchItem.addEventListener('click', () => {
+            document.getElementById('searchInput').value = search.term;
+            currentFilters.query = search.term;
+            currentPage = 1;
+            performSearch();
+        });
+        searchesList.appendChild(searchItem);
+    });
+    
+    popularSearchesDiv.style.display = 'block';
+}
+
+// Load suggestions
+async function loadSuggestions(query) {
+    try {
+        const response = await fetch(`/api/search/suggestions?q=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            // Render suggestions (autocomplete functionality)
+            console.log('Suggestions:', data.data);
+        }
+    } catch (error) {
+        console.error('Error loading suggestions:', error);
+    }
+}
+
+// Apply filters
+function applyFilters() {
+    // Update current filters object
+    currentFilters = {
+        ...currentFilters,
+        query: document.getElementById('searchInput').value,
+        price_min: document.getElementById('priceMin').value || null,
+        price_max: document.getElementById('priceMax').value || null,
+        min_rating: parseFloat(document.getElementById('ratingRange').value) || null,
+        available_now: document.getElementById('availableNow').checked,
+        verified_only: document.getElementById('verifiedOnly').checked,
+        background_checked_only: document.getElementById('backgroundChecked').checked,
+        teaching_modes: getCheckedValues(['modeOnline', 'modeOffline', 'modeHybrid']),
+        category_ids: getCheckedValues(Array.from(document.querySelectorAll('[id^="cat_"]')).map(el => el.id))
+    };
+    
+    currentPage = 1;
+    performSearch();
+}
+
+// Get checked values from checkboxes
+function getCheckedValues(ids) {
+    return ids
+        .map(id => document.getElementById(id))
+        .filter(el => el && el.checked)
+        .map(el => el.value);
+}
+
+// Perform search
+async function performSearch() {
+    showLoading(true);
+    updateActiveFilters();
+    
+    try {
+        const params = new URLSearchParams({
+            ...currentFilters,
+            page: currentPage,
+            per_page: 20
+        });
+        
+        const response = await fetch(`/api/search/tutors?${params}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            renderTutors(data.data.tutors);
+            renderPagination(data.data.pagination);
+            totalPages = data.data.pagination.pages;
+            
+            // Update URL
+            const newUrl = `${window.location.pathname}?${params}`;
+            window.history.pushState({}, '', newUrl);
+        } else {
+            showError(data.error || 'Search failed');
+        }
+    } catch (error) {
+        console.error('Search error:', error);
+        showError('Search temporarily unavailable');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Render tutors
+function renderTutors(tutors) {
+    const tutorsGrid = document.getElementById('tutorsGrid');
+    const noResults = document.getElementById('noResults');
+    
+    if (tutors.length === 0) {
+        tutorsGrid.style.display = 'none';
+        noResults.style.display = 'block';
+        return;
+    }
+    
+    tutorsGrid.style.display = 'grid';
+    noResults.style.display = 'none';
+    tutorsGrid.innerHTML = '';
+    
+    tutors.forEach(tutor => {
+        const tutorCard = createTutorCard(tutor);
+        tutorsGrid.appendChild(tutorCard);
+    });
+}
+
+// Create tutor card
+function createTutorCard(tutor) {
+    const card = document.createElement('div');
+    card.className = 'tutor-card';
+    card.onclick = () => viewTutorProfile(tutor.id);
+    
+    const subjects = tutor.subjects.slice(0, 3).map(subject => 
+        `<span class="subject-tag">${subject}</span>`
+    ).join('');
+    
+    const rating = tutor.rating ? `
+        <div class="tutor-rating">
+            <span class="star-rating">${'★'.repeat(Math.floor(tutor.rating))}${'☆'.repeat(5 - Math.floor(tutor.rating))}</span>
+            <span>${tutor.rating.toFixed(1)}</span>
+        </div>
+    ` : '';
+    
+    card.innerHTML = `
+        <div class="tutor-header">
+            <img src="${tutor.profile_image_url || '/static/images/default-avatar.png'}" alt="${tutor.full_name}" class="tutor-avatar">
+            <div class="tutor-info">
+                <h3>${tutor.full_name}</h3>
+                <div class="tutor-title">${tutor.title || ''}</div>
+                ${rating}
+            </div>
+        </div>
+        <div class="tutor-body">
+            <div class="tutor-subjects">${subjects}</div>
+            <div class="tutor-description">${tutor.description || tutor.bio || ''}</div>
+        </div>
+        <div class="tutor-footer">
+            <div class="tutor-price">$${tutor.hourly_rate || 0}/hr</div>
+            <div class="tutor-actions">
+                <a href="/tutor/profile/${tutor.id}" class="btn-view-profile">View Profile</a>
+            </div>
+        </div>
+    `;
+    
+    return card;
+}
+
+// Render pagination
+function renderPagination(pagination) {
+    const paginationDiv = document.getElementById('pagination');
+    paginationDiv.innerHTML = '';
+    
+    if (pagination.pages <= 1) return;
+    
+    // Previous button
+    const prevBtn = document.createElement('button');
+    prevBtn.textContent = 'Previous';
+    prevBtn.disabled = pagination.page <= 1;
+    prevBtn.onclick = () => goToPage(pagination.page - 1);
+    paginationDiv.appendChild(prevBtn);
+    
+    // Page numbers
+    const startPage = Math.max(1, pagination.page - 2);
+    const endPage = Math.min(pagination.pages, pagination.page + 2);
+    
+    for (let i = startPage; i <= endPage; i++) {
+        const pageBtn = document.createElement('button');
+        pageBtn.textContent = i;
+        pageBtn.className = i === pagination.page ? 'active' : '';
+        pageBtn.onclick = () => goToPage(i);
+        paginationDiv.appendChild(pageBtn);
+    }
+    
+    // Next button
+    const nextBtn = document.createElement('button');
+    nextBtn.textContent = 'Next';
+    nextBtn.disabled = pagination.page >= pagination.pages;
+    nextBtn.onclick = () => goToPage(pagination.page + 1);
+    paginationDiv.appendChild(nextBtn);
+}
+
+// Go to page
+function goToPage(page) {
+    if (page < 1 || page > totalPages) return;
+    currentPage = page;
+    performSearch();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// View tutor profile
+function viewTutorProfile(tutorId) {
+    window.location.href = `/tutor/profile/${tutorId}`;
+}
+
+// Toggle filter section
+function toggleFilter(sectionId) {
+    const content = document.getElementById(sectionId + 'Filter');
+    const button = event.target;
+    
+    if (content.classList.contains('collapsed')) {
+        content.classList.remove('collapsed');
+        button.textContent = '−';
+    } else {
+        content.classList.add('collapsed');
+        button.textContent = '+';
+    }
+}
+
+// Update rating display
+function updateRatingDisplay() {
+    const rating = parseFloat(document.getElementById('ratingRange').value);
+    const display = document.getElementById('ratingValue');
+    
+    if (rating === 0) {
+        display.textContent = 'Any';
+    } else {
+        display.textContent = `${rating}+ Stars`;
+    }
+}
+
+// Update active filters display
+function updateActiveFilters() {
+    const activeFiltersSection = document.getElementById('activeFiltersSection');
+    const activeFiltersDiv = document.getElementById('activeFilters');
+    
+    const activeFilters = [];
+    
+    // Add active filters to array
+    if (currentFilters.query) activeFilters.push({key: 'query', label: 'Search', value: currentFilters.query});
+    if (currentFilters.price_min) activeFilters.push({key: 'price_min', label: 'Min Price', value: `$${currentFilters.price_min}`});
+    if (currentFilters.price_max) activeFilters.push({key: 'price_max', label: 'Max Price', value: `$${currentFilters.price_max}`});
+    if (currentFilters.min_rating) activeFilters.push({key: 'min_rating', label: 'Min Rating', value: `${currentFilters.min_rating}+ Stars`});
+    if (currentFilters.available_now) activeFilters.push({key: 'available_now', label: 'Available Now', value: 'Yes'});
+    if (currentFilters.verified_only) activeFilters.push({key: 'verified_only', label: 'Verified', value: 'Yes'});
+    if (currentFilters.background_checked_only) activeFilters.push({key: 'background_checked_only', label: 'Background Checked', value: 'Yes'});
+    
+    // Render active filters
+    if (activeFilters.length > 0) {
+        activeFiltersSection.style.display = 'block';
+        activeFiltersDiv.innerHTML = activeFilters.map(filter => `
+            <div class="active-filter">
+                ${filter.label}: ${filter.value}
+                <span class="remove-filter" onclick="removeFilter('${filter.key}')">×</span>
+            </div>
+        `).join('');
+    } else {
+        activeFiltersSection.style.display = 'none';
+    }
+}
+
+// Remove filter
+function removeFilter(filterKey) {
+    delete currentFilters[filterKey];
+    
+    // Reset UI elements
+    switch (filterKey) {
+        case 'query':
+            document.getElementById('searchInput').value = '';
+            break;
+        case 'price_min':
+            document.getElementById('priceMin').value = '';
+            break;
+        case 'price_max':
+            document.getElementById('priceMax').value = '';
+            break;
+        case 'min_rating':
+            document.getElementById('ratingRange').value = 0;
+            updateRatingDisplay();
+            break;
+        case 'available_now':
+            document.getElementById('availableNow').checked = false;
+            break;
+        case 'verified_only':
+            document.getElementById('verifiedOnly').checked = false;
+            break;
+        case 'background_checked_only':
+            document.getElementById('backgroundChecked').checked = false;
+            break;
+    }
+    
+    currentPage = 1;
+    performSearch();
+}
+
+// Clear all filters
+function clearAllFilters() {
+    currentFilters = {};
+    currentPage = 1;
+    
+    // Reset all form elements
+    document.getElementById('searchInput').value = '';
+    document.getElementById('priceMin').value = '';
+    document.getElementById('priceMax').value = '';
+    document.getElementById('ratingRange').value = 0;
+    document.getElementById('availableNow').checked = false;
+    document.getElementById('verifiedOnly').checked = false;
+    document.getElementById('backgroundChecked').checked = false;
+    
+    // Uncheck all checkboxes
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+    
+    updateRatingDisplay();
+    performSearch();
+}
+
+// Apply URL filters
+function applyUrlFilters(urlParams) {
+    urlParams.forEach((value, key) => {
+        switch (key) {
+            case 'query':
+                currentFilters.query = value;
+                document.getElementById('searchInput').value = value;
+                break;
+            case 'price_min':
+                currentFilters.price_min = value;
+                document.getElementById('priceMin').value = value;
+                break;
+            case 'price_max':
+                currentFilters.price_max = value;
+                document.getElementById('priceMax').value = value;
+                break;
+            case 'min_rating':
+                currentFilters.min_rating = parseFloat(value);
+                document.getElementById('ratingRange').value = value;
+                updateRatingDisplay();
+                break;
+            case 'available_now':
+                currentFilters.available_now = value === 'true';
+                document.getElementById('availableNow').checked = value === 'true';
+                break;
+            case 'verified_only':
+                currentFilters.verified_only = value === 'true';
+                document.getElementById('verifiedOnly').checked = value === 'true';
+                break;
+            case 'background_checked_only':
+                currentFilters.background_checked_only = value === 'true';
+                document.getElementById('backgroundChecked').checked = value === 'true';
+                break;
+        }
+    });
+}
+
+// Load initial tutors
+async function loadInitialTutors() {
+    try {
+        const response = await fetch('/api/search/tutors?per_page=12');
+        const data = await response.json();
+        
+        if (data.success) {
+            renderTutors(data.data.tutors);
+            renderPagination(data.data.pagination);
+        }
+    } catch (error) {
+        console.error('Error loading initial tutors:', error);
+    }
+}
+
+// Show/hide loading
+function showLoading(show) {
+    const spinner = document.getElementById('loadingSpinner');
+    const tutorsGrid = document.getElementById('tutorsGrid');
+    
+    if (show) {
+        spinner.classList.add('active');
+        tutorsGrid.style.display = 'none';
+    } else {
+        spinner.classList.remove('active');
+        tutorsGrid.style.display = 'grid';
+    }
+}
+
+// Show error message
+function showError(message) {
+    const tutorsGrid = document.getElementById('tutorsGrid');
+    tutorsGrid.innerHTML = `
+        <div class="no-results">
+            <h3>Error</h3>
+            <p>${message}</p>
+            <button class="search-button" onclick="performSearch()">Try Again</button>
+        </div>
+    `;
+}
+</script>
+{% endblock %}

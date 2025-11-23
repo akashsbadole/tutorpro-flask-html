@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}TutorPro{% endblock %} - Preply Clone</title>
     
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
@@ -14,12 +19,18 @@
     <!-- Custom CSS -->
     {% block head %}{% endblock %}
 </head>
-<body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+<body{% block body_attr %}{% endblock %}>
+    <!-- Skip to main content for accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <!-- Enhanced Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-modern sticky-top">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('main.index') }}">
-                <i class="fas fa-graduation-cap me-2"></i>TutorPro
+                <div class="brand-logo">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span class="brand-text">TutorPro</span>
+                </div>
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -27,87 +38,134 @@
             </button>
             
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.index') }}">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.about') }}">About</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.contact') }}">Contact</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.help') }}">Help</a>
-                    </li>
-                    
-                    <!-- Role-specific navigation -->
-                    {% if current_user.is_authenticated %}
-                        {% if current_user.is_admin %}
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
-                                    Admin
-                                </a>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="{{ url_for('admin.dashboard') }}">Dashboard</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('admin.users') }}">Users</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('admin.courses') }}">Courses</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('admin.payments') }}">Payments</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('admin.reports') }}">Reports</a></li>
-                                </ul>
-                            </li>
-                        {% elif current_user.is_tutor %}
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" id="tutorDropdown" role="button" data-bs-toggle="dropdown">
-                                    Tutor
-                                </a>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="{{ url_for('tutor.dashboard') }}">Dashboard</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('tutor.profile') }}">Profile</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('tutor.schedule') }}">Schedule</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('tutor.bookings') }}">Bookings</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('tutor.earnings') }}">Earnings</a></li>
-                                </ul>
-                            </li>
-                        {% elif current_user.is_learner %}
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" id="studentDropdown" role="button" data-bs-toggle="dropdown">
-                                    Student
-                                </a>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="{{ url_for('student.dashboard') }}">Dashboard</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('student.profile') }}">Profile</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('student.bookings') }}">Bookings</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('student.tutors') }}">Find Tutors</a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('student.payments') }}">Payments</a></li>
-                                </ul>
-                            </li>
-                        {% endif %}
-                    {% endif %}
-                </ul>
-                
-                <ul class="navbar-nav">
-                    {% if current_user.is_authenticated %}
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-user me-1"></i>{{ current_user.user_profile.full_name }}
+                <div class="navbar-menu">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('main.index') }}">
+                                <i class="fas fa-home me-2"></i>Home
                             </a>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="{{ url_for('main.profile') }}">Profile</a></li>
-                                <li><a class="dropdown-item" href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Logout</a></li>
-                            </ul>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('course.courses') }}">
+                                <i class="fas fa-book me-2"></i>Courses
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('main.tutor_discovery') }}">
+                                <i class="fas fa-users me-2"></i>Find Tutors
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('main.about') }}">
+                                <i class="fas fa-info-circle me-2"></i>About
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('main.contact') }}">
+                                <i class="fas fa-envelope me-2"></i>Contact
+                            </a>
+                        </li>
+                        
+                        <!-- Role-specific navigation -->
+                        {% if current_user.is_authenticated %}
+                            {% if current_user.is_admin %}
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-cog me-2"></i>Admin
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{{ url_for('admin.dashboard') }}">
+                                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('admin.dashboard') }}">
+                                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('admin.courses') }}">
+                                            <i class="fas fa-book me-2"></i>Courses
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('payment.index') }}">
+                                            <i class="fas fa-credit-card me-2"></i>Payments
+                                        </a></li>
+                                    </ul>
+                                </li>
+                            {% elif current_user.is_tutor %}
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" id="tutorDropdown" role="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-chalkboard-teacher me-2"></i>Tutor
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{{ url_for('tutor.dashboard') }}">
+                                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('tutor.profile') }}">
+                                            <i class="fas fa-user me-2"></i>Profile
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('tutor.availability') }}">
+                                            <i class="fas fa-calendar me-2"></i>Schedule
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('tutor.bookings') }}">
+                                            <i class="fas fa-calendar-check me-2"></i>Bookings
+                                        </a></li>
+                                    </ul>
+                                </li>
+                            {% elif current_user.is_learner %}
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" id="studentDropdown" role="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-graduation-cap me-2"></i>Student
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{{ url_for('student.dashboard') }}">
+                                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('main.profile') }}">
+                                            <i class="fas fa-user me-2"></i>Profile
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('main.tutor_discovery') }}">
+                                            <i class="fas fa-users me-2"></i>Find Tutors
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('payment.index') }}">
+                                            <i class="fas fa-credit-card me-2"></i>Payments
+                                        </a></li>
+                                    </ul>
+                                </li>
+                            {% endif %}
+                        {% endif %}
+                    </ul>
+                </div>
+                
+                <div class="nav-user">
+                    {% if current_user.is_authenticated %}
+                        <div class="user-avatar">
+                            {% if current_user.user_profile.avatar_url %}
+                                <img src="{{ current_user.user_profile.avatar_url }}" alt="{{ current_user.user_profile.full_name }}">
+                            {% else %}
+                                <div class="avatar-placeholder">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                            {% endif %}
+                            <span class="online-indicator online"></span>
+                        </div>
+                        <div class="user-dropdown">
+                            <a href="{{ url_for('main.profile') }}" class="dropdown-item">
+                                <i class="fas fa-user me-2"></i>Profile
+                            </a>
+                            <a href="{{ url_for('main.dashboard') }}" class="dropdown-item">
+                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a href="{{ url_for('auth.logout') }}" class="dropdown-item">
+                                <i class="fas fa-sign-out-alt me-2"></i>Logout
+                            </a>
+                        </div>
                     {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('auth.register') }}">Register</a>
-                        </li>
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-modern btn-sm me-2">
+                            <i class="fas fa-sign-in-alt"></i>Login
+                        </a>
+                        <a href="{{ url_for('auth.register') }}" class="btn btn-modern btn-sm">
+                            <i class="fas fa-user-plus"></i>Sign Up
+                        </a>
                     {% endif %}
-                </ul>
+                </div>
             </div>
         </div>
     </nav>
@@ -127,7 +185,7 @@
     {% endwith %}
     
     <!-- Main Content -->
-    <main class="container mt-4">
+    <main id="main-content" class="main-content">
         {% block content %}{% endblock %}
     </main>
     
@@ -173,6 +231,43 @@
     <script src="{{ url_for('static', filename='js/automated-reminders.js') }}"></script>
     <script src="{{ url_for('static', filename='js/timezone-support.js') }}"></script>
     <script src="{{ url_for('static', filename='js/recurring-bookings.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/ui-enhancements.js') }}"></script>
+    
+    <!-- Navigation Dropdown Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // User dropdown functionality
+            const userAvatar = document.querySelector('.user-avatar');
+            const userDropdown = document.querySelector('.user-dropdown');
+            
+            if (userAvatar && userDropdown) {
+                // Toggle dropdown on avatar click
+                userAvatar.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const isVisible = userDropdown.style.opacity === '1';
+                    userDropdown.style.opacity = isVisible ? '0' : '1';
+                    userDropdown.style.visibility = isVisible ? 'hidden' : 'visible';
+                    userDropdown.style.transform = isVisible ? 'translateY(-10px)' : 'translateY(0)';
+                });
+                
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!userAvatar.contains(e.target) && !userDropdown.contains(e.target)) {
+                        userDropdown.style.opacity = '0';
+                        userDropdown.style.visibility = 'hidden';
+                        userDropdown.style.transform = 'translateY(-10px)';
+                    }
+                });
+                
+                // Prevent dropdown from closing when clicking inside
+                userDropdown.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+            }
+        });
+    </script>
     
     {% block scripts %}{% endblock %}
 </body>

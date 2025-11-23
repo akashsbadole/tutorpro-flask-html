@@ -20,7 +20,7 @@ from app.models.payment import Payment, PaymentMethod, Transaction, Payout
 from app.models.booking import Booking
 from app.models.tutor import TutorProfile
 from app.models.user import User
-from app.utils.decorators import role_required
+from app.utils.decorators import roles_required
 from app import db
 
 # Initialize services
@@ -496,7 +496,7 @@ def refund_payment(payment_id):
 # Payout routes
 @bp.route('/payouts')
 @login_required
-@role_required('tutor', 'admin')
+@roles_required('tutor', 'admin')
 def payouts():
     """View payouts"""
     if current_user.role == 'tutor':
@@ -508,7 +508,7 @@ def payouts():
 
 @bp.route('/payouts/request', methods=['GET', 'POST'])
 @login_required
-@role_required('tutor')
+@roles_required('tutor')
 @require_payment_security
 def request_payout():
     """Request a payout"""
@@ -560,7 +560,7 @@ def request_payout():
 
 @bp.route('/payouts/methods', methods=['GET', 'POST'])
 @login_required
-@role_required('tutor')
+@roles_required('tutor')
 def payout_methods():
     """Manage payout methods"""
     form = PayoutMethodForm()
@@ -590,7 +590,7 @@ def payout_methods():
 # Analytics routes
 @bp.route('/analytics')
 @login_required
-@role_required('admin')
+@roles_required('admin')
 def analytics():
     """Payment analytics dashboard"""
     form = AnalyticsFilterForm()
@@ -620,7 +620,7 @@ def analytics():
 
 @bp.route('/export/<format>')
 @login_required
-@role_required('admin')
+@roles_required('admin')
 def export_data(format):
     """Export payment data"""
     try:

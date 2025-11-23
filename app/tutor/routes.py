@@ -4,10 +4,15 @@ from app.tutor import bp
 from app.utils.decorators import tutor_required
 from app.models.user import User, UserProfile
 from app.models.tutor import TutorProfile
-from app.models.course import Course, Subject, TutorSubject
-from app.models.booking import Booking, TutorAvailability
+from app.models.course import Course
+from app.models.tutor import TutorSubject
+from app.models import Subject
+from app.models.booking import Booking
+from app.models.tutor import TutorAvailability
 from app.models.payment import Payment, Payout
-from app.models.review import Review, TutorRatingSummary
+# Review model conflicts with verification.py - using Review from verification.py
+# from app.models.review import Review, TutorRatingSummary
+from app.models.verification import Review
 from app import db
 from sqlalchemy import func, desc
 from datetime import datetime, timedelta
@@ -82,6 +87,13 @@ def dashboard():
                            upcoming_booking_list=upcoming_booking_list,
                            recent_reviews=recent_reviews,
                            rating_summary=rating_summary)
+
+
+@bp.route('/profile/<int:tutor_id>')
+def view_tutor_profile(tutor_id):
+    """View another tutor's public profile"""
+    tutor_profile = TutorProfile.query.get_or_404(tutor_id)
+    return render_template('tutor/public_profile.html', tutor_profile=tutor_profile)
 
 
 @bp.route('/profile')

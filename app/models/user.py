@@ -22,6 +22,7 @@ class User(UserMixin, db.Model):
     # Relationships
     user_profile = db.relationship('UserProfile', backref='user', uselist=False, cascade='all, delete-orphan')
     learner_profile = db.relationship('LearnerProfile', backref='learner_user', uselist=False, cascade='all, delete-orphan')
+    email_notification_preferences = db.relationship('EmailNotificationPreference', backref='user', uselist=False, cascade='all, delete-orphan')
     
     def __init__(self, email, password, role='Learner'):
         self.email = email
@@ -94,29 +95,4 @@ class UserProfile(db.Model):
         return f'<UserProfile {self.full_name}>'
 
 
-class LearnerProfile(db.Model):
-    """
-    Learner-specific profile information
-    """
-    __tablename__ = 'learner_profiles'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    learning_goals = db.Column(db.Text)
-    preferred_subjects = db.Column(db.Text)  # Comma-separated list or JSON
-    availability = db.Column(db.Text)  # Learner's availability for classes
-    timezone = db.Column(db.String(50), default='UTC')
-    budget_range_min = db.Column(db.Numeric(10, 2))
-    budget_range_max = db.Column(db.Numeric(10, 2))
-    preferred_tutor_gender = db.Column(db.Enum('Any', 'Male', 'Female', name='tutor_gender_preferences'),
-                                      nullable=False, default='Any')
-    experience_level = db.Column(db.Enum('Beginner', 'Intermediate', 'Advanced', name='learner_experience_levels'),
-                                nullable=False, default='Beginner')
-    language_preference = db.Column(db.String(50))  # Preferred language for instruction
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # No relationship back to User - defined in User model
-    
-    def __repr__(self):
-        return f'<LearnerProfile {self.user.email}>'
+# LearnerProfile is now defined in app/models/student.py

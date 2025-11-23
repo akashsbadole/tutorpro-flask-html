@@ -49,6 +49,74 @@ def index():
     return render_template('meeting/index.html', meetings=meetings, status=status)
 
 
+@bp.route('/create/<int:tutor_id>', methods=['GET', 'POST'])
+@login_required
+def create_with_tutor(tutor_id):
+    """Create a new meeting with specific tutor"""
+    tutor_profile = TutorProfile.query.get_or_404(tutor_id)
+    
+    form = MeetingForm()
+    
+    # Pre-fill with tutor information
+    form.title.data = f"Session with {tutor_profile.user.user_profile.first_name} {tutor_profile.user.user_profile.last_name}"
+    form.host_id.data = tutor_id
+    form.host_type.data = 'Tutor'
+    
+    if form.validate_on_submit():
+        meeting = Meeting(
+            title=form.title.data,
+            description=form.description.data,
+            meeting_type=form.meeting_type.data,
+            scheduled_time=form.scheduled_time.data,
+            duration_minutes=form.duration_minutes.data,
+            timezone=form.timezone.data,
+            host_id=tutor_id,
+            host_type='Tutor',
+            platform=form.platform.data,
+            meeting_url=form.meeting_url.data,
+            meeting_id=form.meeting_id.data,
+            password=form.password.data,
+            max_participants=form.max_participants.data,
+            enable_recording=form.enable_recording.data,
+            enable_waiting_room=form.enable_waiting_room.data,
+            enable_participant_video=form.enable_participant_video.data,
+            enable_participant_audio=form.enable_participant_audio.data,
+            enable_chat=form.enable_chat.data,
+            enable_screen_share=form.enable_screen_share.data,
+            require_password=form.require_password.data,
+            enable_authentication=form.enable_authentication.data,
+            one_time_link=form.one_time_link.data,
+            link_expires_at=form.link_expires_at.data
+        )
+        
+        # Generate secure password if required but not provided
+        if form.require_password.data and not form.password.data:
+            meeting.generate_secure_password()
+        
+        # Generate host key
+        meeting.generate_host_key()
+        
+        db.session.add(meeting)
+        db.session.commit()
+        
+        # Add host as participant
+        meeting.add_participant(tutor_id, 'Host')
+        
+        # Add current user as participant
+        meeting.add_participant(current_user.id, 'Student')
+        
+        # Create analytics record
+        analytics = MeetingAnalytics(meeting_id=meeting.id)
+        db.session.add(analytics)
+        
+        db.session.commit()
+        
+        flash('Session booked successfully!', 'success')
+        return redirect(url_for('meeting.details', id=meeting.id))
+    
+    return render_template('meeting/create_with_tutor.html', form=form, tutor_profile=tutor_profile)
+
+
 @bp.route('/create', methods=['GET', 'POST'])
 @login_required
 def create():

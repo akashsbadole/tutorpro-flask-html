@@ -2,7 +2,8 @@ from flask import Blueprint, jsonify, request, current_app
 from flask_login import login_required, current_user
 from app.models.meeting import (Meeting, MeetingParticipant, MeetingRecording, MeetingTemplate,
                                MeetingCalendar, MeetingReminder, MeetingAnalytics)
-from app.models.demo import DemoClass, DemoFeedback, DemoMaterial, DemoFollowUp
+from app.models.demo import DemoSession, DemoFeedback, DemoTemplate, DemoAvailability
+# DemoRequestFeedback model doesn't exist, removed import
 from app.models.user import User
 from app.models.tutor import TutorProfile
 from app import db
@@ -492,7 +493,7 @@ def create_template():
         return jsonify({'error': str(e)}), 400
 
 
-@meeting_api.route('/webhooks/zoom', methods=['POST'])
+@meeting_api.route('/webhooks/zoom', methods=['POST'], endpoint='zoom_webhook')
 @require_api_key
 def zoom_webhook():
     """Handle Zoom webhooks"""
@@ -541,7 +542,7 @@ def zoom_webhook():
     return jsonify({'message': 'Webhook processed successfully'})
 
 
-@meeting_api.route('/webhooks/google-meet', methods=['POST'])
+@meeting_api.route('/webhooks/google-meet', methods=['POST'], endpoint='google_meet_webhook')
 @require_api_key
 def google_meet_webhook():
     """Handle Google Meet webhooks"""

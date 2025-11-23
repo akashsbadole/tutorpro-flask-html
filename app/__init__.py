@@ -4,7 +4,15 @@ from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 from flask_migrate import Migrate
 from flask_mail import Mail
-from flask_caching import Cache
+try:
+    from flask_caching import Cache
+except ImportError:
+    # Fallback if flask_caching is not installed
+    class Cache:
+        def __init__(self):
+            pass
+        def init_app(self, app):
+            pass
 from config import config
 
 # Initialize Flask extensions
@@ -75,6 +83,22 @@ def create_app(config_name='default'):
     # Register API payment blueprint
     from app.api.payment import payment_api
     app.register_blueprint(payment_api)
+    
+    # Register search API blueprint
+    from app.api.search import search_bp
+    app.register_blueprint(search_bp)
+    
+    # Register AI API blueprint
+    from app.api.ai import ai_bp
+    app.register_blueprint(ai_bp)
+    
+    # Register video classroom API blueprint
+    from app.api.video_classroom import video_classroom_bp
+    app.register_blueprint(video_classroom_bp)
+    
+    # Register messaging API blueprint
+    from app.api.messaging import messaging_bp
+    app.register_blueprint(messaging_bp)
     
     # Register payment blueprint
     from app.payment import bp as payment_bp

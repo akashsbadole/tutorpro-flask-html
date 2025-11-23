@@ -1,129 +1,215 @@
 {% extends "base.html" %}
 
+{% block extra_css %}
+<style>
+.student-nav {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+.student-nav .nav-link {
+    color: rgba(255, 255, 255, 0.8);
+    border-radius: 8px;
+    padding: 12px 20px;
+    margin: 5px;
+    transition: all 0.3s ease;
+}
+
+.student-nav .nav-link:hover,
+.student-nav .nav-link.active {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.student-content {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    padding: 30px;
+    margin-bottom: 30px;
+}
+
+.page-header {
+    border-bottom: 2px solid #f1f3f5;
+    padding-bottom: 15px;
+    margin-bottom: 25px;
+}
+
+.page-title {
+    color: #2c3e50;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.page-subtitle {
+    color: #6c757d;
+    font-size: 1rem;
+}
+
+.stats-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    transition: transform 0.3s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+}
+
+.stats-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #667eea;
+    margin-bottom: 5px;
+}
+
+.stats-label {
+    color: #6c757d;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.action-btn {
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+    background: #5a6fd8;
+    transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+    .student-nav {
+        padding: 15px;
+    }
+    
+    .student-nav .nav-link {
+        padding: 10px 15px;
+        margin: 3px;
+        font-size: 0.9rem;
+    }
+    
+    .student-content {
+        padding: 20px;
+    }
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
     <div class="row">
-        <!-- Sidebar -->
-        <div class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
-            <div class="position-sticky pt-3">
-                <ul class="nav flex-column">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="{{ url_for('student.dashboard') }}">
-                            <i class="fas fa-tachometer-alt me-2"></i>
-                            Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('student.profile') }}">
-                            <i class="fas fa-user me-2"></i>
-                            Profile
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('student.bookings') }}">
-                            <i class="fas fa-calendar-check me-2"></i>
-                            Bookings
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('student.courses') }}">
-                            <i class="fas fa-book me-2"></i>
-                            My Courses
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('student.tutors') }}">
-                            <i class="fas fa-chalkboard-teacher me-2"></i>
-                            Find Tutors
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('student.payments') }}">
-                            <i class="fas fa-credit-card me-2"></i>
-                            Payments
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('student.reviews') }}">
-                            <i class="fas fa-star me-2"></i>
-                            Reviews
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <hr class="my-2">
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.profile') }}">
-                            <i class="fas fa-user-cog me-2"></i>
-                            Settings
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('auth.logout') }}">
-                            <i class="fas fa-sign-out-alt me-2"></i>
-                            Logout
-                        </a>
-                    </li>
-                </ul>
+        <div class="col-12">
+            <!-- Student Navigation -->
+            <nav class="student-nav">
+                <div class="nav nav-pills">
+                    <a class="nav-link {% if request.endpoint == 'student.dashboard' %}active{% endif %}" 
+                       href="{{ url_for('student.dashboard') }}">
+                        <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                    </a>
+                    <a class="nav-link {% if request.endpoint == 'student.profile' %}active{% endif %}" 
+                       href="{{ url_for('student.profile') }}">
+                        <i class="fas fa-user me-2"></i>Profile
+                    </a>
+                    <a class="nav-link {% if request.endpoint == 'student.progress' %}active{% endif %}" 
+                       href="{{ url_for('student.progress') }}">
+                        <i class="fas fa-chart-line me-2"></i>Progress
+                    </a>
+                    <a class="nav-link {% if request.endpoint == 'student.learning_goals' %}active{% endif %}" 
+                       href="{{ url_for('student.learning_goals') }}">
+                        <i class="fas fa-bullseye me-2"></i>Goals
+                    </a>
+                    <a class="nav-link {% if request.endpoint == 'student.bookings' %}active{% endif %}" 
+                       href="{{ url_for('student.bookings') }}">
+                        <i class="fas fa-calendar me-2"></i>Bookings
+                    </a>
+                    <a class="nav-link {% if request.endpoint == 'student.wishlist' %}active{% endif %}" 
+                       href="{{ url_for('student.wishlist') }}">
+                        <i class="fas fa-heart me-2"></i>Wishlist
+                    </a>
+                    <a class="nav-link {% if request.endpoint == 'student.compare' %}active{% endif %}" 
+                       href="{{ url_for('student.compare') }}">
+                        <i class="fas fa-balance-scale me-2"></i>Compare
+                    </a>
+                    <a class="nav-link {% if request.endpoint == 'student.achievements' %}active{% endif %}" 
+                       href="{{ url_for('student.achievements') }}">
+                        <i class="fas fa-trophy me-2"></i>Achievements
+                    </a>
+                </div>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <!-- Student Content -->
+            <div class="student-content">
+                {% block student_content %}
+                <!-- Content will be inserted here -->
+                {% endblock %}
             </div>
         </div>
-
-        <!-- Main content -->
-        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                <h1 class="h2">{% block page_title %}Student Panel{% endblock %}</h1>
-                <div class="btn-toolbar mb-2 mb-md-0">
-                    <div class="btn-group me-2">
-                        <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
-                    </div>
-                    <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle">
-                        <i class="fas fa-bell"></i>
-                    </button>
-                </div>
-            </div>
-            
-            {% block student_content %}{% endblock %}
-        </main>
     </div>
 </div>
 {% endblock %}
 
-{% block head %}
-<style>
-    .sidebar {
-        position: fixed;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        z-index: 100;
-        padding: 48px 0 0;
-        box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.1);
-    }
+{% block extra_js %}
+<script>
+// Student navigation enhancements
+document.addEventListener('DOMContentLoaded', function() {
+    // Add ripple effect to nav links
+    const navLinks = document.querySelectorAll('.student-nav .nav-link');
+    
+    navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            const ripple = document.createElement('span');
+            ripple.classList.add('ripple');
+            ripple.style.left = e.offsetX + 'px';
+            ripple.style.top = e.offsetY + 'px';
+            this.appendChild(ripple);
+            
+            setTimeout(() => {
+                ripple.remove();
+            }, 600);
+        });
+    });
+});
 
-    .sidebar .nav-link {
-        color: #333;
-        font-weight: 500;
+// Add ripple effect CSS
+const style = document.createElement('style');
+style.textContent = `
+    .student-nav .nav-link {
+        position: relative;
+        overflow: hidden;
     }
-
-    .sidebar .nav-link.active {
-        color: #007bff;
-        background-color: rgba(0, 123, 255, 0.1);
+    
+    .ripple {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(0);
+        animation: ripple-animation 0.6s ease-out;
+        pointer-events: none;
     }
-
-    .sidebar .nav-link:hover {
-        color: #007bff;
-        background-color: rgba(0, 123, 255, 0.05);
-    }
-
-    .sidebar .nav-link i {
-        width: 20px;
-        text-align: center;
-    }
-
-    @media (max-width: 767.98px) {
-        .sidebar {
-            top: 5rem;
+    
+    @keyframes ripple-animation {
+        to {
+            transform: scale(4);
+            opacity: 0;
         }
     }
-</style>
+`;
+document.head.appendChild(style);
+</script>
 {% endblock %}

@@ -4,7 +4,8 @@ from app.admin import bp
 from app.utils.decorators import admin_required
 from app.models.user import User, UserProfile
 from app.models.tutor import TutorProfile
-from app.models.course import Course, Subject
+from app.models.course import Course
+from app.models import Subject
 from app.models.booking import Booking
 from app.models.payment import Payment, Payout
 from app import db
@@ -108,7 +109,7 @@ def delete_user(user_id):
     """Delete a user"""
     user = User.query.get_or_404(user_id)
     
-    # Don't allow deletion of the current admin user
+    # Don't allow deletion of current admin user
     if user.id == current_user.id:
         flash('You cannot delete your own account', 'danger')
         return redirect(url_for('admin.users'))
@@ -136,8 +137,9 @@ def courses():
     courses = query.order_by(Course.created_at.desc()).paginate(
         page=page, per_page=per_page, error_out=False
     )
+    subjects = Subject.query.all()
     
-    return render_template('admin/courses.html', courses=courses, search=search)
+    return render_template('admin/courses.html', courses=courses, search=search, subjects=subjects)
 
 
 @bp.route('/courses/<int:course_id>/edit', methods=['GET', 'POST'])
@@ -179,6 +181,58 @@ def delete_course(course_id):
     db.session.commit()
     flash('Course deleted successfully', 'success')
     return redirect(url_for('admin.courses'))
+
+
+@bp.route('/courses/new', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def new_course():
+    """Create a new course"""
+    subjects = Subject.query.all()
+    
+    if request.method == 'POST':
+        course = Course(
+            title=request.form.get('title'),
+            description=request.form.get('description'),
+            level=request.form.get('level'),
+            price=float(request.form.get('price')),
+            duration_hours=int(request.form.get('duration_hours')),
+            subject_id=int(request.form.get('subject_id')),
+            is_active='is_active' in request.form
+        )
+        db.session.add(course)
+        db.session.commit()
+        flash('Course created successfully', 'success')
+        return redirect(url_for('admin.courses'))
+    
+    return render_template('admin/new_course.html', subjects=subjects)
+
+
+@bp.route('/api/courses/<int:course_id>')
+@login_required
+@admin_required
+def get_course_api(course_id):
+    """API endpoint to get course details"""
+    course = Course.query.get_or_404(course_id)
+    
+    return jsonify({
+        'success': True,
+        'course': {
+            'id': course.id,
+            'title': course.title,
+            'description': course.description,
+            'level': course.level,
+            'price': course.price,
+            'duration_hours': course.duration_hours,
+            'subject': {
+                'id': course.subject.id,
+                'name': course.subject.name
+            } if course.subject else None,
+            'is_active': course.is_active,
+            'created_at': course.created_at.isoformat() if course.created_at else None,
+            'updated_at': course.updated_at.isoformat() if course.updated_at else None
+        }
+    })
 
 
 @bp.route('/subjects')

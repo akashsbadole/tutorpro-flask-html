@@ -1,0 +1,296 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Create New Course{% endblock %}
+
+{% block page_title %}Create New Course{% endblock %}
+
+{% block admin_content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Course Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="title" class="form-label">Course Title *</label>
+                            <input type="text" class="form-control" id="title" name="title" required
+                                   placeholder="Enter course title">
+                            <div class="form-text">Choose a descriptive title for your course</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="subject_id" class="form-label">Subject *</label>
+                            <select class="form-select" id="subject_id" name="subject_id" required>
+                                <option value="">Select a subject</option>
+                                {% for subject in subjects %}
+                                <option value="{{ subject.id }}">{{ subject.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description *</label>
+                        <textarea class="form-control" id="description" name="description" rows="4" required
+                                  placeholder="Describe what students will learn in this course"></textarea>
+                        <div class="form-text">Provide a detailed description of the course content and learning objectives</div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="level" class="form-label">Level *</label>
+                            <select class="form-select" id="level" name="level" required>
+                                <option value="">Select level</option>
+                                <option value="Beginner">Beginner</option>
+                                <option value="Intermediate">Intermediate</option>
+                                <option value="Advanced">Advanced</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="price" class="form-label">Price ($) *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="price" name="price" 
+                                       step="0.01" min="0" required placeholder="0.00">
+                            </div>
+                            <div class="form-text">Set the course price</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="duration_hours" class="form-label">Duration (hours) *</label>
+                            <input type="number" class="form-control" id="duration_hours" name="duration_hours" 
+                                   min="1" required placeholder="10">
+                            <div class="form-text">Estimated course duration in hours</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+                            <label class="form-check-label" for="is_active">
+                                Active Course
+                            </label>
+                            <div class="form-text">Uncheck to hide this course from public view</div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('admin.courses') }}" class="btn btn-secondary">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Create Course
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">Guidelines</h6>
+            </div>
+            <div class="card-body">
+                <div class="guidelines">
+                    <h6>Course Title</h6>
+                    <ul class="list-unstyled small text-muted">
+                        <li><i class="fas fa-check text-success me-2"></i>Be specific and descriptive</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Include target audience</li>
+                        <li><i class="fas fa-times text-danger me-2"></i>Avoid clickbait titles</li>
+                    </ul>
+                    
+                    <h6>Description</h6>
+                    <ul class="list-unstyled small text-muted">
+                        <li><i class="fas fa-check text-success me-2"></i>Clear learning objectives</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Prerequisites (if any)</li>
+                        <li><i class="fas fa-check text-success me-2"></i>What students will achieve</li>
+                    </ul>
+                    
+                    <h6>Pricing</h6>
+                    <ul class="list-unstyled small text-muted">
+                        <li><i class="fas fa-info text-info me-2"></i>Research market rates</li>
+                        <li><i class="fas fa-info text-info me-2"></i>Consider course length</li>
+                        <li><i class="fas fa-info text-info me-2"></i>Value proposition</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">Quick Tips</h6>
+            </div>
+            <div class="card-body">
+                <div class="tips">
+                    <div class="tip-item mb-2">
+                        <i class="fas fa-lightbulb text-warning me-2"></i>
+                        <small>Include relevant keywords in your title for better search visibility</small>
+                    </div>
+                    <div class="tip-item mb-2">
+                        <i class="fas fa-lightbulb text-warning me-2"></i>
+                        <small>Set competitive pricing based on market research</small>
+                    </div>
+                    <div class="tip-item mb-2">
+                        <i class="fas fa-lightbulb text-warning me-2"></i>
+                        <small>Be realistic about course duration estimates</small>
+                    </div>
+                    <div class="tip-item">
+                        <i class="fas fa-lightbulb text-warning me-2"></i>
+                        <small>Test your course content before publishing</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.guidelines h6 {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 10px;
+    margin-top: 15px;
+}
+
+.guidelines h6:first-child {
+    margin-top: 0;
+}
+
+.guidelines ul {
+    margin-bottom: 15px;
+}
+
+.tips .tip-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 8px;
+    background: #f8f9fa;
+    border-radius: 6px;
+}
+
+.form-text {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.btn {
+    border-radius: 0.375rem;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+@media (max-width: 768px) {
+    .row {
+        flex-direction: column;
+    }
+    
+    .col-md-4 {
+        margin-top: 20px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-save draft functionality
+    const form = document.querySelector('form');
+    const inputs = form.querySelectorAll('input, textarea, select');
+    
+    // Load saved draft if exists
+    const savedDraft = localStorage.getItem('course_draft');
+    if (savedDraft) {
+        const draft = JSON.parse(savedDraft);
+        inputs.forEach(input => {
+            if (input.type === 'checkbox') {
+                input.checked = draft[input.name] || false;
+            } else {
+                input.value = draft[input.name] || '';
+            }
+        });
+    }
+    
+    // Auto-save on input change
+    let saveTimeout;
+    inputs.forEach(input => {
+        input.addEventListener('input', function() {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(saveDraft, 1000);
+        });
+    });
+    
+    function saveDraft() {
+        const draft = {};
+        inputs.forEach(input => {
+            if (input.type === 'checkbox') {
+                draft[input.name] = input.checked;
+            } else {
+                draft[input.name] = input.value;
+            }
+        });
+        localStorage.setItem('course_draft', JSON.stringify(draft));
+    }
+    
+    // Clear draft on successful submission
+    form.addEventListener('submit', function() {
+        localStorage.removeItem('course_draft');
+    });
+    
+    // Form validation
+    form.addEventListener('submit', function(e) {
+        if (!form.checkValidity()) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    });
+    
+    // Price formatting
+    const priceInput = document.getElementById('price');
+    priceInput.addEventListener('blur', function() {
+        if (this.value) {
+            this.value = parseFloat(this.value).toFixed(2);
+        }
+    });
+    
+    // Character count for description
+    const description = document.getElementById('description');
+    const maxLength = 1000;
+    
+    const charCount = document.createElement('div');
+    charCount.className = 'form-text';
+    charCount.style.textAlign = 'right';
+    description.parentNode.appendChild(charCount);
+    
+    function updateCharCount() {
+        const remaining = maxLength - description.value.length;
+        charCount.textContent = `${description.value.length}/${maxLength} characters`;
+        charCount.style.color = remaining < 100 ? '#dc3545' : '#6c757d';
+    }
+    
+    description.addEventListener('input', updateCharCount);
+    updateCharCount();
+});
+</script>
+{% endblock %}

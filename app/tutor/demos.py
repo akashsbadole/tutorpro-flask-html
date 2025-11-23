@@ -6,8 +6,12 @@ from app.tutor import bp
 from app.utils.decorators import tutor_required
 from app.models.user import User, UserProfile
 from app.models.tutor import TutorProfile
-from app.models.course import Subject, Course
-from app.models.booking import Booking, TutorAvailability, DemoRequest, BookingFeedback
+from app.models.course import Course
+from app.models import Subject
+from app.models.booking import Booking
+from app.models.tutor import TutorAvailability
+from app.models.demo import DemoSession as DemoRequest
+# from app.models.booking import BookingFeedback, DemoRequestFeedback
 from app.models.payment import Payment
 from app.tutor.forms import DemoRequestForm, FeedbackForm
 from app import db
@@ -204,7 +208,7 @@ def demo_feedback(demo_id):
         return redirect(url_for('tutor.demo_details', demo_id=demo_id))
     
     # Check if feedback already exists
-    existing_feedback = DemoFeedback.query.filter_by(demo_request_id=demo_id).first()
+    existing_feedback = DemoRequestFeedback.query.filter_by(demo_request_id=demo_id).first()
     if existing_feedback:
         flash('Feedback already collected for this demo', 'info')
         return redirect(url_for('tutor.demo_details', demo_id=demo_id))
@@ -213,7 +217,7 @@ def demo_feedback(demo_id):
     
     if form.validate_on_submit():
         # Create feedback record
-        feedback = DemoFeedback(
+        feedback = DemoRequestFeedback(
             demo_request_id=demo_id,
             rating=form.rating.data,
             teaching_quality=form.teaching_quality.data,
@@ -438,27 +442,3 @@ def check_demo_conflict(tutor_id, preferred_date, preferred_time, duration_minut
     
     return False
 
-
-# Model for demo feedback (needs to be added to models)
-class DemoFeedback(db.Model):
-    """
-    Model for demo feedback
-    """
-    __tablename__ = 'demo_feedback'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    demo_request_id = db.Column(db.Integer, db.ForeignKey('demo_requests.id'), nullable=False)
-    rating = db.Column(db.Integer, nullable=False)
-    teaching_quality = db.Column(db.Integer, nullable=False)
-    communication = db.Column(db.Integer, nullable=False)
-    preparation = db.Column(db.Integer, nullable=False)
-    value_for_money = db.Column(db.Integer, nullable=False)
-    comments = db.Column(db.Text)
-    would_recommend = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relationship
-    demo_request = db.relationship('DemoRequest', backref='feedback')
-    
-    def __repr__(self):
-        return f'<DemoFeedback {self.demo_request_id} - {self.rating}>'

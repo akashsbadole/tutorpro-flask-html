@@ -9,8 +9,10 @@ from app.tutor import bp
 from app.utils.decorators import tutor_required
 from app.models.user import User, UserProfile
 from app.models.tutor import TutorProfile
-from app.models.course import Subject, Course
-from app.models.booking import Booking, TutorAvailability
+from app.models.course import Course
+from app.models import Subject
+from app.models.booking import Booking
+from app.models.tutor import TutorAvailability
 from app.tutor.forms import AvailabilityForm, BulkAvailabilityForm
 from app import db
 from app.utils.errors import ValidationError

@@ -1,0 +1,790 @@
+{% extends "student/base.html" %}
+
+{% block title %}Achievements{% endblock %}
+
+{% block student_content %}
+<div class="page-header">
+    <h1 class="page-title">My Achievements</h1>
+    <p class="page-subtitle">Celebrate your learning milestones and accomplishments</p>
+</div>
+
+<!-- Achievement Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="stats-number">{{ achievements|length or 0 }}</div>
+            <div class="stats-label">Total Achievements</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            {% set recent_achievements = achievements|selectattr('earned_recently')|list if achievements else [] %}
+            <div class="stats-number">{{ recent_achievements|length or 0 }}</div>
+            <div class="stats-label">Recent</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            {% set rare_achievements = achievements|selectattr('is_rare')|list if achievements else [] %}
+            <div class="stats-number">{{ rare_achievements|length or 0 }}</div>
+            <div class="stats-label">Rare</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            {% set total_points = achievements|sum(attribute='points') or 0 %}
+            <div class="stats-number">{{ total_points }}</div>
+            <div class="stats-label">Total Points</div>
+        </div>
+    </div>
+</div>
+
+<!-- Achievement Categories -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="achievement-filters">
+            <button class="filter-btn active" data-category="all">All Achievements</button>
+            <button class="filter-btn" data-category="learning">Learning</button>
+            <button class="filter-btn" data-category="social">Social</button>
+            <button class="filter-btn" data-category="milestone">Milestones</button>
+            <button class="filter-btn" data-category="special">Special</button>
+        </div>
+    </div>
+</div>
+
+<!-- Achievements Grid -->
+<div class="achievements-container">
+    {% if achievements %}
+        {% for achievement in achievements %}
+        <div class="achievement-card {{ achievement.category }}" data-category="{{ achievement.category }}">
+            <div class="achievement-header">
+                <div class="achievement-icon {{ 'unlocked' if achievement.is_earned else 'locked' }}">
+                    <i class="{{ achievement.icon_class }}"></i>
+                </div>
+                <div class="achievement-info">
+                    <h5 class="achievement-title">{{ achievement.title }}</h5>
+                    <div class="achievement-meta">
+                        <span class="badge bg-{{ achievement.rarity }}">{{ achievement.rarity.title() }}</span>
+                        <span class="points">+{{ achievement.points }} pts</span>
+                    </div>
+                </div>
+                <div class="achievement-status">
+                    {% if achievement.is_earned %}
+                    <div class="status-badge earned">
+                        <i class="fas fa-check"></i>
+                        <span>Earned</span>
+                    </div>
+                    {% else %}
+                    <div class="status-badge locked">
+                        <i class="fas fa-lock"></i>
+                        <span>Locked</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="achievement-content">
+                <p class="achievement-description">{{ achievement.description }}</p>
+                
+                {% if achievement.is_earned and achievement.earned_at %}
+                <div class="achievement-date">
+                    <i class="far fa-calendar me-2"></i>
+                    Earned on {{ achievement.earned_at.strftime('%B %d, %Y') }}
+                </div>
+                {% endif %}
+                
+                {% if not achievement.is_earned and achievement.requirements %}
+                <div class="achievement-requirements">
+                    <h6>Requirements:</h6>
+                    <ul class="requirements-list">
+                        {% for requirement in achievement.requirements %}
+                        <li class="requirement-item {{ 'completed' if requirement.is_completed else 'incomplete' }}">
+                            <i class="fas fa-{{ 'check' if requirement.is_completed else 'times' }}"></i>
+                            <span>{{ requirement.description }}</span>
+                            {% if requirement.progress %}
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: {{ requirement.progress }}%"></div>
+                            </div>
+                            <span class="progress-text">{{ requirement.progress }}%</span>
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                
+                {% if achievement.is_earned and achievement.reward %}
+                <div class="achievement-reward">
+                    <h6>Reward:</h6>
+                    <div class="reward-content">
+                        {% if achievement.reward.type == 'badge' %}
+                        <div class="reward-badge">
+                            <i class="{{ achievement.reward.icon }}"></i>
+                            <span>{{ achievement.reward.title }}</span>
+                        </div>
+                        {% elif achievement.reward.type == 'discount' %}
+                        <div class="reward-discount">
+                            <i class="fas fa-percentage"></i>
+                            <span>{{ achievement.reward.value }}% off next session</span>
+                        </div>
+                        {% elif achievement.reward.type == 'points' %}
+                        <div class="reward-points">
+                            <i class="fas fa-coins"></i>
+                            <span>{{ achievement.reward.value }} bonus points</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            {% if achievement.is_earned and achievement.share_text %}
+            <div class="achievement-actions">
+                <button class="btn btn-outline-primary btn-sm" onclick="shareAchievement({{ achievement.id }})">
+                    <i class="fas fa-share-alt me-2"></i>Share
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="viewDetails({{ achievement.id }})">
+                    <i class="fas fa-info-circle me-2"></i>Details
+                </button>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-achievements">
+            <div class="empty-icon">
+                <i class="fas fa-trophy"></i>
+            </div>
+            <h5>No Achievements Yet</h5>
+            <p>Start your learning journey to unlock achievements and earn rewards!</p>
+            <a href="{{ url_for('search.tutor_discovery') }}" class="btn btn-primary">
+                <i class="fas fa-search me-2"></i>Find Tutors
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Progress Overview -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h6 class="card-title mb-0">Progress Overview</h6>
+    </div>
+    <div class="card-body">
+        <div class="progress-overview">
+            <div class="progress-section">
+                <h6>Learning Achievements</h6>
+                {% set learning_achievements = achievements|selectattr('category', 'learning')|list if achievements else [] %}
+                {% set earned_learning = learning_achievements|selectattr('is_earned')|list %}
+                <div class="circular-progress">
+                    <div class="progress-circle">
+                        <svg width="120" height="120">
+                            <circle class="progress-bg" cx="60" cy="60" r="50"></circle>
+                            <circle class="progress-fill" cx="60" cy="60" r="50"
+                                    stroke-dasharray="{{ earned_learning|length * 314 / (learning_achievements|length or 1) }} 314"
+                                    stroke-dashoffset="0"></circle>
+                        </svg>
+                        <div class="progress-text">
+                            {{ (earned_learning|length / (learning_achievements|length or 1) * 100)|round|int }}%
+                        </div>
+                    </div>
+                    <div class="progress-label">{{ earned_learning|length }}/{{ learning_achievements|length or 1 }}</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="progress-section">
+            <h6>Social Achievements</h6>
+            {% set social_achievements = achievements|selectattr('category', 'social')|list if achievements else [] %}
+            {% set earned_social = social_achievements|selectattr('is_earned')|list %}
+            <div class="circular-progress">
+                <div class="progress-circle">
+                    <svg width="120" height="120">
+                        <circle class="progress-bg" cx="60" cy="60" r="50"></circle>
+                        <circle class="progress-fill" cx="60" cy="60" r="50"
+                                    stroke-dasharray="{{ earned_social|length * 314 / (social_achievements|length or 1) }} 314"
+                                    stroke-dashoffset="0"></circle>
+                        </svg>
+                        <div class="progress-text">
+                            {{ (earned_social|length / (social_achievements|length or 1) * 100)|round|int }}%
+                        </div>
+                    </div>
+                    <div class="progress-label">{{ earned_social|length }}/{{ social_achievements|length or 1 }}</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="progress-section">
+            <h6>Milestone Achievements</h6>
+            {% set milestone_achievements = achievements|selectattr('category', 'milestone')|list if achievements else [] %}
+            {% set earned_milestone = milestone_achievements|selectattr('is_earned')|list %}
+            <div class="circular-progress">
+                <div class="progress-circle">
+                    <svg width="120" height="120">
+                        <circle class="progress-bg" cx="60" cy="60" r="50"></circle>
+                        <circle class="progress-fill" cx="60" cy="60" r="50"
+                                    stroke-dasharray="{{ earned_milestone|length * 314 / (milestone_achievements|length or 1) }} 314"
+                                    stroke-dashoffset="0"></circle>
+                        </svg>
+                        <div class="progress-text">
+                            {{ (earned_milestone|length / (milestone_achievements|length or 1) * 100)|round|int }}%
+                        </div>
+                    </div>
+                    <div class="progress-label">{{ earned_milestone|length }}/{{ milestone_achievements|length or 1 }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Achievement Details Modal -->
+<div class="modal fade" id="achievementModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Achievement Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="achievementDetails">
+                <!-- Achievement details will be loaded dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="shareAchievementBtn">
+                    <i class="fas fa-share-alt me-2"></i>Share Achievement
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Share Modal -->
+<div class="modal fade" id="shareModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Share Achievement</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="share-options">
+                    <button class="share-btn facebook" onclick="shareOnFacebook()">
+                        <i class="fab fa-facebook-f"></i>
+                        Facebook
+                    </button>
+                    <button class="share-btn twitter" onclick="shareOnTwitter()">
+                        <i class="fab fa-twitter"></i>
+                        Twitter
+                    </button>
+                    <button class="share-btn linkedin" onclick="shareOnLinkedIn()">
+                        <i class="fab fa-linkedin-in"></i>
+                        LinkedIn
+                    </button>
+                    <button class="share-btn whatsapp" onclick="shareOnWhatsApp()">
+                        <i class="fab fa-whatsapp"></i>
+                        WhatsApp
+                    </button>
+                </div>
+                <div class="share-link">
+                    <label class="form-label">Share Link:</label>
+                    <div class="input-group">
+                        <input type="text" id="shareLink" class="form-control" readonly>
+                        <button class="btn btn-outline-secondary" onclick="copyShareLink()">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.achievement-filters {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.filter-btn {
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 25px;
+    padding: 8px 20px;
+    font-weight: 500;
+    color: #6c757d;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.filter-btn:hover {
+    background: #e9ecef;
+    color: #495057;
+}
+
+.filter-btn.active {
+    background: #667eea;
+    border-color: #667eea;
+    color: white;
+}
+
+.achievements-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 25px;
+}
+
+.achievement-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.achievement-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+}
+
+.achievement-header {
+    display: flex;
+    align-items: flex-start;
+    padding: 20px 20px 0 20px;
+}
+
+.achievement-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    font-size: 2rem;
+    transition: all 0.3s ease;
+}
+
+.achievement-icon.unlocked {
+    background: linear-gradient(135deg, #ffc107, #ff9800);
+    color: white;
+    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+}
+
+.achievement-icon.locked {
+    background: #e9ecef;
+    color: #6c757d;
+}
+
+.achievement-info {
+    flex: 1;
+}
+
+.achievement-title {
+    margin-bottom: 5px;
+    color: #2c3e50;
+}
+
+.achievement-meta {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.achievement-status {
+    text-align: right;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.status-badge.earned {
+    background: #e8f5e8;
+    color: #155724;
+}
+
+.status-badge.locked {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.points {
+    background: #667eea;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.achievement-content {
+    padding: 0 20px 20px 20px;
+}
+
+.achievement-description {
+    color: #6c757d;
+    margin-bottom: 15px;
+    line-height: 1.5;
+}
+
+.achievement-date {
+    color: #667eea;
+    font-weight: 500;
+    margin-bottom: 15px;
+    font-size: 0.9rem;
+}
+
+.achievement-requirements {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.achievement-requirements h6 {
+    color: #495057;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+}
+
+.requirements-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.requirement-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+
+.requirement-item.completed {
+    color: #155724;
+}
+
+.requirement-item.incomplete {
+    color: #6c757d;
+}
+
+.requirement-item i {
+    margin-right: 8px;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 6px;
+    background: #e9ecef;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-left: 10px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: #28a745;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    font-size: 0.8rem;
+    margin-left: 10px;
+    min-width: 40px;
+}
+
+.achievement-reward {
+    background: linear-gradient(135deg, #e8f5e8, #d4edda);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.achievement-reward h6 {
+    color: #155724;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+}
+
+.reward-badge, .reward-discount, .reward-points {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.reward-badge {
+    background: #155724;
+    color: white;
+}
+
+.reward-discount {
+    background: #667eea;
+    color: white;
+}
+
+.reward-points {
+    background: #ffc107;
+    color: #212529;
+}
+
+.achievement-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.empty-achievements {
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: #dee2e6;
+    margin-bottom: 20px;
+}
+
+.progress-overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 30px;
+}
+
+.progress-section {
+    text-align: center;
+}
+
+.progress-section h6 {
+    color: #495057;
+    margin-bottom: 15px;
+}
+
+.circular-progress {
+    position: relative;
+    display: inline-block;
+}
+
+.progress-circle {
+    position: relative;
+}
+
+.progress-bg {
+    fill: none;
+    stroke: #e9ecef;
+    stroke-width: 8;
+}
+
+.progress-fill {
+    fill: none;
+    stroke: #667eea;
+    stroke-width: 8;
+    stroke-linecap: round;
+    transform: rotate(-90deg);
+    transform-origin: center;
+    transition: stroke-dasharray 0.5s ease;
+}
+
+.progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #667eea;
+}
+
+.progress-label {
+    margin-top: 10px;
+    font-weight: 500;
+    color: #6c757d;
+}
+
+.share-options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.share-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.share-btn.facebook {
+    background: #1877f2;
+    color: white;
+}
+
+.share-btn.twitter {
+    background: #1da1f2;
+    color: white;
+}
+
+.share-btn.linkedin {
+    background: #0077b5;
+    color: white;
+}
+
+.share-btn.whatsapp {
+    background: #25d366;
+    color: white;
+}
+
+.share-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.share-link {
+    margin-top: 15px;
+}
+
+.share-link label {
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 8px;
+}
+
+@media (max-width: 768px) {
+    .achievements-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .achievement-filters {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .filter-btn {
+        font-size: 0.9rem;
+        padding: 6px 15px;
+    }
+    
+    .progress-overview {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .share-options {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Filter functionality
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const achievementCards = document.querySelectorAll('.achievement-card');
+    
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const category = this.dataset.category;
+            
+            // Update active state
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Filter achievements
+            achievementCards.forEach(card => {
+                if (category === 'all' || card.dataset.category === category) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    });
+    
+    // Animate progress circles on load
+    const progressCircles = document.querySelectorAll('.progress-fill');
+    setTimeout(() => {
+        progressCircles.forEach(circle => {
+            circle.style.strokeDasharray = circle.getAttribute('stroke-dasharray');
+        });
+    }, 100);
+});
+
+// Achievement details modal
+function viewDetails(achievementId) {
+    // This would fetch detailed achievement information
+    const modal = new bootstrap.Modal(document.getElementById('achievementModal'));
+    modal.show();
+}
+
+// Share functionality
+function shareAchievement(achievementId) {
+    const modal = new bootstrap.Modal(document.getElementById('shareModal'));
+    modal.show();
+}
+
+function shareOnFacebook() {
+    const url = encodeURIComponent(window.location.href);
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+}
+
+function shareOnTwitter() {
+    const url = encodeURIComponent(window.location.href);
+    const text = encodeURIComponent('Check out my learning achievements!');
+    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+}
+
+function shareOnLinkedIn() {
+    const url = encodeURIComponent(window.location.href);
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank');
+}
+
+function shareOnWhatsApp() {
+    const url = encodeURIComponent(window.location.href);
+    window.open(`https://wa.me/?text=${url}`, '_blank');
+}
+
+function copyShareLink() {
+    const shareLink = document.getElementById('shareLink');
+    shareLink.select();
+    document.execCommand('copy');
+    
+    // Show copied feedback
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+    button.classList.add('btn-success');
+    button.classList.remove('btn-outline-secondary');
+    
+    setTimeout(() => {
+        button.innerHTML = originalText;
+        button.classList.remove('btn-success');
+        button.classList.add('btn-outline-secondary');
+    }, 2000);
+}
+</script>
+{% endblock %}

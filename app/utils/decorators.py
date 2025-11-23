@@ -1,6 +1,48 @@
 from functools import wraps
-from flask import flash, redirect, url_for, abort
+from flask import flash, redirect, url_for, abort, jsonify, g, request
 from flask_login import current_user
+from time import time
+import collections
+
+def rate_limit(limit=100, period=3600):
+    """
+    Rate limiting decorator for API endpoints
+    Usage: @rate_limit(limit=100, period=3600)  # 100 requests per hour
+    """
+    def decorator(f):
+        # Simple in-memory rate limiter
+        # In production, use Redis or other distributed cache
+        if not hasattr(rate_limit, 'requests'):
+            rate_limit.requests = collections.defaultdict(list)
+        
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            # Get client identifier (IP address or user ID)
+            if current_user.is_authenticated:
+                key = f"user:{current_user.id}"
+            else:
+                key = f"ip:{request.remote_addr}"
+            
+            now = time()
+            # Remove old requests outside the period
+            rate_limit.requests[key] = [
+                req_time for req_time in rate_limit.requests[key]
+                if now - req_time < period
+            ]
+            
+            # Check if limit exceeded
+            if len(rate_limit.requests[key]) >= limit:
+                return jsonify({
+                    'error': 'Rate limit exceeded',
+                    'message': f'Too many requests. Limit: {limit} per {period} seconds.'
+                }), 429
+            
+            # Add current request
+            rate_limit.requests[key].append(now)
+            
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
 
 def admin_required(f):
     """

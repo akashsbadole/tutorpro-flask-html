@@ -5,7 +5,6 @@ from app.models.user import User
 from app.models.tutor import TutorProfile
 from app.models.course import Course
 import secrets
-import json
 
 
 class Meeting(db.Model):
@@ -17,8 +16,6 @@ class Meeting(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)
-    meeting_type = db.Column(db.Enum('Regular', 'Demo', 'Consultation', 'Group', 'Webinar', name='meeting_types'), 
-                            nullable=False, default='Regular')
     
     # Meeting scheduling
     scheduled_time = db.Column(db.DateTime, nullable=False, index=True)
@@ -71,7 +68,6 @@ class Meeting(db.Model):
     host = db.relationship('User', foreign_keys=[host_id], backref='hosted_meetings')
     participants = db.relationship('MeetingParticipant', backref='meeting', cascade='all, delete-orphan')
     recordings = db.relationship('MeetingRecording', backref='meeting', cascade='all, delete-orphan')
-    templates = db.relationship('MeetingTemplate', backref='meeting', cascade='all, delete-orphan')
     
     # Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -101,12 +97,12 @@ class Meeting(db.Model):
     
     @property
     def is_upcoming(self):
-        """Check if meeting is in the future"""
+        """Check if meeting is in future"""
         return self.scheduled_time > datetime.utcnow()
     
     @property
     def is_past(self):
-        """Check if meeting is in the past"""
+        """Check if meeting is in past"""
         return self.scheduled_time <= datetime.utcnow()
     
     @property
@@ -151,7 +147,7 @@ class Meeting(db.Model):
             duration = (self.actual_end_time - self.actual_start_time).total_seconds() / 60
             self.recording_duration = int(duration)
         db.session.commit()
-
+ 
 
 class MeetingParticipant(db.Model):
     """
@@ -250,7 +246,7 @@ class MeetingTemplate(db.Model):
     meeting_type = db.Column(db.Enum('Regular', 'Demo', 'Consultation', 'Group', 'Webinar', name='template_meeting_types'), 
                              nullable=False, default='Regular')
     platform = db.Column(db.Enum('Zoom', 'Google Meet', 'Microsoft Teams', 'Custom', name='template_platforms'), 
-                         nullable=False, default='Zoom')
+                          nullable=False, default='Zoom')
     
     # Default settings
     default_duration = db.Column(db.Integer, default=60)
@@ -287,7 +283,7 @@ class MeetingCalendar(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     calendar_type = db.Column(db.Enum('Google', 'Outlook', 'Apple', name='calendar_types'), 
-                             nullable=False)
+                             nullable=False, default='Google')
     calendar_id = db.Column(db.String(200), nullable=False)
     calendar_name = db.Column(db.String(200))
     
@@ -299,7 +295,7 @@ class MeetingCalendar(db.Model):
     # Sync settings
     sync_enabled = db.Column(db.Boolean, default=True)
     sync_direction = db.Column(db.Enum('Import', 'Export', 'Bidirectional', name='sync_directions'), 
-                              default='Bidirectional')
+                               default='Bidirectional')
     last_sync_at = db.Column(db.DateTime)
     
     # Relationships

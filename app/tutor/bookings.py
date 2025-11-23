@@ -6,8 +6,12 @@ from app.tutor import bp
 from app.utils.decorators import tutor_required
 from app.models.user import User, UserProfile
 from app.models.tutor import TutorProfile
-from app.models.course import Subject, Course
-from app.models.booking import Booking, TutorAvailability, MeetingLink, DemoRequest
+from app.models.course import Course
+from app.models import Subject
+from app.models.booking import Booking
+from app.models.tutor import TutorAvailability
+from app.models.demo import DemoSession as DemoRequest
+# from app.models.booking import MeetingLink
 from app.models.payment import Payment
 from app.tutor.forms import BookingForm, RescheduleForm, FeedbackForm, MeetingLinkForm
 from app import db

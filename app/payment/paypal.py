@@ -340,10 +340,12 @@ def handle_paypal_webhook(event_type, resource, webhook_event_id):
         elif event_type == "PAYMENT.CAPTURE.DENIED":
             # Payment was denied
             # Process payment failure logic here
+            pass
             
         elif event_type == "CHECKOUT.ORDER.APPROVED":
             # Order approved but not yet captured
             # Process order approval logic here
+            pass
             
         return True
         

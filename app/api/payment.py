@@ -12,9 +12,8 @@ from app.models.payment import Payment, PaymentMethod, Transaction, Payout
 from app.models.booking import Booking
 from app.models.tutor import TutorProfile
 from app.models.user import User
-from app.utils.decorators import role_required, api_key_required
+from app.utils.decorators import roles_required
 from app import db
-from app import limiter
 
 # Create blueprint
 payment_api = Blueprint('payment_api', __name__, url_prefix='/api/payment')
@@ -25,12 +24,7 @@ paypal_service = PayPalService()
 payout_service = PayoutService()
 payment_analytics = PaymentAnalytics()
 
-# Rate limiting
-@payment_api.before_request
-@limiter.limit("100 per hour")
-def before_request():
-    """Apply rate limiting to all payment API endpoints"""
-    pass
+# Rate limiting could be implemented here if needed
 
 @payment_api.route('/methods', methods=['GET'])
 @login_required
@@ -538,7 +532,7 @@ def process_refund():
 
 @payment_api.route('/payouts', methods=['GET'])
 @login_required
-@role_required('tutor', 'admin')
+@roles_required('tutor', 'admin')
 def get_payouts():
     """Get payouts"""
     try:
@@ -588,7 +582,7 @@ def get_payouts():
 
 @payment_api.route('/payouts', methods=['POST'])
 @login_required
-@role_required('tutor')
+@roles_required('tutor')
 def request_payout():
     """Request a payout"""
     try:
@@ -639,7 +633,7 @@ def request_payout():
 
 @payment_api.route('/analytics/revenue', methods=['GET'])
 @login_required
-@role_required('admin')
+@roles_required('admin')
 def get_revenue_analytics():
     """Get revenue analytics"""
     try:
@@ -671,7 +665,18 @@ def get_revenue_analytics():
         }), 500
 
 @payment_api.route('/webhooks/paypal', methods=['POST'])
-@api_key_required
+def require_api_key(f):
+    """Decorator to require API key"""
+    from functools import wraps
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        api_key = request.headers.get('X-API-Key')
+        if not api_key or api_key != current_app.config.get('API_KEY'):
+            return jsonify({'error': 'Invalid or missing API key'}), 401
+        return f(*args, **kwargs)
+    return decorated_function
+
+@require_api_key
 def paypal_webhook():
     """Handle PayPal webhooks"""
     try:
@@ -702,7 +707,7 @@ def paypal_webhook():
         }), 500
 
 @payment_api.route('/webhooks/razorpay', methods=['POST'])
-@api_key_required
+@require_api_key
 def razorpay_webhook():
     """Handle Razorpay webhooks"""
     try:

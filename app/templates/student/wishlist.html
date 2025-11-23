@@ -1,0 +1,740 @@
+{% extends "student/base.html" %}
+
+{% block title %}My Wishlist{% endblock %}
+
+{% block student_content %}
+<div class="page-header">
+    <h1 class="page-title">My Wishlist</h1>
+    <p class="page-subtitle">Save and compare your favorite tutors</p>
+</div>
+
+<!-- Wishlist Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="stats-number">{{ wishlist_items|length or 0 }}</div>
+            <div class="stats-label">Saved Tutors</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            {% set high_priority = wishlist_items|selectattr('priority', 'high')|list %}
+            <div class="stats-number">{{ high_priority|length or 0 }}</div>
+            <div class="stats-label">High Priority</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            {% set recently_viewed = wishlist_items|selectattr('last_viewed')|list %}
+            <div class="stats-number">{{ recently_viewed|length or 0 }}</div>
+            <div class="stats-label">Recently Viewed</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="stats-number">{{ wishlist_items|selectattr('tutor.rating')|selectattr('tutor.rating', '>=', 4.5)|list|length or 0 }}</div>
+            <div class="stats-label">Top Rated</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter and Sort -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-4">
+                <label class="form-label">Filter by Priority</label>
+                <select id="priorityFilter" class="form-select">
+                    <option value="">All Priorities</option>
+                    <option value="high">High Priority</option>
+                    <option value="medium">Medium Priority</option>
+                    <option value="low">Low Priority</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Filter by Rating</label>
+                <select id="ratingFilter" class="form-select">
+                    <option value="">All Ratings</option>
+                    <option value="4.5">4.5+ Stars</option>
+                    <option value="4.0">4.0+ Stars</option>
+                    <option value="3.5">3.5+ Stars</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Sort By</label>
+                <select id="sortBy" class="form-select">
+                    <option value="date_added">Date Added</option>
+                    <option value="priority">Priority</option>
+                    <option value="rating">Rating</option>
+                    <option value="price">Price</option>
+                    <option value="last_viewed">Recently Viewed</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Wishlist Items -->
+<div class="wishlist-container">
+    {% if wishlist_items %}
+        {% for item in wishlist_items %}
+        <div class="wishlist-item" data-priority="{{ item.priority }}" data-rating="{{ item.tutor.rating or 0 }}" 
+             data-date="{{ item.added_at.isoformat() if item.added_at else '' }}" 
+             data-last-viewed="{{ item.last_viewed.isoformat() if item.last_viewed else '' }}">
+            <div class="wishlist-header">
+                <div class="tutor-info">
+                    <div class="tutor-avatar">
+                        <img src="{{ item.tutor.profile_image_url or url_for('static', filename='images/default-avatar.png') }}" 
+                             alt="{{ item.tutor.first_name }}" class="rounded-circle">
+                    </div>
+                    <div class="tutor-details">
+                        <h5 class="tutor-name">{{ item.tutor.first_name }} {{ item.tutor.last_name }}</h5>
+                        <div class="tutor-meta">
+                            {% if item.tutor.rating %}
+                            <div class="rating">
+                                <i class="fas fa-star text-warning"></i>
+                                <span>{{ "%.1f"|format(item.tutor.rating) }}</span>
+                                <span class="text-muted">({{ item.tutor.total_reviews or 0 }} reviews)</span>
+                            </div>
+                            {% endif %}
+                            
+                            {% if item.tutor.hourly_rate %}
+                            <div class="price">
+                                ${{ "%.2f"|format(item.tutor.hourly_rate) }}/hour
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="wishlist-actions">
+                    <div class="priority-badge priority-{{ item.priority }}">
+                        {{ item.priority.title() }} Priority
+                    </div>
+                    
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('tutor.profile', user_id=item.tutor.id) }}">
+                                    <i class="fas fa-user me-2"></i>View Profile
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="compareTutor({{ item.tutor.id }})">
+                                    <i class="fas fa-balance-scale me-2"></i>Compare
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="bookDemo({{ item.tutor.id }})">
+                                    <i class="fas fa-play-circle me-2"></i>Book Demo
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="editNote({{ item.id }})">
+                                    <i class="fas fa-edit me-2"></i>Edit Note
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="#" onclick="removeFromWishlist({{ item.id }})">
+                                    <i class="fas fa-heart-broken me-2"></i>Remove
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="wishlist-content">
+                <div class="subjects-section">
+                    <h6>Subjects</h6>
+                    <div class="subjects-list">
+                        {% if item.tutor.subjects %}
+                        {% for tutor_subject in item.tutor.subjects[:4] %}
+                        <span class="subject-badge">{{ tutor_subject.subject.name }}</span>
+                        {% endfor %}
+                        {% if item.tutor.subjects|length > 4 %}
+                        <span class="subject-more">+{{ item.tutor.subjects|length - 4 }} more</span>
+                        {% endif %}
+                        {% else %}
+                        <span class="text-muted">No subjects listed</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if item.notes %}
+                <div class="notes-section">
+                    <h6>Your Notes</h6>
+                    <p class="notes-content">{{ item.notes }}</p>
+                </div>
+                {% endif %}
+                
+                <div class="stats-section">
+                    <div class="stat-item">
+                        <i class="fas fa-graduation-cap me-2"></i>
+                        <span>{{ item.tutor.total_hours_taught or 0 }} hours taught</span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-users me-2"></i>
+                        <span>{{ item.tutor.total_students or 0 }} students</span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <span>{{ item.tutor.is_verified|yesno:'Verified','Not Verified' }}</span>
+                    </div>
+                </div>
+                
+                <div class="availability-section">
+                    <h6>Availability</h6>
+                    <div class="availability-info">
+                        {% if item.tutor.available_days %}
+                        <div class="days-available">
+                            {% for day in item.tutor.get_available_days()[:5] %}
+                            <span class="day-badge">{{ day[:3] }}</span>
+                            {% endfor %}
+                            {% if item.tutor.get_available_days()|length > 5 %}
+                            <span class="day-more">+{{ item.tutor.get_available_days()|length - 5 }}</span>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <span class="text-muted">Availability not specified</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if item.last_viewed %}
+                <div class="last-viewed">
+                    <i class="far fa-clock me-2"></i>
+                    Last viewed: {{ item.last_viewed.strftime('%b %d, %Y at %I:%M %p') }}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="wishlist-footer">
+                <div class="added-date">
+                    <i class="far fa-calendar-plus me-2"></i>
+                    Added {{ item.added_at.strftime('%b %d, %Y') }}
+                </div>
+                <div class="action-buttons">
+                    <a href="{{ url_for('tutor.profile', user_id=item.tutor.id) }}" 
+                       class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-user me-2"></i>View Profile
+                    </a>
+                    <a href="{{ url_for('demo.book_demo') }}?tutor_id={{ item.tutor.id }}" 
+                       class="btn btn-primary btn-sm">
+                        <i class="fas fa-play-circle me-2"></i>Book Demo
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-wishlist">
+            <div class="empty-icon">
+                <i class="fas fa-heart"></i>
+            </div>
+            <h5>Your wishlist is empty</h5>
+            <p>Save tutors you're interested in to easily compare and book sessions later.</p>
+            <a href="{{ url_for('search.tutor_discovery') }}" class="btn btn-primary">
+                <i class="fas fa-search me-2"></i>Find Tutors
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Compare Modal -->
+<div class="modal fade" id="compareModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Compare Tutors</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="compareContent">
+                    <!-- Compare content will be loaded dynamically -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="goToComparePage()">
+                    <i class="fas fa-balance-scale me-2"></i>Full Comparison
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Note Modal -->
+<div class="modal fade" id="editNoteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Wishlist Note</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editNoteForm">
+                <div class="modal-body">
+                    <input type="hidden" id="editWishlistItemId">
+                    <div class="mb-3">
+                        <label class="form-label">Priority</label>
+                        <select id="editPriority" class="form-select">
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea id="editNotes" class="form-control" rows="4" 
+                                  placeholder="Add your notes about this tutor..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.wishlist-container {
+    display: grid;
+    gap: 25px;
+}
+
+.wishlist-item {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.wishlist-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+}
+
+.wishlist-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 20px 20px 0 20px;
+}
+
+.tutor-info {
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+.tutor-avatar {
+    margin-right: 15px;
+}
+
+.tutor-avatar img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.tutor-name {
+    margin-bottom: 5px;
+    color: #2c3e50;
+}
+
+.tutor-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.rating {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.price {
+    font-weight: 600;
+    color: #667eea;
+}
+
+.wishlist-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.priority-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.priority-high {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.priority-medium {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.priority-low {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.wishlist-content {
+    padding: 0 20px 20px 20px;
+}
+
+.subjects-section, .notes-section, .stats-section, .availability-section {
+    margin-bottom: 20px;
+}
+
+.subjects-section h6, .notes-section h6, .stats-section h6, .availability-section h6 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.subjects-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.subject-badge {
+    background: #e9ecef;
+    color: #495057;
+    padding: 4px 10px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+}
+
+.subject-more {
+    background: #667eea;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+}
+
+.notes-content {
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 8px;
+    color: #495057;
+    font-style: italic;
+    line-height: 1.5;
+}
+
+.stats-section {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    color: #6c757d;
+    font-size: 0.85rem;
+}
+
+.days-available {
+    display: flex;
+    gap: 5px;
+}
+
+.day-badge {
+    background: #e9ecef;
+    color: #495057;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.day-more {
+    background: #6c757d;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+}
+
+.last-viewed {
+    color: #6c757d;
+    font-size: 0.8rem;
+    font-style: italic;
+}
+
+.wishlist-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px 20px 20px;
+    border-top: 1px solid #e9ecef;
+    background: #f8f9fa;
+}
+
+.added-date {
+    color: #6c757d;
+    font-size: 0.85rem;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.empty-wishlist {
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: #dee2e6;
+    margin-bottom: 20px;
+}
+
+.empty-wishlist h5 {
+    color: #495057;
+    margin-bottom: 10px;
+}
+
+.empty-wishlist p {
+    color: #6c757d;
+    margin-bottom: 30px;
+}
+
+@media (max-width: 768px) {
+    .wishlist-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .wishlist-header {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .tutor-info {
+        width: 100%;
+    }
+    
+    .wishlist-actions {
+        flex-direction: row;
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .stats-section {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .wishlist-footer {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .action-buttons {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Filter and sort functionality
+    const priorityFilter = document.getElementById('priorityFilter');
+    const ratingFilter = document.getElementById('ratingFilter');
+    const sortBy = document.getElementById('sortBy');
+    const wishlistItems = document.querySelectorAll('.wishlist-item');
+    
+    function filterAndSort() {
+        const priority = priorityFilter.value;
+        const rating = parseFloat(ratingFilter.value) || 0;
+        const sort = sortBy.value;
+        
+        let visibleItems = Array.from(wishlistItems).filter(item => {
+            const itemPriority = item.dataset.priority;
+            const itemRating = parseFloat(item.dataset.rating) || 0;
+            
+            // Priority filter
+            if (priority && itemPriority !== priority) return false;
+            
+            // Rating filter
+            if (rating && itemRating < rating) return false;
+            
+            return true;
+        });
+        
+        // Sort items
+        visibleItems.sort((a, b) => {
+            switch (sort) {
+                case 'priority':
+                    const priorityOrder = {'high': 3, 'medium': 2, 'low': 1};
+                    return priorityOrder[b.dataset.priority] - priorityOrder[a.dataset.priority];
+                case 'rating':
+                    return parseFloat(b.dataset.rating) - parseFloat(a.dataset.rating);
+                case 'date_added':
+                    return new Date(b.dataset.date) - new Date(a.dataset.date);
+                case 'last_viewed':
+                    const dateA = a.dataset.lastViewed ? new Date(a.dataset.lastViewed) : new Date(0);
+                    const dateB = b.dataset.lastViewed ? new Date(b.dataset.lastViewed) : new Date(0);
+                    return dateB - dateA;
+                default:
+                    return 0;
+            }
+        });
+        
+        // Reorder DOM
+        const container = document.querySelector('.wishlist-container');
+        visibleItems.forEach(item => container.appendChild(item));
+    }
+    
+    if (priorityFilter) priorityFilter.addEventListener('change', filterAndSort);
+    if (ratingFilter) ratingFilter.addEventListener('change', filterAndSort);
+    if (sortBy) sortBy.addEventListener('change', filterAndSort);
+    
+    // Edit note form
+    const editNoteForm = document.getElementById('editNoteForm');
+    if (editNoteForm) {
+        editNoteForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const itemId = document.getElementById('editWishlistItemId').value;
+            const priority = document.getElementById('editPriority').value;
+            const notes = document.getElementById('editNotes').value;
+            
+            // Send update request
+            fetch(`/student/wishlist/update/${itemId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    priority: priority,
+                    notes: notes
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('editNoteModal'));
+                    modal.hide();
+                    
+                    // Show success message
+                    showAlert('Wishlist item updated successfully!', 'success');
+                    
+                    // Reload page
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showAlert(data.message || 'Error updating wishlist item', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Error updating wishlist item', 'error');
+            });
+        });
+    }
+});
+
+// Placeholder functions
+function compareTutor(tutorId) {
+    // Add tutor to comparison
+    const compareUrl = `{{ url_for('student.compare') }}?tutors=${tutorId}`;
+    window.location.href = compareUrl;
+}
+
+function bookDemo(tutorId) {
+    // Redirect to demo booking with pre-selected tutor
+    const demoUrl = `{{ url_for('demo.book_demo') }}?tutor_id=${tutorId}`;
+    window.location.href = demoUrl;
+}
+
+function editNote(itemId) {
+    // Load current item data into edit modal
+    // This would fetch the current data and populate the form
+    document.getElementById('editWishlistItemId').value = itemId;
+    
+    const modal = new bootstrap.Modal(document.getElementById('editNoteModal'));
+    modal.show();
+}
+
+function removeFromWishlist(itemId) {
+    if (confirm('Are you sure you want to remove this tutor from your wishlist?')) {
+        fetch(`/student/wishlist/remove/${itemId}`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('Tutor removed from wishlist', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert(data.message || 'Error removing from wishlist', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Error removing from wishlist', 'error');
+        });
+    }
+}
+
+function goToComparePage() {
+    window.location.href = '{{ url_for("student.compare") }}';
+}
+
+function showAlert(message, type) {
+    // Simple alert implementation
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 5000);
+}
+</script>
+{% endblock %}

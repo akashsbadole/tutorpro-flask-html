@@ -1,0 +1,534 @@
+{% extends "student/base.html" %}
+
+{% block title %}Learning Progress{% endblock %}
+
+{% block student_content %}
+<div class="page-header">
+    <h1 class="page-title">Learning Progress</h1>
+    <p class="page-subtitle">Track your learning journey and achievements</p>
+</div>
+
+<!-- Progress Overview -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="stats-number">{{ learning_progress|length or 0 }}</div>
+            <div class="stats-label">Active Subjects</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="stats-number">{{ progress_entries|length or 0 }}</div>
+            <div class="stats-label">Progress Entries</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            {% set total_hours = learning_progress|sum(attribute='total_hours') or 0 %}
+            <div class="stats-number">{{ "%.1f"|format(total_hours) }}</div>
+            <div class="stats-label">Total Hours</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            {% set total_sessions = learning_progress|sum(attribute='sessions_completed') or 0 %}
+            <div class="stats-number">{{ total_sessions }}</div>
+            <div class="stats-label">Sessions Completed</div>
+        </div>
+    </div>
+</div>
+
+<!-- Learning Progress Details -->
+<div class="card">
+    <div class="card-header">
+        <h6 class="card-title mb-0">Subject Progress</h6>
+    </div>
+    <div class="card-body">
+        {% if learning_progress %}
+        {% for progress in learning_progress %}
+        <div class="progress-item mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" 
+                             style="width: 50px; height: 50px;">
+                            <i class="fas fa-book"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <h6 class="mb-1">{{ progress.subject.name }}</h6>
+                        <div class="text-muted small">
+                            {% if progress.tutor %}
+                            with {{ progress.tutor.first_name }} {{ progress.tutor.last_name }}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="text-end">
+                    <div class="progress-percentage">{{ "%.1f"|format(progress.progress_percentage) }}%</div>
+                    <div class="text-muted small">{{ progress.sessions_completed }} sessions</div>
+                </div>
+            </div>
+            
+            <div class="progress mb-3" style="height: 12px;">
+                <div class="progress-bar bg-gradient" role="progressbar" 
+                     style="width: {{ progress.progress_percentage }}%">
+                </div>
+            </div>
+            
+            <div class="row text-center">
+                <div class="col-md-3">
+                    <div class="progress-metric">
+                        <div class="metric-value">{{ progress.sessions_completed }}</div>
+                        <div class="metric-label">Sessions</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="progress-metric">
+                        <div class="metric-value">{{ "%.1f"|format(progress.total_hours) }}</div>
+                        <div class="metric-label">Hours</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="progress-metric">
+                        <div class="metric-value">{{ progress.current_level.value if progress.current_level else 'Beginner' }}</div>
+                        <div class="metric-label">Current Level</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="progress-metric">
+                        <div class="metric-value">{{ "%.1f"|format(progress.assessment_score or 0) }}</div>
+                        <div class="metric-label">Latest Score</div>
+                    </div>
+                </div>
+            </div>
+            
+            {% if progress.student_notes or progress.tutor_feedback %}
+            <div class="progress-notes mt-3">
+                {% if progress.student_notes %}
+                <div class="note-item student-note">
+                    <div class="note-header">
+                        <i class="fas fa-user me-2"></i>Your Notes
+                    </div>
+                    <div class="note-content">{{ progress.student_notes }}</div>
+                </div>
+                {% endif %}
+                
+                {% if progress.tutor_feedback %}
+                <div class="note-item tutor-note">
+                    <div class="note-header">
+                        <i class="fas fa-chalkboard-teacher me-2"></i>Tutor Feedback
+                    </div>
+                    <div class="note-content">{{ progress.tutor_feedback }}</div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-chart-line fa-4x text-muted mb-4"></i>
+            <h5 class="text-muted">No Progress Yet</h5>
+            <p class="text-muted">Start your learning journey by booking sessions with tutors.</p>
+            <a href="{{ url_for('search.tutor_discovery') }}" class="btn btn-primary">
+                <i class="fas fa-search me-2"></i>Find Tutors
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Recent Progress Entries -->
+{% if progress_entries %}
+<div class="card">
+    <div class="card-header">
+        <h6 class="card-title mb-0">Recent Progress Entries</h6>
+    </div>
+    <div class="card-body">
+        <div class="timeline">
+            {% for entry in progress_entries %}
+            <div class="timeline-item">
+                <div class="timeline-marker">
+                    <div class="timeline-dot bg-{{ 'success' if entry.entry_type == 'session' else 'info' }}"></div>
+                </div>
+                <div class="timeline-content">
+                    <div class="timeline-header">
+                        <h6 class="timeline-title">{{ entry.title or 'Progress Entry' }}</h6>
+                        <div class="timeline-meta">
+                            <i class="far fa-clock me-1"></i>
+                            {{ entry.entry_date.strftime('%b %d, %Y at %I:%M %p') }}
+                            <span class="badge bg-light text-dark ms-2">{{ entry.entry_type.title() }}</span>
+                        </div>
+                    </div>
+                    
+                    {% if entry.description %}
+                    <p class="timeline-description">{{ entry.description }}</p>
+                    {% endif %}
+                    
+                    <div class="timeline-details">
+                        {% if entry.progress_value %}
+                        <div class="detail-item">
+                            <span class="detail-label">Progress:</span>
+                            <span class="detail-value">{{ "%.1f"|format(entry.progress_value) }}%</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if entry.hours_spent %}
+                        <div class="detail-item">
+                            <span class="detail-label">Duration:</span>
+                            <span class="detail-value">{{ "%.1f"|format(entry.hours_spent) }} hours</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if entry.score %}
+                        <div class="detail-item">
+                            <span class="detail-label">Score:</span>
+                            <span class="detail-value">{{ "%.1f"|format(entry.score) }}/{{ entry.max_score or 100 }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if entry.topics_covered %}
+                        <div class="detail-item">
+                            <span class="detail-label">Topics:</span>
+                            <div class="topics-list">
+                                {% for topic in entry.topics_covered %}
+                                <span class="topic-badge">{{ topic }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if entry.feedback %}
+                    <div class="timeline-feedback">
+                        <div class="feedback-header">
+                            <i class="fas fa-comment me-2"></i>Feedback
+                        </div>
+                        <div class="feedback-content">{{ entry.feedback }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Achievements Section -->
+<div class="card">
+    <div class="card-header">
+        <h6 class="card-title mb-0">Recent Achievements</h6>
+    </div>
+    <div class="card-body">
+        <div class="achievements-grid">
+            <div class="achievement-card">
+                <div class="achievement-icon bg-warning">
+                    <i class="fas fa-fire"></i>
+                </div>
+                <div class="achievement-info">
+                    <h6>Learning Streak</h6>
+                    <p class="text-muted small">7 days consecutive learning</p>
+                </div>
+            </div>
+            
+            <div class="achievement-card">
+                <div class="achievement-icon bg-success">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <div class="achievement-info">
+                    <h6>First Milestone</h6>
+                    <p class="text-muted small">Completed first learning goal</p>
+                </div>
+            </div>
+            
+            <div class="achievement-card">
+                <div class="achievement-icon bg-info">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="achievement-info">
+                    <h6>Time Master</h6>
+                    <p class="text-muted small">50+ hours of learning</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.progress-item {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 20px;
+    border-left: 4px solid #667eea;
+}
+
+.progress-percentage {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #667eea;
+}
+
+.progress-metric {
+    text-align: center;
+}
+
+.metric-value {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.metric-label {
+    font-size: 0.85rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.progress-notes {
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.note-item {
+    margin-bottom: 10px;
+}
+
+.note-header {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.student-note .note-header {
+    color: #667eea;
+}
+
+.tutor-note .note-header {
+    color: #28a745;
+}
+
+.note-content {
+    color: #6c757d;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e9ecef;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 30px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -30px;
+    top: 5px;
+}
+
+.timeline-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+.timeline-content {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.timeline-title {
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.timeline-meta {
+    color: #6c757d;
+    font-size: 0.85rem;
+    margin-bottom: 10px;
+}
+
+.timeline-description {
+    color: #495057;
+    margin-bottom: 15px;
+}
+
+.timeline-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+}
+
+.detail-label {
+    font-weight: 500;
+    color: #6c757d;
+    margin-right: 5px;
+}
+
+.detail-value {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.topics-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.topic-badge {
+    background: #e9ecef;
+    color: #495057;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+}
+
+.timeline-feedback {
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 12px;
+    margin-top: 10px;
+}
+
+.feedback-header {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.feedback-content {
+    color: #6c757d;
+    font-size: 0.9rem;
+    font-style: italic;
+}
+
+.achievements-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.achievement-card {
+    display: flex;
+    align-items: center;
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    transition: transform 0.3s ease;
+}
+
+.achievement-card:hover {
+    transform: translateY(-5px);
+}
+
+.achievement-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.achievement-info h6 {
+    margin-bottom: 5px;
+    color: #2c3e50;
+}
+
+.achievement-info p {
+    margin-bottom: 0;
+    color: #6c757d;
+    font-size: 0.85rem;
+}
+
+.bg-gradient {
+    background: linear-gradient(90deg, #667eea, #764ba2) !important;
+}
+
+@media (max-width: 768px) {
+    .timeline-details {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .achievements-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .achievement-card {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .achievement-icon {
+        margin-right: 0;
+        margin-bottom: 10px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Animate progress bars on load
+    const progressBars = document.querySelectorAll('.progress-bar');
+    progressBars.forEach(bar => {
+        const width = bar.style.width;
+        bar.style.width = '0%';
+        setTimeout(() => {
+            bar.style.width = width;
+        }, 100);
+    });
+    
+    // Add hover effects to achievement cards
+    const achievementCards = document.querySelectorAll('.achievement-card');
+    achievementCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.querySelector('.achievement-icon').style.transform = 'scale(1.1)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.querySelector('.achievement-icon').style.transform = 'scale(1)';
+        });
+    });
+});
+</script>
+{% endblock %}

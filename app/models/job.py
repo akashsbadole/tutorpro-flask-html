@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from app import db
 from app.models.user import User
 from app.models.tutor import TutorProfile
-from app.models.course import Subject
+from app.models import Subject
 
 
 class JobPost(db.Model):

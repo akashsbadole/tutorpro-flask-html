@@ -19,9 +19,8 @@ def dashboard():
     User dashboard based on role
     """
     if current_user.is_admin():
-        # Temporary redirect for admin dashboard
-        flash('Admin dashboard is under development. Redirecting to home page.', 'info')
-        return redirect(url_for('main.index'))
+        # Redirect to actual admin dashboard
+        return redirect(url_for('admin.dashboard'))
     elif current_user.is_tutor():
         # Temporary redirect for tutor dashboard
         flash('Tutor dashboard is under development. Redirecting to home page.', 'info')
@@ -87,6 +86,32 @@ def help():
     Help page
     """
     return render_template('main/help.html', title='Help Center')
+
+
+@bp.route('/courses')
+def courses():
+    """
+    Courses page - displays available courses
+    """
+    # For now, redirect to admin courses since that's where the courses functionality is
+    # In a full implementation, this would show a public view of courses
+    return redirect(url_for('admin.courses'))
+
+
+@bp.route('/tutors')
+def tutors():
+    """
+    Legacy tutors page - redirects to new tutor discovery
+    """
+    return redirect(url_for('main.tutor_discovery'))
+
+
+@bp.route('/discover')
+def tutor_discovery():
+    """
+    Advanced tutor discovery page with search and filtering
+    """
+    return render_template('main/tutor_discovery.html', title='Find Tutors - TutorPro Marketplace')
 
 
 @bp.route('/profile')

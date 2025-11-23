@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block title %}Book Session with {{ tutor_profile.user.user_profile.first_name }} {{ tutor_profile.user.user_profile.last_name }}{% endblock %}
+
+{% block body_attr %}data-hourly-rate="{{ tutor_profile.hourly_rate }}"{% endblock %}
+
+{% block head %}
+<style>
+    .tutor-info-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+    
+    .tutor-avatar {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    
+    .booking-form {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .time-slot {
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .time-slot:hover {
+        border-color: #0066FF;
+        background-color: #f8f9ff;
+    }
+    
+    .time-slot.selected {
+        border-color: #0066FF;
+        background-color: #e6f3ff;
+    }
+    
+    .form-section {
+        margin-bottom: 2rem;
+    }
+    
+    .form-section h5 {
+        color: #0066FF;
+        margin-bottom: 1rem;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-4">
+            <!-- Tutor Information -->
+            <div class="card tutor-info-card">
+                <div class="card-body text-center">
+                    {% if tutor_profile.user.user_profile.avatar_url %}
+                        <img src="{{ tutor_profile.user.user_profile.avatar_url }}" 
+                             alt="{{ tutor_profile.user.user_profile.first_name }} {{ tutor_profile.user.user_profile.last_name }}" 
+                             class="tutor-avatar mb-3">
+                    {% else %}
+                        <div class="tutor-avatar d-flex align-items-center justify-content-center bg-white mb-3">
+                            <i class="fas fa-user fa-3x text-muted"></i>
+                        </div>
+                    {% endif %}
+                    
+                    <h4>{{ tutor_profile.user.user_profile.first_name }} {{ tutor_profile.user.user_profile.last_name }}</h4>
+                    <p class="text-muted">{{ tutor_profile.title or 'Expert Tutor' }}</p>
+                    
+                    <div class="rating mb-3">
+                        {% for i in range(5) %}
+                            {% if i < (tutor_profile.rating_summary.average_rating or 0) %}
+                                <i class="fas fa-star text-warning"></i>
+                            {% else %}
+                                <i class="far fa-star text-warning"></i>
+                            {% endif %}
+                        {% endfor %}
+                        <span class="text-muted ms-2">({{ tutor_profile.rating_summary.total_reviews or 0 }})</span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h5 class="text-primary">${{ tutor_profile.hourly_rate }}/hour</h5>
+                        <small class="text-muted">Hourly Rate</small>
+                    </div>
+                    
+                    {% if tutor_profile.subjects %}
+                    <div class="mb-3">
+                        <h6>Subjects:</h6>
+                        {% for tutor_subject in tutor_profile.subjects %}
+                        <span class="badge bg-light text-dark me-1 mb-1">
+                            {{ tutor_subject.subject.name }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="text-muted">
+                        <small><i class="fas fa-clock me-1"></i>Usually responds within {{ tutor_profile.response_time or '2 hours' }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <!-- Booking Form -->
+            <div class="card booking-form">
+                <div class="card-body">
+                    <h3 class="card-title mb-4">Book a Session</h3>
+                    
+                    <form method="POST" id="bookingForm">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Session Details -->
+                        <div class="form-section">
+                            <h5><i class="fas fa-info-circle me-2"></i>Session Details</h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.title.label(class="form-label") }}
+                                    {{ form.title(class="form-control") }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    {{ form.meeting_type.label(class="form-label") }}
+                                    {{ form.meeting_type(class="form-select") }}
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                {{ form.description.label(class="form-label") }}
+                                {{ form.description(class="form-control", rows="3", placeholder="Describe what you'd like to learn...") }}
+                            </div>
+                        </div>
+                        
+                        <!-- Schedule -->
+                        <div class="form-section">
+                            <h5><i class="fas fa-calendar me-2"></i>Schedule</h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.scheduled_time.label(class="form-label") }}
+                                    {{ form.scheduled_time(class="form-control") }}
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    {{ form.duration_minutes.label(class="form-label") }}
+                                    {{ form.duration_minutes(class="form-select") }}
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    {{ form.timezone.label(class="form-label") }}
+                                    {{ form.timezone(class="form-select") }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Platform Settings -->
+                        <div class="form-section">
+                            <h5><i class="fas fa-video me-2"></i>Meeting Platform</h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.platform.label(class="form-label") }}
+                                    {{ form.platform(class="form-select") }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Session Duration</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">1 hour = ${{ tutor_profile.hourly_rate }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Additional Options -->
+                        <div class="form-section">
+                            <h5><i class="fas fa-cog me-2"></i>Additional Options</h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <div class="form-check">
+                                        {{ form.enable_recording(class="form-check-input") }}
+                                        {{ form.enable_recording.label(class="form-check-label") }}
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="form-check">
+                                        {{ form.enable_waiting_room(class="form-check-input") }}
+                                        {{ form.enable_waiting_room.label(class="form-check-label") }}
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="form-check">
+                                        {{ form.enable_chat(class="form-check-input") }}
+                                        {{ form.enable_chat.label(class="form-check-label") }}
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="form-check">
+                                        {{ form.enable_screen_share(class="form-check-input") }}
+                                        {{ form.enable_screen_share.label(class="form-check-label") }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Submit Button -->
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-modern btn-lg px-5">
+                                <i class="fas fa-calendar-check me-2"></i>Book Session
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-calculate price based on duration
+        const durationSelect = document.querySelector('#duration_minutes');
+        const hourlyRate = parseFloat(document.body.dataset.hourlyRate);
+        
+        function updatePrice() {
+            const duration = parseInt(durationSelect.value) || 60;
+            const hours = duration / 60;
+            const totalPrice = (hours * hourlyRate).toFixed(2);
+            
+            // Update price display if exists
+            const priceDisplay = document.querySelector('.price-display');
+            if (priceDisplay) {
+                priceDisplay.textContent = '$' + totalPrice;
+            }
+        }
+        
+        if (durationSelect) {
+            durationSelect.addEventListener('change', updatePrice);
+            updatePrice();
+        }
+        
+        // Set minimum date to today
+        const scheduledTimeInput = document.querySelector('#scheduled_time');
+        if (scheduledTimeInput) {
+            const today = new Date().toISOString().split('T')[0];
+            scheduledTimeInput.min = today;
+        }
+    });
+</script>
+{% endblock %}

@@ -1,188 +1,330 @@
-{% extends "base.html" %} {% block title %}Home{% endblock %} {% block content
-%}
-<!-- Hero Section -->
-<section class="bg-primary text-white py-5 mb-5">
-  <div class="container">
-    <div class="row align-items-center">
-      <div class="col-md-6">
-        <h1 class="display-4 fw-bold mb-4">Find Your Perfect Tutor</h1>
-        <p class="lead mb-4">
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<!-- Enhanced Hero Section -->
+<section class="hero-section">
+  <div class="hero-background">
+    <div class="hero-content">
+      <div class="hero-text">
+        <h1 class="hero-title">
+          Find Your Perfect Tutor
+          <span class="highlight">Anywhere, Anytime</span>
+        </h1>
+        <p class="hero-subtitle">
           Connect with expert tutors for personalized learning experiences.
           Whether you're looking to master a new skill or excel in your studies,
           we have the right tutor for you.
         </p>
-        <div class="d-flex gap-3">
-          {% if not current_user.is_authenticated %}
-          <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg">
-            <i class="fas fa-user-plus me-2"></i>Get Started
+        <div class="hero-stats">
+          <div class="stat-item">
+            <span class="stat-number">10,000+</span>
+            <span class="stat-label">Expert Tutors</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">50,000+</span>
+            <span class="stat-label">Happy Students</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">1M+</span>
+            <span class="stat-label">Lessons Taught</span>
+          </div>
+        </div>
+      </div>
+      <div class="hero-cta">
+        {% if not current_user.is_authenticated %}
+          <a href="{{ url_for('auth.register') }}" class="btn btn-modern btn-lg">
+            <i class="fas fa-user-plus me-2"></i>Get Started Free
+            <i class="fas fa-arrow-right ml-2"></i>
           </a>
-          <a
-            href="{{ url_for('auth.login') }}"
-            class="btn btn-outline-light btn-lg"
-          >
+          <a href="{{ url_for('auth.login') }}" class="btn btn-outline-modern btn-lg">
             <i class="fas fa-sign-in-alt me-2"></i>Login
           </a>
-          {% else %}
-          <a
-            href="{{ url_for('main.dashboard') }}"
-            class="btn btn-light btn-lg"
-          >
-            <i class="fas fa-tachometer-alt me-2"></i>Go to Dashboard
-          </a>
-          {% endif %}
-        </div>
-      </div>
-      <div class="col-md-6">
-        <img
-          src="https://placehold.co/600x400/6c757d/ffffff?text=Learning+Platform"
-          class="img-fluid rounded shadow"
-          alt="Learning Platform"
-        />
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Features Section -->
-<section class="mb-5">
-  <div class="container">
-    <div class="row text-center mb-5">
-      <div class="col">
-        <h2 class="fw-bold">Why Choose TutorPro?</h2>
-        <p class="lead text-muted">
-          We make learning personalized, flexible, and effective
-        </p>
-      </div>
-    </div>
-
-    <div class="row">
-      <div class="col-md-4 mb-4">
-        <div class="card h-100 shadow-sm">
-          <div class="card-body text-center">
-            <div class="text-primary mb-3">
-              <i class="fas fa-chalkboard-teacher fa-3x"></i>
-            </div>
-            <h4>Expert Tutors</h4>
-            <p class="text-muted">
-              Learn from qualified professionals with proven track records in
-              their fields.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-md-4 mb-4">
-        <div class="card h-100 shadow-sm">
-          <div class="card-body text-center">
-            <div class="text-success mb-3">
-              <i class="fas fa-calendar-check fa-3x"></i>
-            </div>
-            <h4>Flexible Scheduling</h4>
-            <p class="text-muted">
-              Book sessions at your convenience with 24/7 availability options.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-md-4 mb-4">
-        <div class="card h-100 shadow-sm">
-          <div class="card-body text-center">
-            <div class="text-info mb-3">
-              <i class="fas fa-laptop fa-3x"></i>
-            </div>
-            <h4>Online Learning</h4>
-            <p class="text-muted">
-              Study from anywhere with our interactive online platform and
-              tools.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Subject Categories -->
-<section class="bg-light py-5 mb-5">
-  <div class="container">
-    <div class="row text-center mb-4">
-      <div class="col">
-        <h2 class="fw-bold">Popular Subjects</h2>
-        <p class="lead text-muted">
-          Find tutors in various subjects and disciplines
-        </p>
-      </div>
-    </div>
-
-    <div class="row">
-      <div class="col-md-3 col-sm-6 mb-4">
-        <div class="card h-100">
-          <div class="card-body text-center">
-            <i class="fas fa-language fa-2x text-primary mb-2"></i>
-            <h5>Language Learning</h5>
-            <p class="text-muted">English, Spanish, French, German</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-md-3 col-sm-6 mb-4">
-        <div class="card h-100">
-          <div class="card-body text-center">
-            <i class="fas fa-calculator fa-2x text-primary mb-2"></i>
-            <h5>Mathematics</h5>
-            <p class="text-muted">Algebra, Calculus, Statistics</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-md-3 col-sm-6 mb-4">
-        <div class="card h-100">
-          <div class="card-body text-center">
-            <i class="fas fa-laptop-code fa-2x text-primary mb-2"></i>
-            <h5>Programming</h5>
-            <p class="text-muted">Python, JavaScript, Java</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-md-3 col-sm-6 mb-4">
-        <div class="card h-100">
-          <div class="card-body text-center">
-            <i class="fas fa-music fa-2x text-primary mb-2"></i>
-            <h5>Music</h5>
-            <p class="text-muted">Guitar, Piano, Singing</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Call to Action -->
-<section class="mb-5">
-  <div class="container">
-    <div class="row">
-      <div class="col-md-8 mx-auto text-center">
-        <h2 class="fw-bold mb-4">Ready to Start Learning?</h2>
-        <p class="lead mb-4">
-          Join thousands of students who are already achieving their learning
-          goals with our expert tutors.
-        </p>
-        {% if not current_user.is_authenticated %}
-        <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">
-          <i class="fas fa-user-plus me-2"></i>Create Free Account
-        </a>
         {% else %}
-        <a
-          href="{{ url_for('main.dashboard') }}"
-          class="btn btn-primary btn-lg"
-        >
-          <i class="fas fa-tachometer-alt me-2"></i>Go to Dashboard
-        </a>
+          <a href="{{ url_for('main.dashboard') }}" class="btn btn-modern btn-lg">
+            <i class="fas fa-tachometer-alt me-2"></i>Go to Dashboard
+            <i class="fas fa-arrow-right ml-2"></i>
+          </a>
         {% endif %}
       </div>
     </div>
   </div>
 </section>
+
+<!-- Enhanced Features Section -->
+<section class="features-section py-5">
+  <div class="container">
+    <div class="row text-center mb-5">
+      <div class="col">
+        <h2 class="section-title">Why Choose TutorPro?</h2>
+        <p class="section-subtitle">
+          We make learning personalized, flexible, and effective
+        </p>
+      </div>
+    </div>
+    
+    <div class="row">
+      <div class="col-md-4 mb-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-chalkboard-teacher"></i>
+          </div>
+          <h3 class="feature-title">Expert Tutors</h3>
+          <p class="feature-description">
+            Learn from qualified professionals with proven track records in their fields.
+          </p>
+        </div>
+      </div>
+      
+      <div class="col-md-4 mb-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-calendar-check"></i>
+          </div>
+          <h3 class="feature-title">Flexible Scheduling</h3>
+          <p class="feature-description">
+            Book sessions at your convenience with 24/7 availability options.
+          </p>
+        </div>
+      </div>
+      
+      <div class="col-md-4 mb-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-laptop"></i>
+          </div>
+          <h3 class="feature-title">Online Learning</h3>
+          <p class="feature-description">
+            Study from anywhere with our interactive online platform and tools.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Search Section -->
+<section class="py-5 bg-light">
+  <div class="container">
+    <div class="row text-center mb-5">
+      <div class="col">
+        <h2 class="section-title">Find Your Perfect Tutor</h2>
+        <p class="section-subtitle">
+          Search from thousands of expert tutors in various subjects
+        </p>
+      </div>
+    </div>
+    
+    <div class="search-modern">
+      <div class="search-input-wrapper">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" 
+               class="search-input-modern form-control" 
+               placeholder="Search for tutors, subjects, or skills..."
+               autocomplete="off">
+        <div class="search-suggestions">
+          <!-- Dynamic suggestions will appear here -->
+        </div>
+      </div>
+      <button class="btn btn-modern">
+        <i class="fas fa-search"></i>
+        Search
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- Subject Categories -->
+<section class="py-5">
+  <div class="container">
+    <div class="row text-center mb-5">
+      <div class="col">
+        <h2 class="section-title">Popular Subjects</h2>
+        <p class="section-subtitle">
+          Find tutors in various subjects and disciplines
+        </p>
+      </div>
+    </div>
+    
+    <div class="row">
+      <div class="col-md-3 col-sm-6 mb-4">
+        <div class="tutor-card">
+          <div class="tutor-avatar">
+            <img src="https://placehold.co/80x80/6c757d/ffffff?text=LANG" alt="Language Tutor">
+            <div class="online-status online"></div>
+          </div>
+          <div class="tutor-info">
+            <div class="tutor-header">
+              <h3 class="tutor-name">Language Learning</h3>
+              <div class="tutor-rating">
+                <div class="stars">
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star-half-alt"></i>
+                </div>
+                <span class="rating-text">4.8 (2,341)</span>
+              </div>
+            </div>
+            <p class="tutor-title">English, Spanish, French, German</p>
+            <div class="tutor-pricing">
+              <div class="price">
+                <span class="currency">$</span>
+                <span class="amount">25</span>
+                <span class="period">/hour</span>
+              </div>
+              <div class="verified-badge">
+                <i class="fas fa-check-circle"></i>
+                Verified
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-3 col-sm-6 mb-4">
+        <div class="tutor-card">
+          <div class="tutor-avatar">
+            <img src="https://placehold.co/80x80/6c757d/ffffff?text=MATH" alt="Math Tutor">
+            <div class="online-status online"></div>
+          </div>
+          <div class="tutor-info">
+            <div class="tutor-header">
+              <h3 class="tutor-name">Mathematics</h3>
+              <div class="tutor-rating">
+                <div class="stars">
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                </div>
+                <span class="rating-text">4.9 (3,567)</span>
+              </div>
+            </div>
+            <p class="tutor-title">Algebra, Calculus, Statistics</p>
+            <div class="tutor-pricing">
+              <div class="price">
+                <span class="currency">$</span>
+                <span class="amount">30</span>
+                <span class="period">/hour</span>
+              </div>
+              <div class="verified-badge">
+                <i class="fas fa-check-circle"></i>
+                Verified
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-3 col-sm-6 mb-4">
+        <div class="tutor-card">
+          <div class="tutor-avatar">
+            <img src="https://placehold.co/80x80/6c757d/ffffff?text=CODE" alt="Programming Tutor">
+            <div class="online-status online"></div>
+          </div>
+          <div class="tutor-info">
+            <div class="tutor-header">
+              <h3 class="tutor-name">Programming</h3>
+              <div class="tutor-rating">
+                <div class="stars">
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star-half-alt"></i>
+                </div>
+                <span class="rating-text">4.7 (1,892)</span>
+              </div>
+            </div>
+            <p class="tutor-title">Python, JavaScript, Java, Web Dev</p>
+            <div class="tutor-pricing">
+              <div class="price">
+                <span class="currency">$</span>
+                <span class="amount">35</span>
+                <span class="period">/hour</span>
+              </div>
+              <div class="verified-badge">
+                <i class="fas fa-check-circle"></i>
+                Verified
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-3 col-sm-6 mb-4">
+        <div class="tutor-card">
+          <div class="tutor-avatar">
+            <img src="https://placehold.co/80x80/6c757d/ffffff?text=SCI" alt="Science Tutor">
+            <div class="online-status online"></div>
+          </div>
+          <div class="tutor-info">
+            <div class="tutor-header">
+              <h3 class="tutor-name">Science</h3>
+              <div class="tutor-rating">
+                <div class="stars">
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="far fa-star"></i>
+                </div>
+                <span class="rating-text">4.6 (987)</span>
+              </div>
+            </div>
+            <p class="tutor-title">Physics, Chemistry, Biology</p>
+            <div class="tutor-pricing">
+              <div class="price">
+                <span class="currency">$</span>
+                <span class="amount">28</span>
+                <span class="period">/hour</span>
+              </div>
+              <div class="verified-badge">
+                <i class="fas fa-check-circle"></i>
+                Verified
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="text-center mt-5">
+      <a href="{{ url_for('main.tutors') }}" class="btn btn-modern btn-lg">
+        <i class="fas fa-users me-2"></i>View All Tutors
+        <i class="fas fa-arrow-right ml-2"></i>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Call to Action -->
+<section class="py-5 bg-light">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-8 mx-auto text-center">
+        <h2 class="section-title mb-4">Ready to Start Learning?</h2>
+        <p class="section-subtitle mb-4">
+          Join thousands of students who are already achieving their learning
+          goals with our expert tutors.
+        </p>
+        {% if not current_user.is_authenticated %}
+          <a href="{{ url_for('auth.register') }}" class="btn btn-modern btn-lg">
+            <i class="fas fa-user-plus me-2"></i>Create Free Account
+            <i class="fas fa-arrow-right ml-2"></i>
+          </a>
+        {% else %}
+          <a href="{{ url_for('main.dashboard') }}" class="btn btn-modern btn-lg">
+            <i class="fas fa-tachometer-alt me-2"></i>Go to Dashboard
+            <i class="fas fa-arrow-right ml-2"></i>
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
 {% endblock %}

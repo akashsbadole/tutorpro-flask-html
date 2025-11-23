@@ -1,0 +1,693 @@
+{% extends "student/base.html" %}
+
+{% block title %}Notifications{% endblock %}
+
+{% block student_content %}
+<div class="page-header">
+    <h1 class="page-title">Notifications</h1>
+    <p class="page-subtitle">Stay updated with your learning activities</p>
+</div>
+
+<!-- Notification Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="stats-number">{{ unread_count or 0 }}</div>
+            <div class="stats-label">Unread</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="stats-number">{{ notifications|length or 0 }}</div>
+            <div class="stats-label">Total</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="stats-number">{{ today_count or 0 }}</div>
+            <div class="stats-label">Today</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="stats-number">{{ important_count or 0 }}</div>
+            <div class="stats-label">Important</div>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Controls -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="notification-controls">
+            <div class="controls-left">
+                <button class="btn btn-outline-primary btn-sm" onclick="markAllAsRead()">
+                    <i class="fas fa-check-double me-2"></i>Mark All as Read
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="markAllAsImportant()">
+                    <i class="fas fa-star me-2"></i>Mark All as Important
+                </button>
+            </div>
+            <div class="controls-right">
+                <div class="filter-dropdown">
+                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-filter me-2"></i>Filter
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" onclick="filterNotifications('all')">All Notifications</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="filterNotifications('unread')">Unread Only</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="filterNotifications('important')">Important Only</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="filterNotifications('today')">Today Only</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#" onclick="filterNotifications('booking')">Bookings</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="filterNotifications('message')">Messages</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="filterNotifications('payment')">Payments</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="filterNotifications('achievement')">Achievements</a></li>
+                    </ul>
+                </div>
+                <button class="btn btn-outline-danger btn-sm" onclick="clearAllNotifications()">
+                    <i class="fas fa-trash me-2"></i>Clear All
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notifications List -->
+<div class="notifications-container">
+    {% if notifications %}
+        {% for notification in notifications %}
+        <div class="notification-card {{ 'unread' if not notification.is_read }} {{ 'important' if notification.is_important }}" 
+             data-category="{{ notification.category }}" data-date="{{ notification.created_at.strftime('%Y-%m-%d') }}">
+            <div class="notification-header">
+                <div class="notification-icon {{ notification.type }}">
+                    <i class="{{ notification.icon_class }}"></i>
+                </div>
+                <div class="notification-content">
+                    <div class="notification-title">
+                        {{ notification.title }}
+                        {% if notification.is_important %}
+                        <i class="fas fa-star text-warning ms-2"></i>
+                        {% endif %}
+                    </div>
+                    <div class="notification-meta">
+                        <span class="notification-time">{{ notification.created_at|time_ago }}</span>
+                        <span class="notification-category badge bg-{{ notification.category_color }}">{{ notification.category.title() }}</span>
+                    </div>
+                </div>
+                <div class="notification-actions">
+                    <div class="action-buttons">
+                        <button class="action-btn" onclick="toggleImportant({{ notification.id }})" title="Mark as Important">
+                            <i class="fas fa-star {{ 'text-warning' if notification.is_important else 'text-muted' }}"></i>
+                        </button>
+                        <button class="action-btn" onclick="toggleRead({{ notification.id }})" title="Mark as Read">
+                            <i class="fas fa-envelope {{ 'text-primary' if not notification.is_read else 'text-muted' }}"></i>
+                        </button>
+                        <button class="action-btn" onclick="deleteNotification({{ notification.id }})" title="Delete">
+                            <i class="fas fa-trash text-danger"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="notification-body">
+                <p class="notification-message">{{ notification.message }}</p>
+                
+                {% if notification.action_url %}
+                <div class="notification-action">
+                    <a href="{{ notification.action_url }}" class="btn btn-primary btn-sm">
+                        {{ notification.action_text or 'View Details' }}
+                    </a>
+                </div>
+                {% endif %}
+                
+                {% if notification.metadata %}
+                <div class="notification-details">
+                    {% if notification.metadata.tutor_name %}
+                    <div class="detail-item">
+                        <span class="detail-label">Tutor:</span>
+                        <span class="detail-value">{{ notification.metadata.tutor_name }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if notification.metadata.course_name %}
+                    <div class="detail-item">
+                        <span class="detail-label">Course:</span>
+                        <span class="detail-value">{{ notification.metadata.course_name }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if notification.metadata.booking_date %}
+                    <div class="detail-item">
+                        <span class="detail-label">Date:</span>
+                        <span class="detail-value">{{ notification.metadata.booking_date }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if notification.metadata.amount %}
+                    <div class="detail-item">
+                        <span class="detail-label">Amount:</span>
+                        <span class="detail-value">{{ notification.metadata.amount }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-notifications">
+            <div class="empty-icon">
+                <i class="fas fa-bell"></i>
+            </div>
+            <h5>No Notifications</h5>
+            <p>You're all caught up! No new notifications to show.</p>
+            <a href="{{ url_for('search.tutor_discovery') }}" class="btn btn-primary">
+                <i class="fas fa-search me-2"></i>Explore Tutors
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Load More -->
+{% if has_more %}
+<div class="text-center mt-4">
+    <button class="btn btn-outline-primary" onclick="loadMoreNotifications()">
+        <i class="fas fa-plus me-2"></i>Load More
+    </button>
+</div>
+{% endif %}
+
+<!-- Notification Settings -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h6 class="card-title mb-0">Notification Preferences</h6>
+    </div>
+    <div class="card-body">
+        <form id="notificationSettingsForm">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Notification Types</h6>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="emailNotifications" checked>
+                        <label class="form-check-label" for="emailNotifications">
+                            Email Notifications
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="pushNotifications" checked>
+                        <label class="form-check-label" for="pushNotifications">
+                            Push Notifications
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="smsNotifications">
+                        <label class="form-check-label" for="smsNotifications">
+                            SMS Notifications
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6>Notification Categories</h6>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="bookingNotifications" checked>
+                        <label class="form-check-label" for="bookingNotifications">
+                            Booking Updates
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="messageNotifications" checked>
+                        <label class="form-check-label" for="messageNotifications">
+                            New Messages
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="paymentNotifications" checked>
+                        <label class="form-check-label" for="paymentNotifications">
+                            Payment Updates
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="achievementNotifications" checked>
+                        <label class="form-check-label" for="achievementNotifications">
+                            Achievements & Progress
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Save Preferences
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.notification-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.controls-left, .controls-right {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.notifications-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.notification-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+}
+
+.notification-card.unread {
+    border-left-color: #667eea;
+    background: #f8f9ff;
+}
+
+.notification-card.important {
+    border-left-color: #ffc107;
+}
+
+.notification-card:hover {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+}
+
+.notification-header {
+    display: flex;
+    align-items: flex-start;
+    padding: 20px 20px 0 20px;
+}
+
+.notification-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    font-size: 1.2rem;
+    color: white;
+}
+
+.notification-icon.booking {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.notification-icon.message {
+    background: linear-gradient(135deg, #f093fb, #f5576c);
+}
+
+.notification-icon.payment {
+    background: linear-gradient(135deg, #4facfe, #00f2fe);
+}
+
+.notification-icon.achievement {
+    background: linear-gradient(135deg, #ffc107, #ff9800);
+}
+
+.notification-icon.system {
+    background: linear-gradient(135deg, #6c757d, #495057);
+}
+
+.notification-content {
+    flex: 1;
+}
+
+.notification-title {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 5px;
+    font-size: 1.1rem;
+}
+
+.notification-meta {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.notification-actions {
+    display: flex;
+    align-items: center;
+}
+
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.action-btn {
+    background: none;
+    border: none;
+    padding: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-btn:hover {
+    background: #f8f9fa;
+}
+
+.notification-body {
+    padding: 0 20px 20px 20px;
+}
+
+.notification-message {
+    color: #6c757d;
+    margin-bottom: 15px;
+    line-height: 1.5;
+}
+
+.notification-action {
+    margin-bottom: 15px;
+}
+
+.notification-details {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 10px;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+
+.detail-item:last-child {
+    margin-bottom: 0;
+}
+
+.detail-label {
+    font-weight: 500;
+    color: #495057;
+}
+
+.detail-value {
+    color: #6c757d;
+}
+
+.empty-notifications {
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: #dee2e6;
+    margin-bottom: 20px;
+}
+
+.notification-settings .form-check {
+    margin-bottom: 10px;
+}
+
+.notification-settings h6 {
+    color: #495057;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    .notification-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .controls-left, .controls-right {
+        justify-content: center;
+    }
+    
+    .notification-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .notification-icon {
+        margin-right: 0;
+        margin-bottom: 10px;
+        align-self: center;
+    }
+    
+    .notification-actions {
+        justify-content: center;
+        margin-top: 10px;
+    }
+    
+    .action-buttons {
+        flex-direction: row;
+        justify-content: center;
+    }
+    
+    .notification-meta {
+        flex-wrap: wrap;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-refresh notifications every 30 seconds
+    setInterval(refreshNotifications, 30000);
+    
+    // Notification settings form
+    document.getElementById('notificationSettingsForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveNotificationPreferences();
+    });
+});
+
+// Mark all notifications as read
+function markAllAsRead() {
+    fetch('/student/notifications/mark-all-read', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+// Mark all notifications as important
+function markAllAsImportant() {
+    fetch('/student/notifications/mark-all-important', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+// Clear all notifications
+function clearAllNotifications() {
+    if (confirm('Are you sure you want to clear all notifications?')) {
+        fetch('/student/notifications/clear-all', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+}
+
+// Toggle notification important status
+function toggleImportant(notificationId) {
+    fetch(`/student/notifications/${notificationId}/toggle-important`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+// Toggle notification read status
+function toggleRead(notificationId) {
+    fetch(`/student/notifications/${notificationId}/toggle-read`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+// Delete notification
+function deleteNotification(notificationId) {
+    if (confirm('Are you sure you want to delete this notification?')) {
+        fetch(`/student/notifications/${notificationId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+}
+
+// Filter notifications
+function filterNotifications(category) {
+    const cards = document.querySelectorAll('.notification-card');
+    
+    cards.forEach(card => {
+        if (category === 'all') {
+            card.style.display = 'block';
+        } else if (category === 'unread') {
+            card.style.display = card.classList.contains('unread') ? 'block' : 'none';
+        } else if (category === 'important') {
+            card.style.display = card.classList.contains('important') ? 'block' : 'none';
+        } else if (category === 'today') {
+            const today = new Date().toISOString().split('T')[0];
+            card.style.display = card.dataset.date === today ? 'block' : 'none';
+        } else {
+            card.style.display = card.dataset.category === category ? 'block' : 'none';
+        }
+    });
+}
+
+// Load more notifications
+function loadMoreNotifications() {
+    const button = event.target;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Loading...';
+    
+    // This would fetch more notifications from the server
+    setTimeout(() => {
+        button.style.display = 'none';
+    }, 1000);
+}
+
+// Refresh notifications
+function refreshNotifications() {
+    fetch('/student/notifications/refresh', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.has_new) {
+            location.reload();
+        }
+    });
+}
+
+// Save notification preferences
+function saveNotificationPreferences() {
+    const formData = new FormData(document.getElementById('notificationSettingsForm'));
+    
+    fetch('/student/notifications/preferences', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': getCsrfToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Notification preferences saved successfully!', 'success');
+        }
+    });
+}
+
+// Get CSRF token
+function getCsrfToken() {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    return meta ? meta.getAttribute('content') : '';
+}
+
+// Show alert message
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    const container = document.querySelector('.page-header');
+    container.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 5000);
+}
+</script>
+{% endblock %}

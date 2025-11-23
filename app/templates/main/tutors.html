@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}Find Tutors{% endblock %}
+
+{% block head %}
+<style>
+    .tutor-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: none;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .tutor-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    
+    .tutor-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    
+    .rating {
+        color: #ffc107;
+    }
+    
+    .subject-badge {
+        background-color: #f8f9fa;
+        padding: 0.25rem 0.5rem;
+        border-radius: 15px;
+        font-size: 0.85rem;
+        margin-right: 0.25rem;
+        margin-bottom: 0.25rem;
+        display: inline-block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-4 fw-bold">Find Your Perfect Tutor</h1>
+            <p class="lead text-muted">Connect with expert tutors for personalized learning experiences</p>
+        </div>
+    </div>
+    
+    <!-- Search and Filter Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-4">
+                            <input type="text" class="form-control" placeholder="Search by subject or name..." name="search">
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" name="subject">
+                                <option value="">All Subjects</option>
+                                <option value="mathematics">Mathematics</option>
+                                <option value="science">Science</option>
+                                <option value="languages">Languages</option>
+                                <option value="programming">Programming</option>
+                                <option value="music">Music</option>
+                                <option value="arts">Arts</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" name="level">
+                                <option value="">All Levels</option>
+                                <option value="beginner">Beginner</option>
+                                <option value="intermediate">Intermediate</option>
+                                <option value="advanced">Advanced</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-modern w-100">
+                                <i class="fas fa-search me-2"></i>Search
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tutors Grid -->
+    <div class="row">
+        {% if tutors %}
+            {% for tutor in tutors %}
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card tutor-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <img src="https://picsum.photos/seed/tutor{{ tutor.id }}/80/80.jpg" 
+                                 alt="{{ tutor.name }}" class="tutor-avatar me-3">
+                            <div>
+                                <h5 class="card-title mb-1">{{ tutor.name }}</h5>
+                                <div class="rating mb-1">
+                                    {% for i in range(5) %}
+                                        {% if i < tutor.rating %}
+                                                    <i class="fas fa-star"></i>
+                                                {% else %}
+                                                    <i class="far fa-star"></i>
+                                                {% endif %}
+                                    {% endfor %}
+                                    <span class="text-muted ms-1">({{ tutor.reviews_count }})</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <p class="card-text">{{ tutor.bio|truncate(100) }}</p>
+                        
+                        <div class="mb-3">
+                            {% for subject in tutor.subjects %}
+                            <span class="subject-badge">{{ subject }}</span>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="fw-bold">${{ tutor.hourly_rate }}/hour</span>
+                            </div>
+                            <div>
+                                {% if tutor.is_online %}
+                                <span class="badge bg-success">Online</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Offline</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent border-top-0">
+                        <a href="{{ url_for('tutor.profile', tutor_id=tutor.id) }}" class="btn btn-outline-primary btn-sm me-2">View Profile</a>
+                        <a href="{{ url_for('meeting.create', tutor_id=tutor.id) }}" class="btn btn-modern btn-sm">Book Session</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <i class="fas fa-user-tie fa-4x text-muted mb-3"></i>
+                    <h3>No tutors found</h3>
+                    <p class="text-muted">Try adjusting your search criteria or browse all available tutors.</p>
+                    <a href="{{ url_for('main.tutors') }}" class="btn btn-modern">Clear Filters</a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if tutors %}
+    <nav aria-label="Tutors pagination" class="mt-4">
+        <ul class="pagination justify-content-center">
+            <li class="page-item disabled">
+                <a class="page-link" href="#" tabindex="-1">Previous</a>
+            </li>
+            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+            <li class="page-item"><a class="page-link" href="#">2</a></li>
+            <li class="page-item"><a class="page-link" href="#">3</a></li>
+            <li class="page-item">
+                <a class="page-link" href="#">Next</a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Add any interactive JavaScript for the tutors page here
+    document.addEventListener('DOMContentLoaded', function() {
+        // Placeholder for future functionality
+        console.log('Tutors page loaded');
+    });
+</script>
+{% endblock %}
