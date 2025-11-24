@@ -10,7 +10,7 @@ from app import db
 from app.models.user import User
 from app.models.tutor import TutorProfile, TutorSubject
 from app.models.category import Subject, SubjectCategory
-from app.models.verification import TutorRating, Review
+from app.models.verification import TutorRating, TutorReview as Review
 from app.models.booking import Booking
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple

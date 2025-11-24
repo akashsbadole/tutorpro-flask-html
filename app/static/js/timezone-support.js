@@ -263,6 +263,6 @@ const timezoneStyles = `
 `;
 
 // Add styles to document
-const styleSheet = document.createElement('style');
-styleSheet.textContent = timezoneStyles;
-document.head.appendChild(styleSheet);
+const timezoneStyleSheet = document.createElement('style');
+timezoneStyleSheet.textContent = timezoneStyles;
+document.head.appendChild(timezoneStyleSheet);

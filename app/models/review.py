@@ -11,6 +11,7 @@ class Review(db.Model):
     Model for student reviews
     """
     __tablename__ = 'reviews'
+    __table_args__ = {'extend_existing': True}
     
     id = db.Column(db.Integer, primary_key=True)
     reviewer_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)

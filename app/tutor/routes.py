@@ -12,7 +12,7 @@ from app.models.tutor import TutorAvailability
 from app.models.payment import Payment, Payout
 # Review model conflicts with verification.py - using Review from verification.py
 # from app.models.review import Review, TutorRatingSummary
-from app.models.verification import Review
+from app.models.verification import TutorReview as Review
 from app import db
 from sqlalchemy import func, desc
 from datetime import datetime, timedelta

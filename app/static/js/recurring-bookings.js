@@ -422,6 +422,6 @@ const recurringStyles = `
 `;
 
 // Add styles to document
-const styleSheet = document.createElement('style');
-styleSheet.textContent = recurringStyles;
-document.head.appendChild(styleSheet);
+const recurringStyleSheet = document.createElement('style');
+recurringStyleSheet.textContent = recurringStyles;
+document.head.appendChild(recurringStyleSheet);

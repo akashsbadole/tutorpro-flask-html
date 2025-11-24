@@ -233,6 +233,6 @@ const reminderStyles = `
 `;
 
 // Add the styles to the document
-const styleSheet = document.createElement('style');
-styleSheet.textContent = reminderStyles;
-document.head.appendChild(styleSheet);
+const reminderStyleSheet = document.createElement('style');
+reminderStyleSheet.textContent = reminderStyles;
+document.head.appendChild(reminderStyleSheet);

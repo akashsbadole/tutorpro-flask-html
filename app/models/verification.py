@@ -124,11 +124,12 @@ class VerificationDocument(db.Model):
         return data
 
 
-class Review(db.Model):
+class TutorReview(db.Model):
     """
     Student reviews and ratings for tutors
     """
     __tablename__ = 'reviews'
+    __table_args__ = {'extend_existing': True}
     
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
@@ -185,7 +186,7 @@ class Review(db.Model):
     moderator = db.relationship('User', foreign_keys=[moderated_by])
     
     def __repr__(self):
-        return f'<Review {self.student_id}->{self.tutor_id} ({self.overall_rating} stars)>'
+        return f'<TutorReview {self.student_id}->{self.tutor_id} ({self.overall_rating} stars)>'
     
     def get_pros_list(self):
         """Get list of pros"""
@@ -319,20 +320,20 @@ class TutorRating(db.Model):
         
         # Get rating aggregates from reviews
         rating_data = db.session.query(
-            func.avg(Review.overall_rating).label('avg_overall'),
-            func.avg(Review.teaching_quality).label('avg_teaching'),
-            func.avg(Review.communication).label('avg_communication'),
-            func.avg(Review.punctuality).label('avg_punctuality'),
-            func.avg(Review.value_for_money).label('avg_value'),
-            func.avg(Review.subject_knowledge).label('avg_knowledge'),
-            func.avg(Review.patience).label('avg_patience'),
-            func.count(Review.id).label('total'),
-            func.sum(func.case([(Review.overall_rating == 5, 1)], else_=0)).label('five_star'),
-            func.sum(func.case([(Review.overall_rating == 4, 1)], else_=0)).label('four_star'),
-            func.sum(func.case([(Review.overall_rating == 3, 1)], else_=0)).label('three_star'),
-            func.sum(func.case([(Review.overall_rating == 2, 1)], else_=0)).label('two_star'),
-            func.sum(func.case([(Review.overall_rating == 1, 1)], else_=0)).label('one_star'),
-            func.sum(func.case([(Review.is_verified_purchase == True, 1)], else_=0)).label('verified')
+            func.avg(TutorReview.overall_rating).label('avg_overall'),
+            func.avg(TutorReview.teaching_quality).label('avg_teaching'),
+            func.avg(TutorReview.communication).label('avg_communication'),
+            func.avg(TutorReview.punctuality).label('avg_punctuality'),
+            func.avg(TutorReview.value_for_money).label('avg_value'),
+            func.avg(TutorReview.subject_knowledge).label('avg_knowledge'),
+            func.avg(TutorReview.patience).label('avg_patience'),
+            func.count(TutorReview.id).label('total'),
+            func.sum(func.case([(TutorReview.overall_rating == 5, 1)], else_=0)).label('five_star'),
+            func.sum(func.case([(TutorReview.overall_rating == 4, 1)], else_=0)).label('four_star'),
+            func.sum(func.case([(TutorReview.overall_rating == 3, 1)], else_=0)).label('three_star'),
+            func.sum(func.case([(TutorReview.overall_rating == 2, 1)], else_=0)).label('two_star'),
+            func.sum(func.case([(TutorReview.overall_rating == 1, 1)], else_=0)).label('one_star'),
+            func.sum(func.case([(TutorReview.is_verified_purchase == True, 1)], else_=0)).label('verified')
         ).filter_by(
             tutor_id=self.tutor_id,
             moderation_status='Approved',

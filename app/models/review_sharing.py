@@ -53,7 +53,7 @@ class ReviewSharing(db.Model):
     last_shared_at = db.Column(db.DateTime)
     
     # Relationships
-    review = db.relationship('Review', backref='sharing')
+    review = db.relationship('TutorReview', backref='sharing')
     user = db.relationship('User', backref='shared_reviews')
     
     def __repr__(self):
@@ -163,7 +163,7 @@ class SocialMediaPost(db.Model):
     
     # Relationships
     user = db.relationship('User', backref='social_media_posts')
-    review = db.relationship('Review', backref='social_posts')
+    review = db.relationship('TutorReview', backref='social_posts')
     
     def __repr__(self):
         return f'<SocialMediaPost {self.id}: {self.platform}>'

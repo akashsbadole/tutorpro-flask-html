@@ -254,6 +254,6 @@ const conflictDetectionStyles = `
 `;
 
 // Add the styles to the document
-const styleSheet = document.createElement('style');
-styleSheet.textContent = conflictDetectionStyles;
-document.head.appendChild(styleSheet);
+const conflictDetectionStyleSheet = document.createElement('style');
+conflictDetectionStyleSheet.textContent = conflictDetectionStyles;
+document.head.appendChild(conflictDetectionStyleSheet);

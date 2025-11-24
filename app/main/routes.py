@@ -1,5 +1,6 @@
-from flask import render_template, request, redirect, url_for, flash
+from flask import render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
+from datetime import datetime
 from app import db
 from app.main import bp
 from app.utils.decorators import roles_required, admin_required, tutor_required, learner_required
@@ -121,3 +122,23 @@ def profile():
     User profile page
     """
     return render_template('main/profile.html', title='My Profile')
+
+
+@bp.route('/offline')
+def offline():
+    """
+    Offline page for PWA functionality
+    """
+    return render_template('offline.html', title='Offline - TutorPro')
+
+
+@bp.route('/api/health')
+def health_check():
+    """
+    Health check endpoint for PWA connectivity testing
+    """
+    return jsonify({
+        'status': 'healthy',
+        'timestamp': datetime.utcnow().isoformat(),
+        'service': 'TutorPro PWA'
+    }), 200

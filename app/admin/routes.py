@@ -416,3 +416,11 @@ def booking_stats():
     }
     
     return jsonify(stats)
+
+
+@bp.route('/analytics')
+@login_required
+@admin_required
+def analytics_dashboard():
+    """Advanced analytics dashboard"""
+    return render_template('admin/analytics_dashboard.html')

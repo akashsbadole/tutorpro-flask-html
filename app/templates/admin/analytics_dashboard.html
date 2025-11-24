@@ -1,0 +1,683 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Advanced Analytics Dashboard{% endblock %}
+
+{% block head %}
+<style>
+.analytics-dashboard {
+    padding: 2rem 0;
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.date-filters {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.date-filters input {
+    padding: 0.5rem 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.date-filters button {
+    padding: 0.5rem 1.5rem;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.date-filters button:hover {
+    background: #0056b3;
+}
+
+.export-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.analytics-card {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.analytics-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.card-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.card-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #007bff;
+    margin: 0;
+}
+
+.card-subtitle {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin: 0.5rem 0 0 0;
+}
+
+.trends-section {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.trends-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.chart-container {
+    position: relative;
+    height: 400px;
+    margin-bottom: 2rem;
+}
+
+.insights-section {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.insight-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 1rem;
+    border-left: 4px solid #007bff;
+    margin-bottom: 1rem;
+    background: #f8f9fa;
+    border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.insight-item:last-child {
+    margin-bottom: 0;
+}
+
+.insight-icon {
+    font-size: 1.5rem;
+    color: #007bff;
+    margin-right: 1rem;
+    min-width: 2rem;
+    text-align: center;
+}
+
+.insight-content {
+    flex: 1;
+}
+
+.insight-title {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.insight-description {
+    color: #6c757d;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.insight-impact {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-top: 0.5rem;
+}
+
+.impact-high {
+    background: #dc3545;
+    color: white;
+}
+
+.impact-medium {
+    background: #ffc107;
+    color: #212529;
+}
+
+.impact-low {
+    background: #28a745;
+    color: white;
+}
+
+.predictive-section {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.forecast-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.forecast-item {
+    text-align: center;
+    padding: 1.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.forecast-item:hover {
+    border-color: #007bff;
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.15);
+}
+
+.forecast-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.forecast-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-bottom: 0.25rem;
+}
+
+.forecast-confidence {
+    font-size: 0.8rem;
+    color: #6c757d;
+    font-style: italic;
+}
+
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 0.5rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+    .analytics-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .dashboard-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .date-filters {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .forecast-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .chart-container {
+        height: 300px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="analytics-dashboard">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <h1>Advanced Analytics Dashboard</h1>
+        
+        <div class="date-filters">
+            <input type="date" id="startDate" placeholder="Start Date">
+            <input type="date" id="endDate" placeholder="End Date">
+            <button onclick="refreshDashboard()">Apply Filters</button>
+            <button onclick="resetFilters()">Reset</button>
+        </div>
+        
+        <div class="export-buttons">
+            <button onclick="exportData('dashboard')">Export Dashboard</button>
+            <button onclick="exportData('revenue')">Export Revenue</button>
+            <button onclick="exportData('users')">Export Users</button>
+        </div>
+    </div>
+
+    <!-- Key Metrics Grid -->
+    <div class="analytics-grid" id="keyMetrics">
+        <div class="analytics-card">
+            <div class="card-header">
+                <h3 class="card-title">Total Revenue</h3>
+                <span class="card-subtitle">Last 30 days</span>
+            </div>
+            <div class="card-value" id="totalRevenue">$0</div>
+        </div>
+        
+        <div class="analytics-card">
+            <div class="card-header">
+                <h3 class="card-title">Active Users</h3>
+                <span class="card-subtitle">Current period</span>
+            </div>
+            <div class="card-value" id="activeUsers">0</div>
+        </div>
+        
+        <div class="analytics-card">
+            <div class="card-header">
+                <h3 class="card-title">Engagement Rate</h3>
+                <span class="card-subtitle">Last 30 days</span>
+            </div>
+            <div class="card-value" id="engagementRate">0%</div>
+        </div>
+        
+        <div class="analytics-card">
+            <div class="card-header">
+                <h3 class="card-title">Customer LTV</h3>
+                <span class="card-subtitle">Average</span>
+            </div>
+            <div class="card-value" id="customerLTV">$0</div>
+        </div>
+    </div>
+
+    <!-- Revenue Trends -->
+    <div class="trends-section">
+        <div class="trends-header">
+            <h2>Revenue Trends</h2>
+            <div>
+                <select id="trendPeriod" onchange="updateTrends()">
+                    <option value="7">Last 7 days</option>
+                    <option value="30" selected>Last 30 days</option>
+                    <option value="90">Last 90 days</option>
+                </select>
+            </div>
+        </div>
+        <div class="chart-container">
+            <canvas id="revenueChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Predictive Insights -->
+    <div class="insights-section">
+        <h2>Predictive Insights</h2>
+        <div id="insightsContainer">
+            <div class="loading-spinner"></div>
+            Loading insights...
+        </div>
+    </div>
+
+    <!-- Revenue Forecast -->
+    <div class="predictive-section">
+        <h2>Revenue Forecast</h2>
+        <div class="forecast-grid" id="forecastGrid">
+            <div class="loading-spinner"></div>
+            Loading forecast...
+        </div>
+    </div>
+
+    <!-- Market Intelligence -->
+    <div class="trends-section">
+        <h2>Market Intelligence</h2>
+        <div class="analytics-grid">
+            <div class="analytics-card">
+                <div class="card-header">
+                    <h3 class="card-title">Top Subjects</h3>
+                </div>
+                <div id="topSubjects">
+                    <div class="loading-spinner"></div>
+                    Loading...
+                </div>
+            </div>
+            
+            <div class="analytics-card">
+                <div class="card-header">
+                    <h3 class="card-title">Geographic Distribution</h3>
+                </div>
+                <div id="geographicData">
+                    <div class="loading-spinner"></div>
+                    Loading...
+                </div>
+            </div>
+            
+            <div class="analytics-card">
+                <div class="card-header">
+                    <h3 class="card-title">User Segments</h3>
+                </div>
+                <div id="userSegments">
+                    <div class="loading-spinner"></div>
+                    Loading...
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let dashboardData = null;
+
+// Initialize dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    loadDashboardData();
+    
+    // Set default dates
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - 30);
+    
+    document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
+    document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
+});
+
+async function loadDashboardData() {
+    try {
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        
+        const url = new URL('/api/analytics/dashboard', window.location.origin);
+        if (startDate) url.searchParams.set('start_date', startDate);
+        if (endDate) url.searchParams.set('end_date', endDate);
+        
+        const response = await fetch(url);
+        dashboardData = await response.json();
+        
+        if (dashboardData.success) {
+            updateDashboardUI(dashboardData.data);
+        } else {
+            console.error('Failed to load dashboard data:', dashboardData.error);
+        }
+    } catch (error) {
+        console.error('Error loading dashboard data:', error);
+    }
+}
+
+function updateDashboardUI(data) {
+    // Update key metrics
+    updateKeyMetrics(data);
+    
+    // Update revenue trends
+    updateRevenueChart(data.revenue_intelligence?.trends);
+    
+    // Update insights
+    updateInsights(data.predictive_insights);
+    
+    // Update forecast
+    updateForecast(data.revenue_intelligence?.forecast);
+    
+    // Update market intelligence
+    updateMarketIntelligence(data.market_intelligence);
+}
+
+function updateKeyMetrics(data) {
+    // Revenue
+    const totalRevenue = data.revenue_intelligence?.trends?.data?.reduce((sum, item) => sum + item.revenue, 0) || 0;
+    document.getElementById('totalRevenue').textContent = `$${totalRevenue.toLocaleString()}`;
+    
+    // Active users
+    const activeUsers = data.user_intelligence?.engagement?.active_users || 0;
+    document.getElementById('activeUsers').textContent = activeUsers.toLocaleString();
+    
+    // Engagement rate
+    const engagementRate = data.user_intelligence?.engagement?.engagement_rate || 0;
+    document.getElementById('engagementRate').textContent = `${engagementRate.toFixed(1)}%`;
+    
+    // Customer LTV
+    const ltv = data.user_intelligence?.lifetime_value?.average_ltv || 0;
+    document.getElementById('customerLTV').textContent = `$${ltv.toLocaleString()}`;
+}
+
+function updateRevenueChart(trendsData) {
+    if (!trendsData || !trendsData.data) return;
+    
+    const ctx = document.getElementById('revenueChart').getContext('2d');
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: trendsData.data.map(item => item.date),
+            datasets: [{
+                label: 'Daily Revenue',
+                data: trendsData.data.map(item => item.revenue),
+                borderColor: '#007bff',
+                backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: function(context) {
+                            return `Revenue: $${context.parsed.y.toLocaleString()}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function updateInsights(insights) {
+    if (!insights || insights.length === 0) {
+        document.getElementById('insightsContainer').innerHTML = '<p>No insights available</p>';
+        return;
+    }
+    
+    const insightsHTML = insights.map(insight => `
+        <div class="insight-item">
+            <div class="insight-icon">
+                <i class="fas fa-lightbulb"></i>
+            </div>
+            <div class="insight-content">
+                <div class="insight-title">${insight.type.replace(/_/g, ' ').toUpperCase()}</div>
+                <div class="insight-description">${insight.recommendation}</div>
+                <span class="insight-impact impact-${insight.impact.toLowerCase()}">
+                    ${insight.impact.toUpperCase()} IMPACT
+                </span>
+            </div>
+        </div>
+    `).join('');
+    
+    document.getElementById('insightsContainer').innerHTML = insightsHTML;
+}
+
+function updateForecast(forecastData) {
+    if (!forecastData || !forecastData.forecast) {
+        document.getElementById('forecastGrid').innerHTML = '<p>No forecast data available</p>';
+        return;
+    }
+    
+    const forecastHTML = forecastData.forecast.slice(0, 6).map(item => `
+        <div class="forecast-item">
+            <div class="forecast-label">${item.date}</div>
+            <div class="forecast-value">$${item.predicted_revenue.toLocaleString()}</div>
+            <div class="forecast-confidence">Confidence: ${(forecastData.confidence * 100).toFixed(0)}%</div>
+        </div>
+    `).join('');
+    
+    document.getElementById('forecastGrid').innerHTML = forecastHTML;
+}
+
+function updateMarketIntelligence(marketData) {
+    // Top subjects
+    if (marketData.subject_demand?.top_subjects) {
+        const subjectsHTML = marketData.subject_demand.top_subjects.map(subject => `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                <span>${subject.subject}</span>
+                <span><strong>${subject.demand_score}</strong></span>
+            </div>
+        `).join('');
+        
+        document.getElementById('topSubjects').innerHTML = subjectsHTML;
+    }
+    
+    // Geographic distribution
+    if (marketData.geographic_distribution?.top_regions) {
+        const geoHTML = marketData.geographic_distribution.top_regions.map(region => `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                <span>${region.region}</span>
+                <span><strong>${region.user_percentage}%</strong></span>
+            </div>
+        `).join('');
+        
+        document.getElementById('geographicData').innerHTML = geoHTML;
+    }
+    
+    // User segments
+    if (marketData.user_intelligence?.acquisition?.by_role) {
+        const segmentsHTML = Object.entries(marketData.user_intelligence.acquisition.by_role).map(([role, count]) => `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                <span>${role.charAt(0).toUpperCase() + role.slice(1)}</span>
+                <span><strong>${count}</strong></span>
+            </div>
+        `).join('');
+        
+        document.getElementById('userSegments').innerHTML = segmentsHTML;
+    }
+}
+
+function refreshDashboard() {
+    loadDashboardData();
+}
+
+function resetFilters() {
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - 30);
+    
+    document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
+    document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
+    
+    loadDashboardData();
+}
+
+async function updateTrends() {
+    const period = document.getElementById('trendPeriod').value;
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - parseInt(period));
+    
+    try {
+        const url = new URL('/api/analytics/revenue/trends', window.location.origin);
+        url.searchParams.set('start_date', startDate.toISOString().split('T')[0]);
+        url.searchParams.set('end_date', endDate.toISOString().split('T')[0]);
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.success) {
+            updateRevenueChart(data.data);
+        }
+    } catch (error) {
+        console.error('Error updating trends:', error);
+    }
+}
+
+async function exportData(type) {
+    try {
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        
+        const url = new URL('/api/analytics/export', window.location.origin);
+        url.searchParams.set('type', type);
+        url.searchParams.set('format', 'json');
+        if (startDate) url.searchParams.set('start_date', startDate);
+        if (endDate) url.searchParams.set('end_date', endDate);
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.success) {
+            // Create download link
+            const blob = new Blob([JSON.stringify(data.data, null, 2)], {type: 'application/json'});
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = `tutorpro-${type}-analytics-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(downloadUrl);
+        } else {
+            alert('Export failed: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Error exporting data:', error);
+        alert('Export failed. Please try again.');
+    }
+}
+</script>
+{% endblock %}

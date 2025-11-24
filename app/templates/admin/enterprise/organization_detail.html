@@ -1,0 +1,715 @@
+{% extends "admin/enterprise/base.html" %}
+
+{% block title %}{{ organization.name }} - Organization Details{% endblock %}
+
+{% block extra_css %}
+<style>
+.org-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 8px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #007bff;
+}
+
+.stat-label {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.progress-ring {
+    transform: rotate(-90deg);
+}
+
+.progress-ring-circle {
+    transition: stroke-dashoffset 0.35s;
+    stroke: #007bff;
+    stroke-width: 4;
+    fill: transparent;
+}
+
+.recent-activity {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.activity-item {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.invoice-status {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+}
+
+.status-issued {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-paid {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-overdue {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.tab-content {
+    padding-top: 1.5rem;
+}
+
+.chart-container {
+    position: relative;
+    height: 300px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Organization Header -->
+    <div class="org-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="d-flex align-items-center">
+                    {% if organization.logo_url %}
+                    <img src="{{ organization.logo_url }}" alt="{{ organization.name }}" class="rounded-circle me-4" style="width: 80px; height: 80px; object-fit: cover;">
+                    {% else %}
+                    <div class="rounded-circle bg-white text-primary d-flex align-items-center justify-content-center me-4" style="width: 80px; height: 80px; font-size: 2rem;">
+                        {{ organization.name[:2].upper() }}
+                    </div>
+                    {% endif %}
+                    <div>
+                        <h1 class="mb-2">{{ organization.name }}</h1>
+                        <p class="mb-1">{{ organization.description or 'No description available' }}</p>
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-light text-dark me-2">{{ organization.type.title() }}</span>
+                            <span class="badge bg-light text-dark me-2">{{ organization.industry or 'N/A' }}</span>
+                            <span class="badge bg-light text-dark">{{ organization.size.title() }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="btn-group">
+                    <a href="{{ url_for('enterprise.edit_organization', id=organization.id) }}" class="btn btn-light">
+                        <i class="fas fa-edit me-2"></i>Edit
+                    </a>
+                    <a href="{{ url_for('enterprise.organization_analytics', id=organization.id) }}" class="btn btn-light">
+                        <i class="fas fa-chart-line me-2"></i>Analytics
+                    </a>
+                    <a href="{{ url_for('enterprise.organization_billing', id=organization.id) }}" class="btn btn-light">
+                        <i class="fas fa-file-invoice-dollar me-2"></i>Billing
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stat-card text-center">
+                <div class="stat-number">{{ analytics.user_analytics.total_users or 0 }}</div>
+                <div class="stat-label">Total Users</div>
+                <div class="text-success small">
+                    <i class="fas fa-arrow-up"></i> {{ analytics.user_analytics.active_users or 0 }} active
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card text-center">
+                <div class="stat-number">{{ analytics.department_analytics.total_departments or 0 }}</div>
+                <div class="stat-label">Departments</div>
+                <div class="text-muted small">Organizational units</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card text-center">
+                <div class="stat-number">{{ analytics.training_analytics.total_programs or 0 }}</div>
+                <div class="stat-label">Training Programs</div>
+                <div class="text-success small">
+                    {{ analytics.training_analytics.active_programs or 0 }} active
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card text-center">
+                <div class="stat-number">{{ "%.0f"|format(analytics.learning_analytics.total_learning_hours or 0) }}</div>
+                <div class="stat-label">Learning Hours</div>
+                <div class="text-muted small">This period</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs" id="organizationTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+                <i class="fas fa-chart-pie me-2"></i>Overview
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab">
+                <i class="fas fa-users me-2"></i>Users
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="training-tab" data-bs-toggle="tab" data-bs-target="#training" type="button" role="tab">
+                <i class="fas fa-graduation-cap me-2"></i>Training
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="billing-tab" data-bs-toggle="tab" data-bs-target="#billing" type="button" role="tab">
+                <i class="fas fa-file-invoice-dollar me-2"></i>Billing
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab">
+                <i class="fas fa-cog me-2"></i>Settings
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="organizationTabsContent">
+        <!-- Overview Tab -->
+        <div class="tab-pane fade show active" id="overview" role="tabpanel">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Learning Analytics</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="learningChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Department Distribution</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="departmentChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Financial Summary</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="text-center">
+                                        <div class="stat-number">${{ "%.0f"|format(analytics.financial_analytics.total_spending or 0) }}</div>
+                                        <div class="stat-label">Total Spending</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="text-center">
+                                        <div class="stat-number">${{ "%.0f"|format(analytics.financial_analytics.average_spending_per_user or 0) }}</div>
+                                        <div class="stat-label">Avg per User</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Training Completion</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="text-center">
+                                <div class="stat-number">{{ "%.1f"|format(analytics.training_analytics.completion_rate or 0) }}%</div>
+                                <div class="stat-label">Completion Rate</div>
+                                <div class="progress mt-3" style="height: 10px;">
+                                    <div class="progress-bar bg-success" style="width: {{ analytics.training_analytics.completion_rate or 0 }}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users Tab -->
+        <div class="tab-pane fade" id="users" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5>Organization Users</h5>
+                <div>
+                    <a href="{{ url_for('enterprise.new_organization_user', id=organization.id) }}" class="btn btn-primary me-2">
+                        <i class="fas fa-plus me-2"></i>Add User
+                    </a>
+                    <a href="{{ url_for('enterprise.bulk_import_users', id=organization.id) }}" class="btn btn-outline-primary">
+                        <i class="fas fa-upload me-2"></i>Bulk Import
+                    </a>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>User</th>
+                                    <th>Role</th>
+                                    <th>Department</th>
+                                    <th>Joined</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for org_user, user in recent_users %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{{ user.profile_image_url or '/static/images/default-avatar.png' }}" alt="{{ user.first_name }}" class="user-avatar me-3">
+                                            <div>
+                                                <div class="fw-bold">{{ user.first_name }} {{ user.last_name }}</div>
+                                                <div class="text-muted small">{{ user.email }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark">{{ org_user.role.title() }}</span>
+                                    </td>
+                                    <td>
+                                        {% if org_user.department %}
+                                        {{ org_user.department.name }}
+                                        {% else %}
+                                        <span class="text-muted">No department</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="text-muted small">
+                                            {{ org_user.created_at.strftime('%b %d, %Y') }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if org_user.last_login_at %}
+                                        <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                        <span class="badge bg-warning">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <button class="btn btn-sm btn-outline-primary" title="View Profile">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-secondary" title="Edit User">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('enterprise.organization_users', id=organization.id) }}" class="btn btn-outline-primary">
+                            View All Users
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Training Tab -->
+        <div class="tab-pane fade" id="training" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5>Training Programs</h5>
+                <a href="{{ url_for('enterprise.new_training_program', id=organization.id) }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Create Program
+                </a>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <div class="stat-number">{{ analytics.training_analytics.total_programs or 0 }}</div>
+                            <div class="stat-label">Total Programs</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <div class="stat-number">{{ analytics.training_analytics.total_enrollments or 0 }}</div>
+                            <div class="stat-label">Total Enrollments</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <div class="stat-number">{{ analytics.training_analytics.completed_enrollments or 0 }}</div>
+                            <div class="stat-label">Completed</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-body">
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-graduation-cap fa-3x mb-3"></i>
+                        <h5>Training Programs</h5>
+                        <p>View and manage training programs for this organization.</p>
+                        <a href="{{ url_for('enterprise.training_programs', id=organization.id) }}" class="btn btn-primary">
+                            Manage Training Programs
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Billing Tab -->
+        <div class="tab-pane fade" id="billing" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5>Billing & Invoices</h5>
+                <a href="{{ url_for('enterprise.new_invoice', id=organization.id) }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Create Invoice
+                </a>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <div class="stat-number">${{ "%.0f"|format(analytics.financial_analytics.total_spending or 0) }}</div>
+                            <div class="stat-label">Total Billed</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <div class="stat-number">${{ "%.0f"|format(analytics.financial_analytics.total_spending or 0) }}</div>
+                            <div class="stat-label">Total Paid</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <div class="stat-number">{{ "%.1f"|format(analytics.financial_analytics.payment_rate or 0) }}%</div>
+                            <div class="stat-label">Payment Rate</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Recent Invoices</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Invoice #</th>
+                                    <th>Issue Date</th>
+                                    <th>Due Date</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for invoice in recent_invoices %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">{{ invoice.invoice_number }}</div>
+                                    </td>
+                                    <td>{{ invoice.issue_date.strftime('%b %d, %Y') }}</td>
+                                    <td>{{ invoice.due_date.strftime('%b %d, %Y') }}</td>
+                                    <td>${{ "%.2f"|format(invoice.amount) }}</td>
+                                    <td>
+                                        <span class="invoice-status status-{{ invoice.status }}">
+                                            {{ invoice.status.title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <button class="btn btn-sm btn-outline-primary" title="View Invoice">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-success" title="Download">
+                                                <i class="fas fa-download"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('enterprise.organization_billing', id=organization.id) }}" class="btn btn-outline-primary">
+                            View All Invoices
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div class="tab-pane fade" id="settings" role="tabpanel">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Organization Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td class="text-muted" style="width: 40%;">Organization ID:</td>
+                                    <td class="fw-bold">{{ organization.id }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Contact Email:</td>
+                                    <td>{{ organization.contact_email }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Contact Phone:</td>
+                                    <td>{{ organization.contact_phone or 'Not provided' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Website:</td>
+                                    <td>
+                                        {% if organization.website %}
+                                        <a href="{{ organization.website }}" target="_blank">{{ organization.website }}</a>
+                                        {% else %}
+                                        Not provided
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Address:</td>
+                                    <td>
+                                        {% if organization.address %}
+                                        {{ organization.address }}, {{ organization.city }}, {{ organization.state }}, {{ organization.country }} {{ organization.postal_code }}
+                                        {% else %}
+                                        Not provided
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Subscription Details</h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td class="text-muted" style="width: 40%;">Plan:</td>
+                                    <td class="fw-bold">{{ organization.subscription_plan.title() }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Billing Cycle:</td>
+                                    <td>{{ organization.billing_cycle.title() }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Max Users:</td>
+                                    <td>{{ organization.max_users }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Current Users:</td>
+                                    <td>{{ organization.current_users or 0 }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Status:</td>
+                                    <td>
+                                        <span class="badge bg-success">{{ organization.subscription_status.title() }}</span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Branding Settings</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Primary Color</label>
+                                <div class="d-flex align-items-center">
+                                    <input type="color" class="form-control form-control-color me-3" value="{{ organization.primary_color or '#007bff' }}" disabled>
+                                    <span>{{ organization.primary_color or '#007bff' }}</span>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Secondary Color</label>
+                                <div class="d-flex align-items-center">
+                                    <input type="color" class="form-control form-control-color me-3" value="{{ organization.secondary_color or '#6c757d' }}" disabled>
+                                    <span>{{ organization.secondary_color or '#6c757d' }}</span>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Custom Domain</label>
+                                <input type="text" class="form-control" value="{{ organization.custom_domain or '' }}" disabled>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Features & Permissions</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" {{ 'checked' if organization.api_access_enabled else '' }} disabled>
+                                <label class="form-check-label">API Access</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" {{ 'checked' if organization.sso_enabled else '' }} disabled>
+                                <label class="form-check-label">SSO Enabled</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" checked disabled>
+                                <label class="form-check-label">Basic Analytics</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" checked disabled>
+                                <label class="form-check-label">Training Programs</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" checked disabled>
+                                <label class="form-check-label">User Management</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+$(document).ready(function() {
+    // Learning Analytics Chart
+    const learningCtx = document.getElementById('learningChart').getContext('2d');
+    new Chart(learningCtx, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'Learning Hours',
+                data: [120, 150, 180, 200, 240, 280],
+                borderColor: '#007bff',
+                backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Department Distribution Chart
+    const deptCtx = document.getElementById('departmentChart').getContext('2d');
+    new Chart(deptCtx, {
+        type: 'doughnut',
+        data: {
+            labels: [{% for dept in analytics.department_analytics.department_stats %}'{{ dept.name }}'{% if not loop.last %},{% endif %}{% endfor %}],
+            datasets: [{
+                data: [{% for dept in analytics.department_analytics.department_stats %}{{ dept.user_count }}{% if not loop.last %},{% endif %}{% endfor %}],
+                backgroundColor: [
+                    '#007bff',
+                    '#28a745',
+                    '#ffc107',
+                    '#dc3545',
+                    '#6c757d'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

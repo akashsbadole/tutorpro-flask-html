@@ -1,0 +1,506 @@
+{% extends "admin/enterprise/base.html" %}
+
+{% block title %}Create New Organization{% endblock %}
+
+{% block extra_css %}
+<style>
+.form-section {
+    background: white;
+    border-radius: 8px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.form-section h5 {
+    color: #007bff;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #007bff;
+}
+
+.color-preview {
+    width: 40px;
+    height: 40px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    margin-left: 10px;
+}
+
+.subscription-card {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.subscription-card:hover {
+    border-color: #007bff;
+    box-shadow: 0 4px 8px rgba(0,123,255,0.1);
+}
+
+.subscription-card.selected {
+    border-color: #007bff;
+    background-color: rgba(0,123,255,0.05);
+}
+
+.subscription-card h6 {
+    color: #007bff;
+    margin-bottom: 0.5rem;
+}
+
+.subscription-price {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #28a745;
+}
+
+.required-field::after {
+    content: " *";
+    color: #dc3545;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">Create New Organization</h1>
+            <p class="text-muted">Add a new enterprise customer to the platform</p>
+        </div>
+        <a href="{{ url_for('enterprise.organizations') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Organizations
+        </a>
+    </div>
+
+    <form method="POST" id="organizationForm">
+        <!-- Basic Information -->
+        <div class="form-section">
+            <h5><i class="fas fa-building me-2"></i>Basic Information</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="name" class="form-label required-field">Organization Name</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                        <div class="form-text">The official name of the organization</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="type" class="form-label">Organization Type</label>
+                        <select class="form-select" id="type" name="type">
+                            <option value="enterprise">Enterprise</option>
+                            <option value="educational">Educational Institution</option>
+                            <option value="government">Government</option>
+                            <option value="non_profit">Non-Profit</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="description" class="form-label">Description</label>
+                <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                <div class="form-text">Brief description of the organization</div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="industry" class="form-label">Industry</label>
+                        <input type="text" class="form-control" id="industry" name="industry" list="industries">
+                        <datalist id="industries">
+                            <option value="Technology">
+                            <option value="Healthcare">
+                            <option value="Finance">
+                            <option value="Education">
+                            <option value="Manufacturing">
+                            <option value="Retail">
+                            <option value="Consulting">
+                            <option value="Government">
+                            <option value="Non-Profit">
+                        </datalist>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="size" class="form-label">Organization Size</label>
+                        <select class="form-select" id="size" name="size">
+                            <option value="small">Small (1-50 employees)</option>
+                            <option value="medium">Medium (51-500 employees)</option>
+                            <option value="large">Large (501-5000 employees)</option>
+                            <option value="enterprise">Enterprise (5000+ employees)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="website" class="form-label">Website</label>
+                        <input type="url" class="form-control" id="website" name="website" placeholder="https://example.com">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Information -->
+        <div class="form-section">
+            <h5><i class="fas fa-address-card me-2"></i>Contact Information</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="contact_email" class="form-label required-field">Contact Email</label>
+                        <input type="email" class="form-control" id="contact_email" name="contact_email" required>
+                        <div class="form-text">Primary contact email for billing and support</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="contact_phone" class="form-label">Contact Phone</label>
+                        <input type="tel" class="form-control" id="contact_phone" name="contact_phone" placeholder="+1 (555) 123-4567">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="address" class="form-label">Address</label>
+                <input type="text" class="form-control" id="address" name="address" placeholder="123 Main Street">
+            </div>
+
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="mb-3">
+                        <label for="city" class="form-label">City</label>
+                        <input type="text" class="form-control" id="city" name="city">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="mb-3">
+                        <label for="state" class="form-label">State/Province</label>
+                        <input type="text" class="form-control" id="state" name="state">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="mb-3">
+                        <label for="country" class="form-label">Country</label>
+                        <input type="text" class="form-control" id="country" name="country">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="mb-3">
+                        <label for="postal_code" class="form-label">Postal Code</label>
+                        <input type="text" class="form-control" id="postal_code" name="postal_code">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subscription Details -->
+        <div class="form-section">
+            <h5><i class="fas fa-credit-card me-2"></i>Subscription Details</h5>
+            
+            <div class="mb-4">
+                <label class="form-label">Choose Subscription Plan</label>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="subscription-card" data-plan="basic">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6>Basic</h6>
+                                    <div class="text-muted small">Perfect for small teams</div>
+                                </div>
+                                <div class="subscription-price">$99</div>
+                            </div>
+                            <ul class="list-unstyled mt-3">
+                                <li><i class="fas fa-check text-success me-2"></i>Up to 50 users</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Basic analytics</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Email support</li>
+                                <li><i class="fas fa-times text-muted me-2"></i>API access</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="subscription-card selected" data-plan="professional">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6>Professional</h6>
+                                    <div class="text-muted small">For growing organizations</div>
+                                </div>
+                                <div class="subscription-price">$299</div>
+                            </div>
+                            <ul class="list-unstyled mt-3">
+                                <li><i class="fas fa-check text-success me-2"></i>Up to 500 users</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Advanced analytics</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Priority support</li>
+                                <li><i class="fas fa-check text-success me-2"></i>API access</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="subscription-card" data-plan="enterprise">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6>Enterprise</h6>
+                                    <div class="text-muted small">Custom solution</div>
+                                </div>
+                                <div class="subscription-price">Custom</div>
+                            </div>
+                            <ul class="list-unstyled mt-3">
+                                <li><i class="fas fa-check text-success me-2"></i>Unlimited users</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Custom analytics</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Dedicated support</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Custom features</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="subscription_plan" class="form-label">Subscription Plan</label>
+                        <select class="form-select" id="subscription_plan" name="subscription_plan" required>
+                            <option value="basic">Basic</option>
+                            <option value="professional" selected>Professional</option>
+                            <option value="enterprise">Enterprise</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="billing_cycle" class="form-label">Billing Cycle</label>
+                        <select class="form-select" id="billing_cycle" name="billing_cycle">
+                            <option value="monthly">Monthly</option>
+                            <option value="annual">Annual (Save 20%)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="max_users" class="form-label required-field">Maximum Users</label>
+                        <input type="number" class="form-control" id="max_users" name="max_users" value="100" min="1" required>
+                        <div class="form-text">Maximum number of users allowed</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="custom_domain" class="form-label">Custom Domain (Optional)</label>
+                        <input type="text" class="form-control" id="custom_domain" name="custom_domain" placeholder="company.tutorpro.com">
+                        <div class="form-text">Custom domain for white-label solution</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Branding -->
+        <div class="form-section">
+            <h5><i class="fas fa-palette me-2"></i>Branding Settings</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="primary_color" class="form-label">Primary Color</label>
+                        <div class="d-flex align-items-center">
+                            <input type="color" class="form-control form-control-color" id="primary_color" name="primary_color" value="#007bff">
+                            <input type="text" class="form-control ms-2" id="primary_color_text" value="#007bff" readonly>
+                            <div class="color-preview" id="primary_preview" style="background-color: #007bff;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="secondary_color" class="form-label">Secondary Color</label>
+                        <div class="d-flex align-items-center">
+                            <input type="color" class="form-control form-control-color" id="secondary_color" name="secondary_color" value="#6c757d">
+                            <input type="text" class="form-control ms-2" id="secondary_color_text" value="#6c757d" readonly>
+                            <div class="color-preview" id="secondary_preview" style="background-color: #6c757d;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features -->
+        <div class="form-section">
+            <h5><i class="fas fa-cogs me-2"></i>Features & Permissions</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="api_access_enabled" name="api_access_enabled">
+                        <label class="form-check-label" for="api_access_enabled">
+                            Enable API Access
+                        </label>
+                        <div class="form-text">Allow organization to access platform APIs</div>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="sso_enabled" name="sso_enabled">
+                        <label class="form-check-label" for="sso_enabled">
+                            Enable SSO
+                        </label>
+                        <div class="form-text">Single Sign-On integration</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="custom_branding_enabled" name="custom_branding_enabled">
+                        <label class="form-check-label" for="custom_branding_enabled">
+                            Custom Branding
+                        </label>
+                        <div class="form-text">Allow custom branding and white-label</div>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="advanced_analytics_enabled" name="advanced_analytics_enabled">
+                        <label class="form-check-label" for="advanced_analytics_enabled">
+                            Advanced Analytics
+                        </label>
+                        <div class="form-text">Access to detailed analytics and reports</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="d-flex justify-content-between">
+            <a href="{{ url_for('enterprise.organizations') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-times me-2"></i>Cancel
+            </a>
+            <div>
+                <button type="button" class="btn btn-outline-primary me-2" onclick="previewOrganization()">
+                    <i class="fas fa-eye me-2"></i>Preview
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>Create Organization
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Organization Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="previewContent">
+                <!-- Preview content will be inserted here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="confirmCreate()">Create Organization</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Subscription card selection
+    $('.subscription-card').click(function() {
+        $('.subscription-card').removeClass('selected');
+        $(this).addClass('selected');
+        const plan = $(this).data('plan');
+        $('#subscription_plan').val(plan);
+        
+        // Update max users based on plan
+        const maxUsers = {
+            'basic': 50,
+            'professional': 500,
+            'enterprise': 10000
+        };
+        $('#max_users').val(maxUsers[plan]);
+    });
+
+    // Color picker synchronization
+    $('#primary_color').on('input', function() {
+        const color = $(this).val();
+        $('#primary_color_text').val(color);
+        $('#primary_preview').css('background-color', color);
+    });
+
+    $('#secondary_color').on('input', function() {
+        const color = $(this).val();
+        $('#secondary_color_text').val(color);
+        $('#secondary_preview').css('background-color', color);
+    });
+
+    // Form validation
+    $('#organizationForm').on('submit', function(e) {
+        if (!this.checkValidity()) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        this.classList.add('was-validated');
+    });
+});
+
+function previewOrganization() {
+    const formData = {
+        name: $('#name').val(),
+        type: $('#type option:selected').text(),
+        description: $('#description').val(),
+        industry: $('#industry').val(),
+        size: $('#size option:selected').text(),
+        website: $('#website').val(),
+        contact_email: $('#contact_email').val(),
+        contact_phone: $('#contact_phone').val(),
+        subscription_plan: $('#subscription_plan option:selected').text(),
+        billing_cycle: $('#billing_cycle option:selected').text(),
+        max_users: $('#max_users').val(),
+        primary_color: $('#primary_color').val(),
+        secondary_color: $('#secondary_color').val()
+    };
+
+    const previewHtml = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Organization Details</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>Name:</strong></td><td>${formData.name || 'N/A'}</td></tr>
+                    <tr><td><strong>Type:</strong></td><td>${formData.type}</td></tr>
+                    <tr><td><strong>Industry:</strong></td><td>${formData.industry || 'N/A'}</td></tr>
+                    <tr><td><strong>Size:</strong></td><td>${formData.size}</td></tr>
+                    <tr><td><strong>Website:</strong></td><td>${formData.website || 'N/A'}</td></tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6>Subscription Details</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>Plan:</strong></td><td>${formData.subscription_plan}</td></tr>
+                    <tr><td><strong>Billing:</strong></td><td>${formData.billing_cycle}</td></tr>
+                    <tr><td><strong>Max Users:</strong></td><td>${formData.max_users}</td></tr>
+                    <tr><td><strong>Primary Color:</strong></td><td><span style="display: inline-block; width: 20px; height: 20px; background-color: ${formData.primary_color}; border: 1px solid #ccc;"></span> ${formData.primary_color}</td></tr>
+                    <tr><td><strong>Secondary Color:</strong></td><td><span style="display: inline-block; width: 20px; height: 20px; background-color: ${formData.secondary_color}; border: 1px solid #ccc;"></span> ${formData.secondary_color}</td></tr>
+                </table>
+            </div>
+        </div>
+        <div class="mt-3">
+            <h6>Contact Information</h6>
+            <table class="table table-sm">
+                <tr><td><strong>Email:</strong></td><td>${formData.contact_email}</td></tr>
+                <tr><td><strong>Phone:</strong></td><td>${formData.contact_phone || 'N/A'}</td></tr>
+            </table>
+        </div>
+        ${formData.description ? `<div class="mt-3"><h6>Description</h6><p>${formData.description}</p></div>` : ''}
+    `;
+
+    $('#previewContent').html(previewHtml);
+    $('#previewModal').modal('show');
+}
+
+function confirmCreate() {
+    $('#previewModal').modal('hide');
+    $('#organizationForm').submit();
+}
+</script>
+{% endblock %}

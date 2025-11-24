@@ -20,7 +20,7 @@ from app.models.tutor import TutorProfile
 from app.models.category import Subject
 from app.models.booking import Booking
 from app.models.demo import DemoSession, DemoSessionStatus
-from app.models.verification import TutorRating, Review
+from app.models.verification import TutorRating, TutorReview as Review
 from app.services.student_matching import StudentMatchingService
 from app.services.demo_booking import DemoBookingService
 

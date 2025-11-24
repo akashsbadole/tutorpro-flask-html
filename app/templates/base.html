@@ -5,6 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}TutorPro{% endblock %} - Preply Clone</title>
     
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#007bff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="TutorPro">
+    <meta name="application-name" content="TutorPro">
+    <meta name="msapplication-TileColor" content="#007bff">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -74,9 +85,6 @@
                                         <i class="fas fa-cog me-2"></i>Admin
                                     </a>
                                     <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="{{ url_for('admin.dashboard') }}">
-                                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
-                                        </a></li>
                                         <li><a class="dropdown-item" href="{{ url_for('admin.dashboard') }}">
                                             <i class="fas fa-tachometer-alt me-2"></i>Dashboard
                                         </a></li>
@@ -233,6 +241,12 @@
     <script src="{{ url_for('static', filename='js/recurring-bookings.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ui-enhancements.js') }}"></script>
     
+    <!-- PWA JavaScript -->
+    <script src="{{ url_for('static', filename='js/pwa-install.js') }}"></script>
+    
+    <!-- Mobile Optimizations -->
+    <script src="{{ url_for('static', filename='js/mobile-optimizations.js') }}"></script>
+    
     <!-- Navigation Dropdown Script -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -267,6 +281,53 @@
                 });
             }
         });
+    </script>
+    
+    <!-- PWA Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('{{ url_for('static', filename='sw.js') }}')
+                    .then(function(registration) {
+                        console.log('Service Worker registered with scope:', registration.scope);
+                        
+                        // Check for service worker updates
+                        registration.addEventListener('updatefound', function() {
+                            const installingWorker = registration.installing;
+                            if (installingWorker) {
+                                installingWorker.addEventListener('statechange', function() {
+                                    if (installingWorker.state === 'installed' && 'serviceWorker' in navigator) {
+                                        // Show update notification
+                                        const updateNotification = document.createElement('div');
+                                        updateNotification.className = 'alert alert-info alert-dismissible fade show';
+                                        updateNotification.style.position = 'fixed';
+                                        updateNotification.style.top = '20px';
+                                        updateNotification.style.right = '20px';
+                                        updateNotification.style.zIndex = '9999';
+                                        updateNotification.innerHTML = `
+                                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                            A new version of TutorPro is available!
+                                            <button type="button" class="btn btn-sm btn-primary" onclick="location.reload()">Refresh Now</button>
+                                        `;
+                                        
+                                        document.body.appendChild(updateNotification);
+                                        
+                                        // Auto-hide after 10 seconds
+                                        setTimeout(function() {
+                                            if (updateNotification) {
+                                                updateNotification.remove();
+                                            }
+                                        }, 10000);
+                                    }
+                                });
+                            }
+                        });
+                    })
+                    .catch(function(error) {
+                        console.error('Service Worker registration failed:', error);
+                    });
+            });
+        }
     </script>
     
     {% block scripts %}{% endblock %}

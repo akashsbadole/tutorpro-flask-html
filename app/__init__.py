@@ -100,9 +100,17 @@ def create_app(config_name='default'):
     from app.api.messaging import messaging_bp
     app.register_blueprint(messaging_bp)
     
+    # Register analytics API blueprint
+    from app.api.analytics import bp as analytics_bp
+    app.register_blueprint(analytics_bp)
+    
     # Register payment blueprint
     from app.payment import bp as payment_bp
     app.register_blueprint(payment_bp)
+    
+    # Register enterprise admin blueprint
+    from app.admin.enterprise import enterprise_bp as admin_enterprise_bp
+    app.register_blueprint(admin_enterprise_bp)
     
     # Register error handlers
     from app.utils.error_handlers import register_error_handlers
